@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .dashboard { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 400px; }
+        .nav-buttons { display: grid; gap: 15px; margin-top: 20px; }
+        .btn { padding: 15px; text-decoration: none; color: white; border-radius: 6px; font-weight: bold; transition: 0.3s; }
+        .btn-personal { background: #007bff; }
+        .btn-academic { background: #6c757d; }
+        .btn-contact { background: #17a2b8; }
+        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <h2>Student Registration</h2>
+                   <a href="../dashboard.html" class="back-link">← Back to Dashboard</a>
+        <div class="nav-buttons">
+            <a href="stu_personal_info.html" class="btn btn-personal">Initial Registration</a>
+            <a href="student_list.html" class="btn btn-academic">Students' List</a>
+            
+        </div>
+    </div>
+</body>
+</html>

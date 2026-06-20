@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam & Marks Management</title>
+    <style>
+     :root {
+    --primary: #2e08b6;
+    --success: #28a745;
+    --bg: #f1f5f9;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f1f5f9;
+    margin: 0;
+    padding: 10px 20px; /* Reduced padding */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container { max-width: 1200px; margin: auto; width: 100%; }
+
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.header h2 { font-size: 18px; margin: 0; color: var(--primary); }
+
+.card {
+    background: white;
+    padding: 12px 18px; /* Compact padding */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 10px; /* Tighter spacing between cards */
+}
+
+h3 { font-size: 15px; margin: 0 0 10px 0; color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 5px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+.form-group { margin-bottom: 8px; }
+label { font-size: 12px; font-weight: 600; margin-bottom: 3px; display: block; }
+
+input, select {
+    padding: 6px 10px;
+    height: 32px; /* Standardized height */
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* SUBJECTS GRID: COMPACT SIDE-BY-SIDE LAYOUT */
+.subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+    gap: 8px 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 6px;
+}
+
+.sub-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.sub-item label {
+    margin: 0;
+    white-space: nowrap;
+    width: 70px; /* Fixed width for labels to align inputs */
+}
+
+.sub-item input {
+    text-align: center;
+    width: 60px; /* Small inputs for marks */
+}
+
+.total-banner {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+
+.btn {
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+}
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; width: 100%; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Checkbox Area */
+        .class-box {
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .checkbox-item input { width: auto; }
+
+        /* Subjects Grid */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .total-banner {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #eee;
+        }
+        .refresh-btn { background: white; border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+
+        #displayTotal { font-size: 20px; color: var(--primary); font-weight: 800; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: navy; text-decoration: underline; text-shadow: #666;">EXAM MANAGEMENT</h1>
+
+<div class="container">
+    <div class="header">
+        <h2>Exam & Marks Management</h2>
+        <button class="refresh-btn" onclick="window.location.href='../dashboard.html'">Dashboard</button>
+        <!-- <button class="refresh-btn" style="background-color: navy; color: white;" onclick="window.location.href='qbank.html'">Q Bank</button> -->
+        <button class="refresh-btn" style="background-color: navy; color: white;" onclick="window.location.href='datesheet.html'"><strong>Date Sheet</strong></button>
+    </div>
+
+    <!-- ROW 1: PREPARATION -->
+    <div class="grid-2">
+        <!-- Step 1 -->
+        <div class="card">
+            <h3>Step 1: Create New Exam</h3>
+            <p style="font-size: 12px; color: #666;">Enter a unique name for the exam (e.g. Final Term 2026).</p>
+            <div class="form-group">
+                <input type="text" id="newExamName" placeholder="Exam Name">
+            </div>
+            <button class="btn btn-primary" onclick="createNewExam()">Create Exam</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="card">
+            <h3>Step 2: Add Students</h3>
+            <div class="form-group">
+                <label>1. Select Exam</label>
+                <select id="selectExamInit"><option value="">-- Choose Exam --</option></select>
+            </div>
+            <div class="form-group">
+                <label>2. Select Classes</label>
+                <div id="classCheckboxContainer" class="class-box">
+                    <!-- Loaded via Script -->
+                </div>
+            </div>
+            <button class="btn btn-success" onclick="generateMarkSheets()">Initiate Exam for Selected Classes</button>
+        </div>
+    </div>
+
+    <!-- ROW 2: SETTINGS -->
+    <div class="card">
+    <h3>Step 3: Set Subject Total Marks</h3>
+    
+    <div class="grid-2" style="margin-bottom: 10px;">
+        <div class="form-group">
+            <label>Target Exam</label>
+            <select id="selectExamSettings"></select>
+        </div>
+        <div class="form-group">
+            <label>Target Class</label>
+            <select id="selectClassSettings"></select>
+        </div>
+    </div>
+
+    <div class="subjects-grid" id="marksInputArea">
+        <div class="sub-item"><label>Urdu</label><input type="number" id="urdu_setmarks" value="100"></div>
+        <div class="sub-item"><label>English</label><input type="number" id="eng_setmarks" value="100"></div>
+        <div class="sub-item"><label>Math</label><input type="number" id="math_setmarks" value="100"></div>
+        <div class="sub-item"><label>SST</label><input type="number" id="sst_setmarks" value="100"></div>
+        
+        <div class="sub-item"><label>Islamiat</label><input type="number" id="islamiat_setmarks" value="100"></div>
+        <div class="sub-item"><label>Science</label><input type="number" id="science_setmarks" value="100"></div>
+        <div class="sub-item"><label>Physics</label><input type="number" id="physics_setmarks" value="100"></div>
+        <div class="sub-item"><label>Chemistry</label><input type="number" id="chemistry_setmarks" value="100"></div>
+        
+        <div class="sub-item"><label>Biology</label><input type="number" id="biology_setmarks" value="100"></div>
+        <div class="sub-item"><label>Computer</label><input type="number" id="computer_setmarks" value="100"></div>
+        <div class="sub-item"><label>Drawing</label><input type="number" id="drawing_setmarks" value="100"></div>
+        <div class="sub-item"><label>Geography</label><input type="number" id="geography_setmarks" value="100"></div>
+    </div>
+
+    <div class="total-banner">
+        <div style="font-weight: bold; font-size: 15px;">Grand Total: <span id="displayTotal" style="color: var(--primary);">1200</span></div>
+        <button class="btn btn-success" onclick="updateTotalMarks()">Update Marks</button>
+        <button class="btn btn-primary" onclick="window.location.href='../results/result.html'">View Results</button>
+    </div>
+</div>
+
+    </div>
+</div>
+
+<script>
+    const subjectIds = [
+        'urdu_setmarks', 'eng_setmarks', 'math_setmarks', 'sst_setmarks',
+        'islamiat_setmarks', 'science_setmarks', 'physics_setmarks',
+        'chemistry_setmarks', 'biology_setmarks', 'computer_setmarks',
+        'drawing_setmarks', 'geography_setmarks'
+    ];
+
+    // 1. Load Data on startup
+    window.addEventListener('DOMContentLoaded', async () => {
+        loadDropdowns();
+        loadClassCheckboxes();
+        
+        // Live calculation for grand total
+        subjectIds.forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateGrandTotal);
+        });
+    });
+
+    function calculateGrandTotal() {
+        let total = 0;
+        subjectIds.forEach(id => total += (parseFloat(document.getElementById(id).value) || 0));
+        document.getElementById('displayTotal').innerText = total;
+    }
+
+    async function loadDropdowns() {
+        const res = await window.api.getDropdownData();
+        if (res.success) {
+            const selects = [document.getElementById('selectExamInit'), document.getElementById('selectExamSettings')];
+            const classSelect = document.getElementById('selectClassSettings');
+            
+            // Clear and Fill Exams
+            selects.forEach(s => {
+                s.innerHTML = '<option value="">-- Choose Exam --</option>';
+                res.exams.forEach(e => s.add(new Option(e.exam_name, e.exam_id)));
+            });
+
+            // Fill Class Select
+            classSelect.innerHTML = '<option value="">-- Choose Class --</option>';
+            res.classes.forEach(c => classSelect.add(new Option(c.class_name, c.class_name)));
+        }
+    }
+
+    async function loadClassCheckboxes() {
+    const classes = await window.api.getActiveClasses(); // Check if this matches your preload.js name
+    const container = document.getElementById('classCheckboxContainer');
+    if (!classes || classes.length === 0) {
+        container.innerHTML = "<p style='color:red; font-size:12px;'>No active students found.</p>";
+        return;
+    }
+    container.innerHTML = classes.map(c => `
+        <div class="checkbox-item">
+            <input type="checkbox" name="classCheck" value="${c.current_class}" id="c_${c.current_class}">
+            <label for="c_${c.current_class}">${c.current_class}</label>
+        </div>
+    `).join('');
+}
+
+
+    // --- STEP 1: CREATE ---
+    async function createNewExam() {
+        const name = document.getElementById('newExamName').value.trim();
+        if(!name) return alert("Enter exam name");
+        const res = await window.api.createExamName(name);
+        if(res.success) {
+            alert("Exam Created!");
+            document.getElementById('newExamName').value = "";
+            loadDropdowns();
+        } else alert(res.error);
+    }
+
+    // --- STEP 2: INITIATE ---
+    async function generateMarkSheets() {
+        const examId = document.getElementById('selectExamInit').value;
+        const selected = Array.from(document.querySelectorAll('input[name="classCheck"]:checked')).map(cb => cb.value);
+        
+        if(!examId || selected.length === 0) return alert("Select Exam and at least one Class");
+
+        const res = await window.api.initiateExamLogic({ examId, selectedClasses: selected });
+        if(res.newlyAdded === 0) alert("Students from these classes are already in this exam sheet.");
+        else alert(`Success! Added ${res.newlyAdded} students.`);
+    }
+
+    // --- STEP 3: SET MARKS ---
+    async function updateTotalMarks() {
+        const examId = document.getElementById('selectExamSettings').value;
+        const className = document.getElementById('selectClassSettings').value;
+
+        if(!examId || !className) return alert("Select Exam and Class for settings");
+
+        const data = {
+            exam_id: examId,
+            current_class: className,
+            urdu: document.getElementById('urdu_setmarks').value,
+            eng: document.getElementById('eng_setmarks').value,
+            math: document.getElementById('math_setmarks').value,
+            sst: document.getElementById('sst_setmarks').value,
+            islamiat: document.getElementById('islamiat_setmarks').value,
+            science: document.getElementById('science_setmarks').value,
+            physics: document.getElementById('physics_setmarks').value,
+            chemistry: document.getElementById('chemistry_setmarks').value,
+            biology: document.getElementById('biology_setmarks').value,
+            computer: document.getElementById('computer_setmarks').value,
+            drawing: document.getElementById('drawing_setmarks').value,
+            geography: document.getElementById('geography_setmarks').value,
+            total: document.getElementById('displayTotal').innerText
+        };
+
+        const res = await window.api.updateSetMarks(data);
+        if(res.success) alert(`Updated marks for ${res.changes} records.`);
+        else alert("Error: " + res.error);
+    }
+</script>
+</body>
+</html>

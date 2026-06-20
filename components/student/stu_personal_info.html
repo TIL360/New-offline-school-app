@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Student Registration</title>
+    <style>
+        :root { --primary: #28a745; --bg: #f4f4f4; --text: #333; --accent: #4f46e5; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 5px; background-color: var(--bg); color: var(--text); overflow: hidden; }
+        .container { max-width: 99%; margin: auto; background: #fff; padding: 10px 20px; border-radius: 8px; height: 97vh; box-sizing: border-box; display: flex; flex-direction: column; }
+        
+        h2 { margin: 0 0 5px 0; color: #444; border-bottom: 2px solid #eee; padding-bottom: 2px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+        .section-title { background: #f8f9fa; padding: 3px 8px; display: block; font-weight: bold; color: var(--accent); border-left: 3px solid var(--accent); margin: 8px 0 5px 0; font-size: 0.75rem; text-transform: uppercase; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px 12px; }
+        .form-group { margin-bottom: 2px; }
+        .span-2 { grid-column: span 2; }
+        
+        label { display: block; margin-bottom: 1px; font-weight: bold; font-size: 0.7rem; color: #555; }
+        input, select, textarea { width: 100%; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 0.75rem; }
+        input:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 3px rgba(79, 70, 229, 0.2); }
+        
+        .submit-btn { width: 250px; padding: 8px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: bold; margin: 10px 0 0 auto; transition: 0.3s; }
+        .btn-back { background: #6c757d; color: white; padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>
+        <span id="formTitle">New Student Admission</span>
+        <button class="btn-back" onclick="window.api.changePage('components/student/student_list.html')">← Back</button>
+    </h2>
+    
+    <form id="studentForm">
+        <!-- Section 1 -->
+        <span class="section-title">1. Personal Information</span>
+        <div class="form-grid">
+            <div class="form-group"><label>Reg No (Unique)</label><input type="text" id="regNo" required></div>
+            <div class="form-group"><label>Roll No</label><input type="text" id="rollNo" ></div>
+            <div class="form-group"><label>Student Name</label><input type="text" id="studentName" required></div>
+            <div class="form-group"><label>Name in Urdu</label><input type="text" id="studentNameUrdu"></div>
+            <div class="form-group"><label>Father's Name</label><input type="text" id="fatherName" ></div>
+            <div class="form-group"><label>Father Name in Urdu</label><input type="text" id="fatherNameUrdu"></div>
+            <div class="form-group"><label>DoB (Figures)</label><input type="date" id="dob" ></div>
+            <div class="form-group"><label>DoB in Words</label><input type="text" id="dobWords"></div>
+            <div class="form-group"><label>B-Form / CNIC</label><input type="text" id="bForm" ></div>
+            <div class="form-group"><label>Student Picture</label><input type="file" id="picture" accept="image/*"></div>
+        </div>
+
+        <!-- Section 2 -->
+        <span class="section-title">2. Academic & Enrollment Details</span>
+        <div class="form-grid">
+            <div class="form-group"><label>Admission Class</label><select id="admClass" ><option value="">Select Class</option></select></div>
+            <div class="form-group"><label>Current Class</label><select id="studyClass" ><option value="">Select Class</option></select></div>
+            <div class="form-group"><label>Section</label><input type="text" id="section"></div>
+            <div class="form-group"><label>Date of Admission</label><input type="date" id="admDate"></div>
+            <div class="form-group"><label>Status</label><select id="status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+        </div>
+
+        <!-- Section 3: Merged School Leaving & Official Records -->
+        <span class="section-title">School Leaving Info & Official Records</span>
+        <div class="form-grid">
+            <div class="form-group"><label>Date of Leaving</label><input type="date" id="leavingDate"></div>
+            <div class="form-group"><label>Class at Leaving</label><select id="leavingClass"><option value="">Select Class</option></select></div>
+            <div class="form-group"><label>Promoted to Class</label><select id="promotedClass"><option value="">Select Class</option></select></div>
+            <div class="form-group"><label>Certificate Serial</label><input type="text" id="certSerial"></div>
+            <div class="form-group"><label>Cert. Issuance Date</label><input type="date" id="certDate"></div>
+            <div class="form-group"><label>Attendance (%)</label><input type="text" id="attendance"></div>
+            <div class="form-group"><label>Dues Paid Up to</label><input type="text" id="duesPaid"></div>
+            <div class="form-group"><label>Monthly Fee</label><input type="number" id="monthlyFee"></div>
+            <div class="form-group span-2"><label>General Remarks</label><input type="text" id="generalRemarks"></div>
+        </div>
+
+        <!-- Section 4 -->
+        <span class="section-title">3. Contact & Address</span>
+        <div class="form-grid">
+            <div class="form-group"><label>Mobile Number</label><input type="tel" id="mobile" placeholder="03xx-xxxxxxx"></div>
+            <div class="form-group"><label>WhatsApp</label><input type="tel" id="whatsapp" placeholder="03xx-xxxxxxx"></div>
+            <div class="form-group"><label>Character Remarks</label><input type="text" id="character"></div>
+            <div class="form-group span-2"><label>Home Address</label><textarea id="address" rows="1"></textarea></div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Save Student Record</button>
+    </form>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const studentId = urlParams.get('id');
+const studentForm = document.getElementById('studentForm');
+let existingPhotoPath = '';
+
+// 1. Populate classes and return a promise to ensure timing is correct
+async function populateClasses() {
+    try {
+        const classes = await window.api.getClasses();
+        const options = classes.map(c => `<option value="${c.class_name}">${c.class_name}</option>`).join('');
+        const defaultOption = '<option value="">Select Class</option>';
+        ['admClass', 'studyClass', 'leavingClass', 'promotedClass'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.innerHTML = defaultOption + options;
+        });
+        return true; 
+    } catch (err) { 
+        console.error("Error populating classes:", err); 
+        return false;
+    }
+}
+
+// 2. Fill student data with exact string matching for Status
+async function fillStudentData() {
+    if (!studentId) return;
+    try {
+        const s = await window.api.getStudentById(studentId);
+        if (!s) return;
+
+        existingPhotoPath = s.picture_path || '';
+        
+        // --- PERSONAL INFO ---
+        document.getElementById('regNo').value = s.registration_no || '';
+        document.getElementById('rollNo').value = s.roll_no || '';
+        document.getElementById('studentName').value = s.student_name || '';
+        document.getElementById('studentNameUrdu').value = s.student_name_urdu || '';
+        document.getElementById('fatherName').value = s.father_name || '';
+        document.getElementById('fatherNameUrdu').value = s.father_name_urdu || '';
+        document.getElementById('dob').value = s.dob || '';
+        document.getElementById('dobWords').value = s.dob_in_words || '';
+        document.getElementById('bForm').value = s.cnic_bform || '';
+
+        // --- ACADEMIC DETAILS ---
+        document.getElementById('admClass').value = s.admission_class || '';
+        document.getElementById('studyClass').value = s.current_class || '';
+        document.getElementById('section').value = s.section || '';
+        document.getElementById('admDate').value = s.admission_date || '';
+        
+        // --- THE STATUS FIX (Exact Case Match) ---
+        // This will now correctly select "Active" or "Inactive"
+        if (s.status) {
+            document.getElementById('status').value = s.status;
+        }
+
+        // --- CONTACT & OTHER ---
+        document.getElementById('mobile').value = s.mobile || '';
+        document.getElementById('whatsapp').value = s.whatsapp || '';
+        document.getElementById('monthlyFee').value = s.monthly_fee || '';
+        document.getElementById('character').value = s.character_remarks || '';
+        document.getElementById('address').value = s.address || '';
+        document.getElementById('leavingDate').value = s.leaving_date || '';
+        document.getElementById('leavingClass').value = s.leaving_class || '';
+        document.getElementById('promotedClass').value = s.promoted_to_class || '';
+        document.getElementById('generalRemarks').value = s.remarks || '';
+        document.getElementById('duesPaid').value = s.dues_paid_up_to || '';
+        document.getElementById('certSerial').value = s.certificate_serial || '';
+        document.getElementById('certDate').value = s.cert_issuance_date || '';
+        document.getElementById('attendance').value = s.attendance || '';
+
+        document.getElementById('submitBtn').innerText = "Update Record";
+        document.getElementById('formTitle').innerText = "Edit Admission";
+    } catch (err) { console.error("Error filling student data:", err); }
+}
+
+// 3. Form Submission Logic
+studentForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const picInput = document.getElementById('picture');
+    let finalPicValue = existingPhotoPath;
+    
+    if (picInput.files && picInput.files.length > 0) {
+        finalPicValue = window.api.getFilePath(picInput.files[0]); 
+    }
+
+    const studentData = {
+        id: studentId,
+        regNo: document.getElementById('regNo').value,
+        rollNo: document.getElementById('rollNo').value,
+        name: document.getElementById('studentName').value,
+        nameUrdu: document.getElementById('studentNameUrdu').value,
+        fatherName: document.getElementById('fatherName').value,
+        fatherNameUrdu: document.getElementById('fatherNameUrdu').value,
+        dob: document.getElementById('dob').value,
+        dobWords: document.getElementById('dobWords').value,
+        cnic: document.getElementById('bForm').value,
+        pic: finalPicValue,
+        admClass: document.getElementById('admClass').value,
+        studyClass: document.getElementById('studyClass').value,
+        leavingClass: document.getElementById('leavingClass').value,
+        promotedClass: document.getElementById('promotedClass').value,
+        section: document.getElementById('section').value,
+        admDate: document.getElementById('admDate').value,
+        leavingDate: document.getElementById('leavingDate').value,
+        status: document.getElementById('status').value, // Correctly captures "Active"/"Inactive"
+        mobile: document.getElementById('mobile').value,
+        whatsapp: document.getElementById('whatsapp').value,
+        monthlyFee: document.getElementById('monthlyFee').value,
+        duesPaid: document.getElementById('duesPaid').value,
+        character: document.getElementById('character').value,
+        generalRemarks: document.getElementById('generalRemarks').value,
+        certSerial: document.getElementById('certSerial').value,
+        certDate: document.getElementById('certDate').value,
+        attendance: document.getElementById('attendance').value,
+        address: document.getElementById('address').value
+    };
+
+    try {
+        if (studentId) { 
+            await window.api.updateStudent(studentData); 
+            alert("Updated Successfully!"); 
+        } else { 
+            await window.api.addStudent(studentData); 
+            alert("Saved Successfully!"); 
+            studentForm.reset(); 
+        }
+        window.api.changePage('components/student/student_list.html');
+    } catch (error) { alert("Error: " + error.message); }
+});
+
+// 4. ONLOAD SEQUENCE: Wait for one before starting the next
+window.onload = async () => { 
+    await populateClasses(); 
+    await fillStudentData(); 
+};
+</script>
+
+
+</body>
+</html>

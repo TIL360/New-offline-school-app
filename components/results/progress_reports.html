@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Progress Reports</title>
+<style>
+:root { --primary: #2e08b6; --bg: #f4f6f9; --school-red: #b01e1e; }
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #000; }
+.nav-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+/* Main Report Sheet */
+.report-sheet { 
+    width: 210mm; 
+    height: 297mm; 
+    padding: 15mm; 
+    margin: 0 auto 40px auto; 
+    background: white; 
+    border: 1px solid #ddd; 
+    box-sizing: border-box; 
+    position: relative; 
+    contain: layout; 
+    overflow: hidden;
+    /* CRITICAL FIX: Forces PDF to show background images/watermarks */
+    -webkit-print-color-adjust: exact; 
+    print-color-adjust: exact;
+}
+
+/* Watermark Styling */
+.report-sheet::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 450px;
+    height: 450px;
+    background-image: url('../../images/logo.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.1; /* Adjusted transparency */
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Content Container */
+.school-header, .student-id-section, table, .remarks-box, .footer-sigs {
+    position: relative;
+    z-index: 1;
+}
+
+.school-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 5px; }
+.school-header h1 { margin: 0; color: var(--school-red); font-size: 26px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; }
+.school-header p { margin: 2px 0; font-size: 13px; font-weight: bold; }
+
+.small-logo { height: 50px; margin-right: 12px; }
+
+.student-id-section { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.info-col { flex: 1; }
+.info-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+.info-field { border-bottom: 1px solid #000; padding: 4px 2px; font-size: 13px; }
+.student-photo { width: 85px; height: 85px; object-fit: cover; border-radius: 50%; border: 2px solid #000; background: #008080; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; background: transparent; }
+th, td { border: 1px solid #000; padding: 6px; text-align: center; font-size: 13px; }
+th { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
+.subject-col { text-align: left; padding-left: 10px; }
+
+.remarks-box { border: 2px dashed #333; padding: 10px; margin-top: 15px; min-height: 80px; position: relative; }
+.footer-sigs { position: absolute; bottom: 20mm; left: 15mm; right: 15mm; display: flex; justify-content: space-between; font-weight: bold; }
+.sig-line { border-top: 1px solid #000; width: 170px; text-align: center; padding-top: 5px; font-size: 13px; }
+
+@media print { 
+    body { background: none; padding: 0; } 
+    .nav-header { display: none; } 
+    .report-sheet { margin: 0; border: none; page-break-after: always; } 
+    @page { size: A4; margin: 0; } 
+}
+</style>
+</head>
+<body>
+<div class="nav-header">
+    <h2 id="recordCounter">Loading Reports...</h2>
+    <div>
+        <span id="loadProgress" style="margin-right:15px; font-weight:bold; color:var(--school-red);"></span>
+        <button id="btnPrint" onclick="startExport()" disabled style="background:var(--primary); color:white; padding:10px 20px; border-radius:4px; cursor:pointer;">Print to PDF</button>
+        <button onclick="window.location.href='result.html'" style="background:#6c757d; color:white; padding:10px 20px; border-radius:4px; cursor:pointer; margin-left:10px;">Back</button>
+    </div>
+</div>
+
+<div id="reportsContainer"></div>
+
+<script>
+async function startExport() { await window.api.saveToPdf(); }
+
+function getGrade(score, max) {
+    if (!max) return '-'; const p = (score / max) * 100;
+    if (p >= 90) return 'A+'; if (p >= 80) return 'A'; if (p >= 70) return 'B+';
+    if (p >= 60) return 'B'; if (p >= 50) return 'C'; if (p >= 40) return 'D';
+    return 'F';
+}
+
+async function loadReports() {
+    const container = document.getElementById('reportsContainer');
+    const progText = document.getElementById('loadProgress');
+    const printBtn = document.getElementById('btnPrint');
+    const recordCounter = document.getElementById('recordCounter');
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const examId = urlParams.get('examId');
+    const className = urlParams.get('className');
+    const studentId = urlParams.get('studentId');
+
+    try {
+        let data = [];
+        if (studentId) {
+            const singleRecord = await window.api.getStudentProgress(studentId);
+            if (singleRecord) { data = [singleRecord]; recordCounter.innerText = `Report for: ${singleRecord.student_name}`; }
+        } else {
+            data = await window.api.getAllStudentProgress({ examId, className });
+            recordCounter.innerText = `Total Records: ${data.length}`;
+        }
+
+        if (!data || data.length === 0) { 
+            container.innerHTML = "<h2 style='text-align:center;'>No records found.</h2>"; 
+            return; 
+        }
+
+        const subjects = [
+            { id: 'Urdu', set: 'urdu_setmarks', obt: 'urdu_obt' }, { id: 'Eng', set: 'eng_setmarks', obt: 'eng_obt' },
+            { id: 'Math', set: 'math_setmarks', obt: 'math_obt' }, { id: 'SST', set: 'sst_setmarks', obt: 'sst_obt' },
+            { id: 'Isl', set: 'islamiat_setmarks', obt: 'islamiat_obt' }, { id: 'Sci', set: 'science_setmarks', obt: 'science_obt' },
+            { id: 'Phy', set: 'physics_setmarks', obt: 'physics_obt' }, { id: 'Chem', set: 'chemistry_setmarks', obt: 'chemistry_obt' },
+            { id: 'Bio', set: 'biology_setmarks', obt: 'biology_obt' }, { id: 'Comp', set: 'computer_setmarks', obt: 'computer_obt' }
+        ];
+
+        let index = 0;
+        async function renderBatch() {
+            const batchSize = 10; 
+            const end = Math.min(index + batchSize, data.length);
+            for (; index < end; index++) {
+                const s = data[index];
+                let rows = ''; let tObt = 0; let tMax = 0; let failed = 0;
+                
+                subjects.filter(sub => s[sub.set] > 0).forEach(sub => {
+                    const ob = s[sub.obt] || 0; const mx = s[sub.set] || 0;
+                    tObt += ob; tMax += mx; if ((ob/mx)*100 < 40) failed++;
+                    rows += `<tr><td class="subject-col">${sub.id}</td><td>${mx}</td><td>${ob}</td><td>${Math.round((ob/mx)*100)}%</td><td>${getGrade(ob, mx)}</td></tr>`;
+                });
+
+                const totalPercentage = tMax > 0 ? Math.round((tObt/tMax)*100) : 0;
+                const totalGrade = getGrade(tObt, tMax);
+                const finalResult = failed > 1 ? 'Detained' : 'Promoted';
+
+                let imgSrc = `https://ui-avatars.com{encodeURIComponent(s.student_name)}&background=008080&color=fff`;
+                if (s.picture_path) { 
+                    try { const p = await window.api.getImageUrl(s.picture_path); if (p) imgSrc = p; } catch (e) {} 
+                }
+
+                const sheet = document.createElement('div');
+                sheet.className = 'report-sheet';
+                sheet.innerHTML = `
+                    <div class="school-header">
+                        <h1><img src="../../images/logo.png" class="small-logo">Your Institute Name</h1>
+                        <p>Address || 0300-xxxxx</p>
+                        
+                <p style="margin:2px; font-size:11px;">E-mail: abc@gmail.com</p>
+                    </div>
+                    <div class="student-id-section">
+                        <div class="info-col">
+                            <div class="info-row">
+                                <div class="info-field">Name: <strong>${s.student_name}</strong></div>
+                                <div class="info-field">Roll No: <strong>${s.roll_no || '___'}</strong></div>
+                                <div class="info-field">Reg No: <strong>${s.registration_no}</strong></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-field">Father: <strong>${s.father_name || '___________'}</strong></div>
+                                <div class="info-field">Class: <strong>${s.class} - ${s.section || 'A'}</strong></div>
+                            </div>
+                        </div>
+                        <img src="${imgSrc}" class="student-photo" />
+                    </div>
+                    <table>
+                        <thead><tr><th>Subject</th><th>Total</th><th>Obt</th><th>%</th><th>Grade</th></tr></thead>
+                        <tbody>${rows}</tbody>
+                        <tfoot><tr style="font-weight:bold; background:#f2f2f2;"><td>TOTAL</td><td>${tMax}</td><td>${tObt}</td><td>${totalPercentage}%</td><td>${totalGrade}</td></tr></tfoot>
+                    </table>
+                    <div style="margin-top:20px; display: flex; border: 2px solid #333; padding: 10px; background: #f9f9f9; -webkit-print-color-adjust: exact;">
+                        <div style="text-align:center; flex:1;"><div>RESULT</div><div style="font-size:18px; font-weight:bold; color:${failed > 1 ? '#c0392b' : '#27ae60'}">${finalResult}</div></div>
+                        <div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>POSITION</div><div style="font-size:22px; font-weight:bold;">${s.position ? Math.round(s.position) : '___'}</div></div>
+                        <div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>PERCENTAGE</div><div style="font-size:22px; font-weight:bold;">${totalPercentage}%</div></div>
+                        <div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>GRADE</div><div style="font-size:22px; font-weight:bold;">${totalGrade}</div></div>
+                    </div>
+                    <div class="remarks-box">
+                        <div style="font-weight:bold; text-decoration:underline;">General Report: <span onclick="enableEdit('${s.result_id}')" style="cursor:pointer">✏️</span></div>
+                        <div id="display-text-${s.result_id}" style="font-style:italic; font-size:16px;">${s.remarks || 'No remarks entered.'}</div>
+                        <div id="edit-container-${s.result_id}" style="display:none; margin-top:5px;">
+                            <textarea id="input-${s.result_id}" style="width:100%; height:50px;">${s.remarks || ''}</textarea>
+                            <button onclick="saveRemarks('${s.result_id}')">Save</button>
+                            <button onclick="cancelEdit('${s.result_id}')">Cancel</button>
+                        </div>
+                    </div>
+                    <div class="footer-sigs">
+                        <div class="sig-line">Result Date</div>
+                        <div class="sig-line">Exam Incharge</div>
+                        <div class="sig-line">Principal Signature</div>
+                    </div>`;
+                container.appendChild(sheet);
+            }
+            progText.innerText = `Loaded: ${Math.round((index/data.length)*100)}%`;
+            if (index < data.length) setTimeout(renderBatch, 5);
+            else { printBtn.disabled = false; progText.innerText = "Ready!"; }
+        }
+        renderBatch();
+    } catch (err) { container.innerHTML = "Error loading reports."; }
+}
+
+function enableEdit(id) { document.getElementById(`edit-container-${id}`).style.display = 'block'; }
+function cancelEdit(id) { document.getElementById(`edit-container-${id}`).style.display = 'none'; }
+async function saveRemarks(id) {
+    const val = document.getElementById(`input-${id}`).value;
+    if (await window.api.updateResultRemarks(id, val)) {
+        document.getElementById(`display-text-${id}`).innerText = val || 'No remarks entered.';
+        cancelEdit(id);
+    }
+}
+window.onload = loadReports;
+</script>
+</body>
+</html>

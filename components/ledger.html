@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link href="../assets/css/bootstrap.min.css" rel="stylesheet" />
+<title>Product Inventory Ledger</title>
+<style>
+  :root {
+    --bg-color: #085a4f44;
+    --primary-color: #003049;
+    --secondary-color: #d62828;
+    --accent-color: #f77f00;
+    --card-bg: #ffffff;
+    --text-color: #2b2d42;
+    --border-color: #e5e5e5;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+  }
+
+  .ledger-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+  }
+
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--bg-color);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .control-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  select,
+  input[type="date"] {
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    min-width: 250px;
+  }
+
+  select:focus,
+  input[type="date"]:focus {
+    border-color: var(--primary-color);
+  }
+
+  .product-meta-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+    display: none;
+  }
+
+  .meta-card {
+    background-color: var(--bg-color);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+  }
+
+  .meta-card.alert-stock {
+    border-left-color: var(--secondary-color);
+  }
+
+  .meta-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #6c757d;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .meta-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color);
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 14px;
+  }
+
+  th {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 14px;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  tr:hover {
+    background-color: rgba(0, 48, 73, 0.02);
+  }
+
+  /* Ledger Badges Style */
+  .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .badge-buy {
+    background-color: #d1e7dd;
+    color: #0f5132;
+  }
+
+  .badge-sale {
+    background-color: #cff4fc;
+    color: #055160;
+  }
+
+  .badge-cr {
+    background-color: #fff3cd;
+    color: #664d03;
+  }
+
+  .badge-sr {
+    background-color: #f8d7da;
+    color: #842029;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-style: italic;
+  }
+
+  .btn-back {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+
+  .btn-back:hover {
+    opacity: 0.9;
+  }
+</style>
+</head>
+<body>
+
+<a href="./dashboard.html" class="btn mb-2 btn-outline-dark btn-sm d-inline-flex align-items-center gap-2 rounded-2 fw-medium">
+  Dashboard
+</a>
+
+<div class="ledger-container">
+  <!-- Top Toolbar -->
+  <div class="header-section">
+    <h2>📖 Product Stock Ledger</h2>
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <div class="date-filter-group" style="display: flex; align-items: center; gap: 10px;">
+    <label for="ledgerDate" style="font-size: 14px;">Select Date:</label>
+    <input type="date" id="ledgerDate" onchange="loadProductLedger(currentProductId)" />
+</div>
+
+      <div class="control-group">
+        <button class="btn-back" onclick="window.history.back()">← Back</button>
+        <select id="productSelect" onchange="loadProductLedger(this.value)">
+          <option value="">-- Choose a Product --</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Product Profile Highlights -->
+  <div class="product-meta-cards" id="metaContainer">
+    <div class="meta-card">
+      <div class="meta-label">Barcode / GTIN</div>
+      <div class="meta-value" id="metaBarcode">-</div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-label">Category</div>
+      <div class="meta-value" id="metaCategory">-</div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-label">Selling Price</div>
+      <div class="meta-value" id="metaPrice">Rs. 0.00</div>
+    </div>
+    <div class="meta-card" id="stockCard">
+      <div class="meta-label">System Book Stock</div>
+      <div class="meta-value" id="metaStock">0 Pcs</div>
+    </div>
+  </div>
+
+  <!-- Ledger Entries Datatable -->
+  <div class="table-responsive" style="margin-top:20px;">
+    <table id="ledgerTable">
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>Activity Type</th>
+          <th>Entity Info (Supplier/Client)</th>
+          <th class="text-right">Price</th>
+          <th class="text-right">Qty In (+)</th>
+          <th class="text-right">Qty Out (-)</th>
+          <th class="text-right">Stock Balance</th>
+          <th class="text-right">Amount Balance</th>
+        </tr>
+      </thead>
+      <tbody id="ledgerBody">
+        <tr>
+          <td colspan="8" class="empty-state">
+            Please select a product from the dropdown top-right to generate ledger records.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// Wait for DOM to load
+document.addEventListener('DOMContentLoaded', async () => {
+    // Set default date to today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('ledgerDate').value = today;
+
+    await populateProductDropdown();
+});
+
+let currentProductId = null;
+
+// Populate product dropdown
+async function populateProductDropdown() {
+    try {
+        const products = await window.authAPI.getProducts();
+        const dropdown = document.getElementById('productSelect');
+        dropdown.innerHTML = '<option value="">-- Choose a Product --</option>';
+        products.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = `${p.name} (${p.barcode || 'No Barcode'})`;
+            dropdown.appendChild(option);
+        });
+    } catch (err) {
+        console.error('Failed to load inventory products:', err);
+    }
+}
+
+// Utility function to get start of day
+function getStartOfDay(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+// Utility function to get end of day
+function getEndOfDay(date) {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+}
+
+// Parse date string safely into Date object
+function parseToValidDate(dateInput) {
+    if (!dateInput) return new Date();
+    if (dateInput instanceof Date) return dateInput;
+
+    let dateStr = dateInput.toString().replace(/\s+/g, ' ').trim();
+
+    if (dateStr.includes('-') && !dateStr.includes('T')) {
+        dateStr = dateStr.replace(' ', 'T');
+    }
+
+    let parsed = new Date(dateStr);
+    if (isNaN(parsed.getTime()) || dateStr.includes('/') || dateStr.includes(',')) {
+        try {
+            const [datePart, timePart] = dateStr.split(',');
+            if (datePart && timePart) {
+                const [d, m, y] = datePart.trim().split('/');
+                const timeStr = timePart.trim();
+                const isPM = /PM/i.test(timeStr);
+                const isAM = /AM/i.test(timeStr);
+                const cleanTime = timeStr.replace(/(AM|PM)/i, '').trim();
+                const [hoursStr, minutesStr, secondsStr] = (cleanTime || '0:00:00').split(':');
+
+                let h = parseInt(hoursStr, 10) || 0;
+                if (isPM && h < 12) h += 12;
+                if (isAM && h === 12) h = 0;
+
+                const isoString = `${y.trim()}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${String(h).padStart(2, '0')}:${minutesStr.padStart(2, '0')}:${(secondsStr || '00').padStart(2, '0')}`;
+                const finalDate = new Date(isoString);
+                if (!isNaN(finalDate.getTime())) return finalDate;
+            }
+        } catch (e) {
+            console.error('Date parser extraction failed:', dateStr, e);
+        }
+    }
+    return parsed;
+}
+
+// Load ledger for selected product
+async function loadProductLedger(productId) {
+    currentProductId = productId;
+    const ledgerDateStr = document.getElementById('ledgerDate').value;
+
+    // Set up range boundaries for exactly the selected date
+    let dateFrom = null;
+    let dateTo = null;
+    if (ledgerDateStr) {
+        dateFrom = getStartOfDay(parseToValidDate(ledgerDateStr));
+        dateTo = getEndOfDay(parseToValidDate(ledgerDateStr));
+    }
+
+    // Clear previous display if no product selected
+    if (!productId) {
+        document.getElementById('metaContainer').style.display = 'none';
+        document.getElementById('ledgerBody').innerHTML = `<tr><td colspan="8" class="empty-state">Please select a product from the dropdown top-right to generate ledger records.</td></tr>`;
+        return;
+    }
+
+    try {
+        // Fetch product info
+        const products = await window.authAPI.getProducts();
+        const targetProduct = products.find(p => p.id == productId);
+        if (!targetProduct) return;
+
+        // Show profile section
+        document.getElementById('metaContainer').style.display = 'grid';
+        document.getElementById('metaBarcode').textContent = targetProduct.barcode || 'N/A';
+        document.getElementById('metaCategory').textContent = targetProduct.category || 'General';
+        document.getElementById('metaPrice').textContent = `Rs. ${parseFloat(targetProduct.price).toFixed(2)}`;
+        document.getElementById('metaStock').textContent = `${targetProduct.stock} ${targetProduct.unit || 'Pcs'}`;
+
+        // Highlight low stock
+        const stockCard = document.getElementById('stockCard');
+        if (targetProduct.stock <= targetProduct.min_stock_level) {
+            stockCard.classList.add('alert-stock');
+        } else {
+            stockCard.classList.remove('alert-stock');
+        }
+
+        // Fetch all transactions
+        const purchases = await window.authAPI.getAllPurchasesDetailed() || [];
+        const salesData = await window.authAPI.getAllSalesDetailed() || [];
+        const customerReturns = await window.authAPI.getReturnHistory() || [];
+        const supplierReturns = await window.authAPI.getSupHistory() || [];
+
+        // Helper function to parse date
+        const parseDate = (dateStr) => parseToValidDate(dateStr);
+
+        // Function to check if date is within range
+        const inRange = (dateStr) => {
+            const d = parseDate(dateStr);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+        };
+
+        // Check if product existed before the selected date range
+        const productCreatedDate = targetProduct.created_at ? getStartOfDay(parseDate(targetProduct.created_at)) : null;
+        if (productCreatedDate && dateTo && dateTo < productCreatedDate) {
+            document.getElementById('ledgerBody').innerHTML = `<tr><td colspan="8" class="empty-state">No transaction logs recorded for this item on selected date (Product did not exist yet).</td></tr>`;
+            return;
+        }
+
+        // 1. Calculate absolute totals across ALL history first to establish static base point
+        let absoluteTotalIn = 0;
+        let absoluteTotalOut = 0;
+
+        // Purchases
+        purchases.filter(p => p.product_id == productId).forEach(p => {
+            if (p.quantity && parseInt(p.quantity) > 0) absoluteTotalIn += parseInt(p.quantity);
+        });
+
+        // Sales
+        salesData.forEach(sale => {
+            if (sale.items && Array.isArray(sale.items)) {
+                sale.items.forEach(item => {
+                    if (item.id == productId) {
+                        let totalReturned = 0;
+                        customerReturns.filter(r => r.sale_id == sale.id && r.product_name === targetProduct.name).forEach(r => {
+                            totalReturned += r.quantity_returned;
+                        });
+                        absoluteTotalOut += (item.qty + totalReturned);
+                    }
+                });
+            }
+        });
+
+        // Customer Returns (stock in)
+        customerReturns.filter(r => r.product_name === targetProduct.name).forEach(r => {
+            absoluteTotalIn += r.quantity_returned;
+        });
+
+        // Supplier Returns (stock out)
+        supplierReturns.filter(sr => sr.barcode === targetProduct.barcode).forEach(sr => {
+            absoluteTotalOut += parseInt(sr.quantity_returned || sr.quantity || 0);
+        });
+
+        // Determine baseline stock before any system transaction
+        const absoluteInitialStock = targetProduct.stock - absoluteTotalIn + absoluteTotalOut;
+
+        // 2. Compute quantities prior to the selected date range
+        let totalInBefore = 0;
+        let totalOutBefore = 0;
+
+        if (dateFrom) {
+            // Purchases before dateFrom
+            purchases.filter(p => p.product_id == productId && parseDate(p.purchase_date) < dateFrom).forEach(p => {
+                if (p.quantity && parseInt(p.quantity) > 0) totalInBefore += parseInt(p.quantity);
+            });
+
+            // Sales before dateFrom
+            salesData.forEach(sale => {
+                if (sale.items && Array.isArray(sale.items)) {
+                    sale.items.forEach(item => {
+                        if (item.id == productId && parseDate(sale.time) < dateFrom) {
+                            let totalReturned = 0;
+                            customerReturns.filter(r => r.sale_id == sale.id && r.product_name === targetProduct.name).forEach(r => {
+                                totalReturned += r.quantity_returned;
+                            });
+                            totalOutBefore += (item.qty + totalReturned);
+                        }
+                    });
+                }
+            });
+
+            // Customer returns before dateFrom
+            customerReturns.filter(r => r.product_name === targetProduct.name && parseDate(r.return_date) < dateFrom).forEach(r => {
+                totalInBefore += r.quantity_returned;
+            });
+
+            // Supplier returns before dateFrom
+            supplierReturns.filter(sr => sr.barcode === targetProduct.barcode && parseDate(sr.return_date || sr.purchase_date) < dateFrom).forEach(sr => {
+                totalOutBefore += parseInt(sr.quantity_returned || sr.quantity || 0);
+            });
+        }
+
+        // Compute initial stock for the selected date
+        const initialStock = dateFrom ? (absoluteInitialStock + totalInBefore - totalOutBefore) : absoluteInitialStock;
+
+        // Prepare ledger entries array
+        let ledgerEntries = [];
+
+        // Add Opening Balance record
+        ledgerEntries.push({
+            date: dateFrom ? dateFrom : (targetProduct.created_at || new Date()),
+            type: 'OPENING BAL',
+            badgeClass: 'badge-buy',
+            entity: `Opening balance for ${ledgerDateStr}`,
+            price: parseFloat(targetProduct.cost_price || 0),
+            inQty: initialStock,
+            outQty: 0
+        });
+
+        // Purchases within date range
+        purchases.filter(p => p.product_id == productId && inRange(p.purchase_date)).forEach(p => {
+            if (p.quantity && parseInt(p.quantity) > 0) {
+                ledgerEntries.push({
+                    date: p.purchase_date,
+                    type: 'BUY',
+                    badgeClass: 'badge-buy',
+                    entity: p.supplier || 'Unknown Supplier',
+                    price: p.cost_price,
+                    inQty: parseInt(p.quantity),
+                    outQty: 0
+                });
+            }
+        });
+
+        // Sales within date range
+        salesData.forEach(sale => {
+            if (sale.items && Array.isArray(sale.items)) {
+                sale.items.forEach(item => {
+                    if (item.id == productId && inRange(sale.time)) {
+                        let totalReturned = 0;
+                        customerReturns.filter(r => r.sale_id == sale.id && r.product_name === targetProduct.name).forEach(r => {
+                            totalReturned += r.quantity_returned;
+                        });
+                        const originalQty = item.qty + totalReturned;
+                        ledgerEntries.push({
+                            date: sale.time,
+                            type: 'SALE',
+                            badgeClass: 'badge-sale',
+                            entity: sale.customer || 'Walking Customer',
+                            price: item.price,
+                            inQty: 0,
+                            outQty: originalQty
+                        });
+                    }
+                });
+            }
+        });
+
+        // Customer Returns (stock in)
+        customerReturns.filter(r => r.product_name === targetProduct.name && inRange(r.return_date)).forEach(r => {
+            ledgerEntries.push({
+                date: r.return_date,
+                type: 'CR RETURN',
+                badgeClass: 'badge-cr',
+                entity: `Bill Ref ID: #${r.sale_id}`,
+                price: r.quantity_returned > 0 ? (r.refund_amount / r.quantity_returned) : 0,
+                inQty: r.quantity_returned,
+                outQty: 0
+            });
+        });
+
+        // Supplier Returns (stock out)
+        supplierReturns.filter(sr => sr.barcode === targetProduct.barcode && inRange(sr.return_date || sr.purchase_date)).forEach(sr => {
+            const qtyReturned = parseInt(sr.quantity_returned || sr.quantity || 0);
+            if (qtyReturned > 0) {
+                ledgerEntries.push({
+                    date: sr.return_date || sr.purchase_date,
+                    type: 'SUP RETURN',
+                    badgeClass: 'badge-sr',
+                    entity: sr.supplier || 'AB Brothers',
+                    price: sr.cost_price || targetProduct.cost_price || 0,
+                    inQty: 0,
+                    outQty: qtyReturned
+                });
+            }
+        });
+
+        // Sort entries chronologically
+        ledgerEntries.sort((a, b) => {
+            const timeA = parseToValidDate(a.date).getTime();
+            const timeB = parseToValidDate(b.date).getTime();
+            if (timeA !== timeB) return timeA - timeB;
+
+            // Prioritize types if timestamps match
+            const getPriority = t => {
+                if (t === 'OPENING BAL') return 0;
+                if (t === 'BUY') return 1;
+                if (t === 'SALE') return 2;
+                if (t === 'CR RETURN') return 3;
+                if (t === 'SUP RETURN') return 4;
+                return 5;
+            };
+            return getPriority(a.type) - getPriority(b.type);
+        });
+
+        // Render table rows
+        const tbody = document.getElementById('ledgerBody');
+        tbody.innerHTML = '';
+
+        let currentRunningStock = initialStock;
+
+        ledgerEntries.forEach(entry => {
+            if (entry.type === 'OPENING BAL') {
+                currentRunningStock = entry.inQty;
+            } else {
+                currentRunningStock += entry.inQty - entry.outQty;
+            }
+            const productCostPrice = parseFloat(targetProduct.cost_price || 0);
+            const cumulativeAmount = currentRunningStock * productCostPrice;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${parseToValidDate(entry.date).toLocaleString('en-US', { hour12: true })}</td>
+                <td><span class="badge ${entry.badgeClass}">${entry.type}</span></td>
+                <td>${entry.entity}</td>
+                <td class="text-right">Rs. ${parseFloat(entry.price || 0).toFixed(2)}</td>
+                <td class="text-right" style="color: green; font-weight: bold;">${entry.inQty > 0 ? '+' + entry.inQty : '-'}</td>
+                <td class="text-right" style="color: red; font-weight: bold;">${entry.outQty > 0 ? '-' + entry.outQty : '-'}</td>
+                <td class="text-right" style="font-weight: 500;">${currentRunningStock}</td>
+                <td class="text-right" style="font-weight: 600; color: #003049;">Rs. ${cumulativeAmount.toFixed(2)}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Ledger runtime error:', error);
+        document.getElementById('ledgerBody').innerHTML = `<tr><td colspan="8" class="empty-state" style="color:#d62828;">Error executing transaction queries. See console.</td></tr>`;
+    }
+}
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Salary Management</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f8f9fa; --success: #27ae60; --danger: #e74c3c; --white: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 30px; color: #333; }
+        
+        .header-card { background: var(--white); padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .filter-group { display: flex; gap: 15px; align-items: center; }
+        select, input[type="number"] { padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
+        .btn-apply { background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+        
+        .table-container { background: var(--white); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #fdfdfd; padding: 18px; text-align: left; font-size: 13px; color: #7f8c8d; text-transform: uppercase; border-bottom: 2px solid #f4f4f4; }
+        td { padding: 18px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+
+        .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .unpaid { background: #fff4e5; color: #d35400; }
+        .paid { background: #e6fffa; color: #2ecc71; }
+        .btn-pay { background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+        .btn-slip { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+        .edit-icon { cursor: pointer; color: var(--accent); margin-left: 8px; font-size: 14px; border: none; background: none; }
+        .edit-group { display: flex; gap: 5px; align-items: center; }
+        .edit-group input { width: 50px; padding: 4px; border: 1px solid var(--accent); border-radius: 4px; }
+        .btn-ok { background: var(--success); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+
+        /* --- MODAL & PRINT STYLES --- */
+        #slipModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px; }
+        .modal-content { background: white; width: 850px; padding: 20px; border-radius: 8px; position: relative; }
+        .slip-wrapper { border: 2px solid #000; padding: 25px; background: #fff; margin-bottom: 10px; }
+        .slip-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 15px; padding-bottom: 10px; }
+        .slip-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .slip-table td { padding: 8px; border: 1px solid #ddd; }
+        .net-pay-box { background: #000; color: #fff; padding: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-top: 10px; }
+        .slip-footer { display: flex; justify-content: space-between; margin-top: 40px; }
+        .sig-line { border-top: 1.5px solid #000; width: 200px; text-align: center; padding-top: 5px; font-size: 12px; font-weight: bold; }
+
+      /* --- UPDATED PRINT STYLES --- */
+@media print {
+    /* 1. Hide everything else */
+    body * { visibility: hidden; }
+    #slipModal { display: block !important; position: absolute; left: 0; top: 0; background: none; padding: 0; }
+    
+    /* 2. Force the container to A4 size */
+    #slip-printable, #slip-printable * { visibility: visible; }
+    #slip-printable { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 190mm; /* Narrower to account for printer safety zones */
+        height: 270mm; 
+        padding: 0;
+        margin: 0;
+    }
+
+    /* 3. Tighten the spacing between slips */
+    .slip-wrapper { 
+        border: 2px solid #000 !important; 
+        padding: 15px !important; /* Reduced from 25px */
+        margin-bottom: 10px !important; /* Smaller gap */
+    }
+
+    /* 4. Remove automatic headers/footers (Date/URL) from PDF */
+    @page { 
+        size: A4; 
+        margin: 10mm; /* Clean 1cm margin all around */
+    }
+
+    /* 5. Hide the modal buttons and the "Separate Slips" text */
+    .no-print { display: none !important; }
+}
+
+    </style>
+</head>
+<body>
+    <div class="header-card">
+        <div>
+            <h2 style="margin:0;">Staff Salary Portal</h2>
+            <p id="salarySummary" style="margin:5px 0 0; color:var(--accent); font-weight:bold;"></p>
+        </div>
+        <div class="filter-group">
+            <select id="filterMonth">
+                <option value="January">January</option><option value="February">February</option>
+                <option value="March">March</option><option value="April" selected>April</option>
+                <option value="May">May</option><option value="June">June</option>
+                <option value="July">July</option><option value="August">August</option>
+                <option value="September">September</option><option value="October">October</option>
+                <option value="November">November</option><option value="December">December</option>
+            </select>
+            <input type="number" id="filterYear" value="2026" style="width: 80px;">
+            <button class="btn-apply" onclick="loadSalaryData()">Apply Filters</button>
+            <button class="btn-apply" onclick="window.location.href='staff.html'">Staff</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Staff Member</th>
+                    <th>Basic Salary</th>
+                    <th>Auth Leaves</th>
+                    <th>Availed</th>
+                    <th>Net Payable</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="salaryTableBody"></tbody>
+        </table>
+    </div>
+
+    <div id="slipModal">
+        <div class="modal-content">
+            <div id="slip-printable">
+                <!-- SCHOOL COPY -->
+                <div class="slip-wrapper">
+                    <div class="slip-header">
+                        <h2 style="margin:0; letter-spacing: 1px;">ISLAMIA MODEL SCHOOL</h2>
+                        <p style="margin:3px 0; font-size:12px; font-weight:bold;">Sohan, Islamabad | Phone: 0300-9813940</p>
+                        <p style="margin:3px 0; font-size:12px; font-weight:bold;">OFFICE COPY</p>
+                        <h3 style="margin:5px 0; text-decoration: underline;">Salary Statement - <span class="p-period"></span></h3>
+                    </div>
+                    <table class="slip-table">
+                        <tr><td><strong>Staff Name:</strong></td><td class="p-name"></td><td><strong>Designation:</strong></td><td class="p-designation"></td></tr>
+                        <tr><td><strong>Basic Pay:</strong></td><td>Rs. <span class="p-basic"></span></td><td><strong>Allowances:</strong></td><td>Rs. <span class="p-allow"></span></td></tr>
+                        <tr><td><strong>Leaves (A/V):</strong></td><td class="p-leaves"></td><td><strong>Deduction:</strong></td><td style="color:red;">Rs. <span class="p-ded"></span></td></tr>
+                    </table>
+                    <div class="net-pay-box"><span>NET PAID:</span><span class="p-total"></span></div>
+                    <div class="slip-footer">
+                        <div class="sig-line">Staff Signature</div>
+                        <div class="sig-line">Principal / Accounts</div>
+                    </div>
+                </div>
+
+                <div class="no-print" style="border-top: 2px dashed #999; margin: 20px 0; text-align:center;"><small>✂ Separate Slips Here</small></div>
+                <div style="border-top: 1px dashed #000; margin: 15px 0;" class="print-only"></div>
+
+                <!-- STAFF COPY -->
+                <div class="slip-wrapper">
+                    <div class="slip-header">
+                        <h2 style="margin:0; letter-spacing: 1px;">ISLAMIA MODEL SCHOOL</h2>
+                        <p style="margin:3px 0; font-size:12px; font-weight:bold;">Sohan, Islamabad | Phone: 0300-9813940</p>
+                        <p style="margin:3px 0; font-size:12px; font-weight:bold;">STAFF COPY</p>
+                        <h3 style="margin:5px 0; text-decoration: underline;">Salary Statement - <span class="p-period"></span></h3>
+                    </div>
+                    <table class="slip-table">
+                        <tr><td><strong>Staff Name:</strong></td><td class="p-name"></td><td><strong>Designation:</strong></td><td class="p-designation"></td></tr>
+                        <tr><td><strong>Basic Pay:</strong></td><td>Rs. <span class="p-basic"></span></td><td><strong>Allowances:</strong></td><td>Rs. <span class="p-allow"></span></td></tr>
+                        <tr><td><strong>Leaves (A/V):</strong></td><td class="p-leaves"></td><td><strong>Deduction:</strong></td><td style="color:red;">Rs. <span class="p-ded"></span></td></tr>
+                    </table>
+                    <div class="net-pay-box"><span>NET PAID:</span><span class="p-total"></span></div>
+                    <div class="slip-footer">
+                        <div class="sig-line">Staff Signature</div>
+                        <div class="sig-line">Principal / Accounts</div>
+                    </div>
+                </div>
+            </div>
+            <div class="no-print" style="margin-top:20px; display:flex; gap:10px;">
+                <button onclick="window.print()" style="flex:2; padding:12px; background:var(--success); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🖨️ Print Slips (A4)</button>
+                <button onclick="closeModal()" style="flex:1; padding:12px; background:#eee; border:none; border-radius:6px; cursor:pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let records = [];
+        document.addEventListener('DOMContentLoaded', loadSalaryData);
+
+        async function loadSalaryData() {
+            const m = document.getElementById('filterMonth').value;
+            const y = document.getElementById('filterYear').value;
+            records = await window.api.getSalaries(m, y);
+            const body = document.getElementById('salaryTableBody');
+            body.innerHTML = '';
+            let totalSum = 0;
+
+            records.forEach(r => {
+                const isUnpaid = r.status === 'Unpaid';
+                const basicSalary = parseFloat(r.salary) || 0; 
+                const allowance = parseFloat(r.allowance) || 0;
+                const auth = parseInt(r.auth_leaves) || 0;
+                const availed = parseInt(r.availed_leaves) || 0;
+                
+                let displayNet = 0;
+                if (isUnpaid) {
+                    const daily = basicSalary / 30;
+                    const extra = Math.max(0, availed - auth);
+                    const deduction = Math.round(extra * daily);
+                    displayNet = (basicSalary - deduction) + allowance;
+                } else {
+                    displayNet = parseFloat(r.salary) || 0;
+                }
+                totalSum += displayNet;
+
+                body.innerHTML += `
+                    <tr>
+                        <td><strong>${r.name}</strong></td>
+                        <td>Rs. ${basicSalary.toLocaleString()}</td>
+                        <td>
+                            <div id="auth-display-${r.id}">${auth} ${isUnpaid ? `<button class="edit-icon" onclick="toggleEdit('auth', ${r.id})">✏️</button>` : ''}</div>
+                            <div id="auth-edit-${r.id}" class="edit-group" style="display:none;">
+                                <input type="number" id="auth-input-${r.id}" value="${auth}">
+                                <button class="btn-ok" onclick="saveAuth(${r.id})">ok</button>
+                            </div>
+                        </td>
+                        <td>
+                            <div id="avail-display-${r.id}">${availed} ${isUnpaid ? `<button class="edit-icon" onclick="toggleEdit('avail', ${r.id})">✏️</button>` : ''}</div>
+                            <div id="avail-edit-${r.id}" class="edit-group" style="display:none;">
+                                <input type="number" id="avail-input-${r.id}" value="${availed}">
+                                <button class="btn-ok" onclick="saveAvail(${r.id})">ok</button>
+                            </div>
+                        </td>
+                        <td style="font-weight:bold; color:#0077b6">Rs. ${Math.round(displayNet).toLocaleString()}</td>
+                        <td><span class="status-badge ${r.status.toLowerCase()}">${r.status}</span></td>
+                        <td>${isUnpaid ? `<button class="btn-pay" onclick="markAsPaid(${r.id}, ${Math.round(displayNet)})">💰 Pay Now</button>` : `<button class="btn-slip" onclick="openSlip(${r.id})">📄 Slip</button>`}</td>
+                    </tr>`;
+            });
+            document.getElementById('salarySummary').innerText = `Total Payable: Rs. ${Math.round(totalSum).toLocaleString()}`;
+        }
+
+        function toggleEdit(type, id) {
+            document.getElementById(`${type}-display-${id}`).style.display = 'none';
+            document.getElementById(`${type}-edit-${id}`).style.display = 'flex';
+        }
+
+        async function saveAuth(id) {
+            const count = parseFloat(document.getElementById(`auth-input-${id}`).value);
+            if(await window.api.updateAuthLeaves({ id, count })) loadSalaryData();
+        }
+
+        async function saveAvail(id) {
+            const count = parseFloat(document.getElementById(`avail-input-${id}`).value);
+            if(await window.api.updateAvailedLeaves({ id, count })) loadSalaryData();
+        }
+
+        async function markAsPaid(id, calculatedNet) {
+            const r = records.find(x => x.id === id);
+            if(confirm(`Confirm payment for ${r.name} of Rs. ${calculatedNet}?`)) {
+                if (await window.api.updateSalaryStatus(id, 'Paid', calculatedNet)) loadSalaryData();
+                else alert("Error updating payment status.");
+            }
+        }
+
+        function openSlip(id) {
+            const r = records.find(x => x.id === id);
+            const basic = parseFloat(r.salary) || 0;
+            const daily = basic / 30;
+            const extra = Math.max(0, (r.availed_leaves || 0) - (r.auth_leaves || 0));
+            const ded = Math.round(extra * daily);
+            const netTotal = (basic - ded) + (r.allowance || 0);
+            const period = `${document.getElementById('filterMonth').value} ${document.getElementById('filterYear').value}`;
+
+            document.querySelectorAll('.p-period').forEach(e => e.innerText = period);
+            document.querySelectorAll('.p-name').forEach(e => e.innerText = r.name);
+            document.querySelectorAll('.p-designation').forEach(e => e.innerText = r.designation || 'Staff Member');
+            document.querySelectorAll('.p-basic').forEach(e => e.innerText = basic.toLocaleString());
+            document.querySelectorAll('.p-allow').forEach(e => e.innerText = (r.allowance || 0).toLocaleString());
+            document.querySelectorAll('.p-leaves').forEach(e => e.innerText = `${r.auth_leaves || 0} / ${r.availed_leaves || 0}`);
+            document.querySelectorAll('.p-ded').forEach(e => e.innerText = ded.toLocaleString());
+            document.querySelectorAll('.p-total').forEach(e => e.innerText = `Rs. ${Math.round(netTotal).toLocaleString()}`);
+            document.getElementById('slipModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('slipModal').style.display = 'none'; }
+    </script>
+</body>
+</html>

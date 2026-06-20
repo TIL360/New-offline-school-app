@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management System</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --container-bg: #ffffff;
+            --primary: #003049;
+            --primary-hover: #004b73;
+            --accent-red: #d62828;
+            --accent-red-hover: #b51d1d;
+            --accent-green: #2ec4b6;
+            --accent-green-hover: #259e92;
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --input-bg: #ffffff;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 30px 20px;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Modern Top Navigation Bar Styling */
+        .top-nav {
+            width: 100%;
+            max-width: 1040px;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--primary);
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+
+        .nav-btn:hover {
+            color: white;
+            background-color: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        /* Container Card Styling */
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 24px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Clean Functional Tab Segment Elements */
+        .tabs {
+            display: flex;
+            background: #e9ecef;
+            padding: 4px;
+            border-radius: 8px;
+            gap: 4px;
+            margin-bottom: 25px;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            background: var(--container-bg);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Controls Form Panel Alignment Grid */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="date"], input[type="text"] {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        select:focus, input[type="date"]:focus, input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 48, 73, 0.15);
+        }
+
+        /* Scanner Specific Focus Accent Ring Styling */
+        #card-scanner {
+            border: 1px solid var(--border-color);
+        }
+        
+        #card-scanner:focus {
+            border-color: #f39c12;
+            box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.2);
+        }
+
+        /* Action Buttons */
+        .btn {
+            padding: 11px 20px;
+            background-color: var(--accent-red);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            white-space: nowrap;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-red-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-save {
+            background-color: var(--accent-green);
+        }
+
+        .btn-save:hover {
+            background-color: var(--accent-green-hover);
+        }
+
+        /* Clean Table Structures */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            color: #4a4a4a;
+            background-color: #ffffff;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #fdfdfd;
+        }
+
+        /* Modern Custom Status Option Radios */
+        .status-options {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .status-label input[type="radio"] {
+            margin: 0;
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Modernized Top Navigation Row Element Links Styled As Premium Buttons -->
+<div class="top-nav">
+    <a href="./dashboard.html" class="nav-btn">📊 Dashboard</a>
+    <a href="./attendance-report.html" class="nav-btn">📋 Attendance Report</a>
+    <a href="./attendance-report2.html" class="nav-btn">📈 Attendance Grid Report</a>
+</div>
+
+<div class="container">
+    <h2> Attendance Dashboard</h2>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('student')">Student Attendance</button>
+        <button class="tab-btn" onclick="switchTab('staff')">Staff Attendance</button>
+    </div>
+
+    <!-- Responsive Responsive Form Controls Configuration Panel Grid -->
+        <!-- Beautiful & Explicitly Positioned Controls Panel Grid -->
+    <div class="controls">
+        <div class="control-group">
+            <label for="attendance-date">Select Date</label>
+            <input type="date" id="attendance-date">
+        </div>
+        
+        <div class="control-group">
+            <label for="card-scanner">Scan Card Here</label>
+            <input type="text" id="card-scanner" placeholder="Waiting for badge scan..." autocomplete="off" style="border: 2px solid #f39c12; background-color: #fffdf9;">
+        </div>
+
+        <div class="control-group" id="class-select-container">
+            <label for="class-dropdown">Select Class</label>
+            <select id="class-dropdown">
+                <option value="">-- Choose Class --</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="loadAttendanceList()">🔍 Load Records</button>
+    </div>
+
+
+    <!-- Data Presentation Table List Spreadsheet Sheet -->
+    <table id="attendance-table">
+        <thead>
+            <tr id="table-headers">
+                <!-- Dynamic Header Output Injector Target -->
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Please configure lookup fields above and execute record sync queries.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Actions Control Panel Segment Footer row -->
+    <div style="margin-top: 25px; text-align: right;">
+        <button class="btn btn-save" id="save-btn" onclick="saveAttendanceRecords()" style="display: none;">💾 Save Attendance Sheet</button>
+    </div>
+</div>
+
+
+<script>
+    let currentTab = 'student';
+
+// 1. Initial configuration load on startup
+window.addEventListener('DOMContentLoaded', async () => {
+    // Correctly sets the input to the local current date string (YYYY-MM-DD)
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('attendance-date').value = `${yyyy}-${mm}-${dd}`;
+
+    // Boot class dropdown parameters from database
+    try {
+        const classes = await window.api.getClasses();
+        const dropdown = document.getElementById('class-dropdown');
+        if (classes && dropdown) {
+            classes.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls.class_name;
+                opt.textContent = cls.class_name;
+                dropdown.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error("Failed to boot dropdown configuration setup:", err);
+    }
+
+    // SAFE SCANNER ATTACHMENT: Element is guaranteed to exist now
+    const scannerInput = document.getElementById('card-scanner');
+    if (scannerInput) {
+        scannerInput.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent page refresh triggers
+                
+                const scannedValue = this.value.trim().toUpperCase();
+                if (!scannedValue) return;
+
+                const date = document.getElementById('attendance-date').value;
+                let targetId = null;
+
+                try {
+                    // Pull pre-filtered listings straight from backend APIs
+                    if (currentTab === 'student') {
+                        const className = document.getElementById('class-dropdown').value;
+                        if (!className) {
+                            alert("Please select a class before scanning a student card.");
+                            this.value = '';
+                            focusScanner();
+                            return;
+                        }
+
+                        const response = await window.api.getStudentAttendance({ className, date });
+                        const students = response.records || [];
+                        const match = students.find(s => String(s.registration_no).toUpperCase() === scannedValue);
+                        if (match) targetId = match.student_id;
+
+                    } else {
+                        // Staff Tab
+                        const response = await window.api.getStaffAttendance({ date });
+                        const staffList = response.records || [];
+                        const match = staffList.find(st => `EMP-${st.staff_id}`.toUpperCase() === scannedValue);
+                        if (match) targetId = match.staff_id;
+                    }
+
+                    // If match is found, commit save instantly to backend
+                    if (targetId) {
+                        let responseResult;
+                        if (currentTab === 'student') {
+                            responseResult = await window.api.saveStudentAttendance({
+                                records: [{ student_id: targetId, status: 'Present' }],
+                                date
+                            });
+                        } else {
+                            responseResult = await window.api.saveStaffAttendance({
+                                records: [{ staff_id: targetId, status: 'Present' }],
+                                date
+                            });
+                        }
+
+                        if (responseResult && responseResult.success) {
+                            // Silently reload UI table spreadsheet updates if open
+                            loadAttendanceList();
+                        } else {
+                            alert("Database Error: " + responseResult.error);
+                        }
+                    } else {
+                        alert(`ID "${scannedValue}" not found or already marked for today.`);
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    alert("An error occurred while automatically processing the card scan.");
+                }
+
+                // Reset field layout seamlessly for subsequent badge scanning runs
+                this.value = '';
+                focusScanner();
+            }
+        });
+    }
+
+    // Initialize layout scanning targets
+    focusScanner();
+    document.addEventListener('click', (e) => focusScanner(e));
+});
+
+// 2. Tab switching logic
+function switchTab(tabName) {
+    currentTab = tabName;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Safety check for active event targets
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
+    const classContainer = document.getElementById('class-select-container');
+    if (tabName === 'staff') {
+        if (classContainer) classContainer.style.display = 'none';
+    } else {
+        if (classContainer) classContainer.style.display = 'block';
+    }
+    
+    document.getElementById('table-body').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Please configure lookup fields above and execute record sync queries.</td></tr>`;
+    document.getElementById('save-btn').style.display = 'none';
+    
+    setTimeout(focusScanner, 50);
+}
+
+// 3. Load lists out from backend tables manually
+async function loadAttendanceList() {
+    const date = document.getElementById('attendance-date').value;
+    const headersTr = document.getElementById('table-headers');
+    const bodyTbody = document.getElementById('table-body');
+    
+    if (!date) {
+        alert("Please pick a date first.");
+        return;
+    }
+    
+    bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">Syncing rows...</td></tr>`;
+    
+    if (currentTab === 'student') {
+        const className = document.getElementById('class-dropdown').value;
+        if (!className) {
+            bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Please select date/class details above and click load.</td></tr>`;
+            return;
+        }
+        
+        headersTr.innerHTML = `<th>Reg No</th><th>Roll No</th><th>Student Name</th><th>Status Tracking Mark Options</th>`;
+        
+        try {
+            const response = await window.api.getStudentAttendance({ className, date });
+            const students = response.records || [];
+            
+            if (students.length === 0) {
+                bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red; padding: 20px;">No active students found in this class.</td></tr>`;
+                document.getElementById('save-btn').style.display = 'none';
+                return;
+            }
+            
+            bodyTbody.innerHTML = '';
+            students.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${s.registration_no}</td>
+                    <td>${s.roll_no}</td>
+                    <td><b>${s.student_name}</b></td>
+                    <td>
+                        <div class="status-options" data-id="${s.student_id}">
+                            <label class="status-label"><input type="radio" name="status-${s.student_id}" value="Present" ${s.status === 'Present' ? 'checked' : ''}> Present</label>
+                            <label class="status-label"><input type="radio" name="status-${s.student_id}" value="Absent" ${s.status === 'Absent' ? 'checked' : ''}> Absent</label>
+                            <label class="status-label"><input type="radio" name="status-${s.student_id}" value="Leave" ${s.status === 'Leave' ? 'checked' : ''}> Leave</label>
+                        </div>
+                    </td>`;
+                bodyTbody.appendChild(tr);
+            });
+            document.getElementById('save-btn').style.display = 'inline-block';
+        } catch (err) {
+            console.error(err);
+        }
+    } else {
+        // Staff Tab Load Configuration
+        headersTr.innerHTML = `<th>ID Map Code</th><th>Staff Designation Title</th><th>Full Employee Name Details</th><th>Status Tracking Mark Options</th>`;
+        
+        try {
+            const response = await window.api.getStaffAttendance({ date });
+            const staffList = response.records || [];
+            
+            if (staffList.length === 0) {
+                bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red; padding: 20px;">No active employees found.</td></tr>`;
+                document.getElementById('save-btn').style.display = 'none';
+                return;
+            }
+            
+            bodyTbody.innerHTML = '';
+            staffList.forEach(st => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>EMP-${st.staff_id}</td>
+                    <td><i>${st.designation}</i></td>
+                    <td><b>${st.name}</b></td>
+                    <td>
+                        <div class="status-options" data-id="${st.staff_id}">
+                            <label class="status-label"><input type="radio" name="status-${st.staff_id}" value="Present" ${st.status === 'Present' ? 'checked' : ''}> Present</label>
+                            <label class="status-label"><input type="radio" name="status-${st.staff_id}" value="Absent" ${st.status === 'Absent' ? 'checked' : ''}> Absent</label>
+                            <label class="status-label"><input type="radio" name="status-${st.staff_id}" value="Leave" ${st.status === 'Leave' ? 'checked' : ''}> Leave</label>
+`;
+bodyTbody.appendChild(tr);
+});
+document.getElementById('save-btn').style.display = 'inline-block';
+} catch (err) {
+console.error(err);
+}
+}
+}
+// 4. Save manually marked profile rows block
+async function saveAttendanceRecords() {
+const date = document.getElementById('attendance-date').value;
+const records =[];
+const optionsContainers = document.querySelectorAll('.status-options');
+optionsContainers.forEach(container => {
+const idKey = container.getAttribute('data-id');
+const checkedRadio = container.querySelector(`input[name="status-${idKey}"]:checked`);
+
+if (checkedRadio) {
+const statusSelection = checkedRadio.value;
+if (currentTab === 'student') {
+records.push({ student_id: parseInt(idKey), status: statusSelection });
+} else {
+records.push({ staff_id: parseInt(idKey), status: statusSelection });
+}
+}
+});
+if (records.length === 0) {
+alert("Please mark at least one person's status before saving!");
+return;
+}
+try {
+let responseResult;
+if (currentTab === 'student') {
+responseResult = await window.api.saveStudentAttendance({ records, date });
+} else {
+responseResult = await window.api.saveStaffAttendance({ records, date });
+}
+if (responseResult && responseResult.success) {
+alert(`Success! Marked records saved safely for ${date}.`);
+loadAttendanceList();
+} else {
+alert("Error: " + responseResult.error);
+}
+} catch (error) {
+console.error(error);
+alert("An error occurred while saving records data.");
+}
+}
+// 5. Smart focus scanner handling
+function focusScanner(event) {
+const scanner = document.getElementById('card-scanner');
+if (!scanner) return;
+if (event && event.target) {
+const tag = event.target.tagName.toLowerCase();
+if (tag === 'select' || tag === 'option' || tag === 'input' || tag === 'button' || tag === 'a') {
+return;
+}
+}
+scanner.focus();
+}
+
+
+</script>
+</body>
+</html>

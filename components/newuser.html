@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Add System User | POS CORE</title>
+<style>
+:root {
+--sidebar-dark: #102a43;
+--accent-orange: #ea580c;
+--bg-page: #f0f4f8;
+--card-white: #ffffff;
+--text-main: #1e293b;
+--text-muted: #64748b;
+--danger-red: #ef4444;
+}
+body {
+font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+background-color: var(--bg-page);
+margin: 0;
+padding: 20px;
+color: var(--text-main);
+}
+.container {
+background: var(--card-white);
+padding: 30px;
+border-radius: 12px;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+max-width: 650px;
+margin: auto;
+}
+h2, h3 {
+color: var(--sidebar-dark);
+margin-top: 0;
+border-bottom: 2px solid var(--bg-page);
+padding-bottom: 10px;
+text-transform: uppercase;
+font-weight: 800;
+}
+.form-group {
+margin-bottom: 18px;
+}
+label {
+display: block;
+margin-bottom: 6px;
+font-weight: bold;
+color: #334155;
+font-size: 0.9rem;
+}
+input, select {
+width: 100%;
+padding: 12px;
+border: 1px solid #cbd5e1;
+border-radius: 6px;
+box-sizing: border-box;
+font-family: inherit;
+font-size: 0.95rem;
+}
+input:focus, select:focus {
+outline: none;
+border-color: #3b82f6;
+box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.permissions-box {
+margin-top: 15px;
+border: 1px solid #cbd5e1;
+padding: 20px;
+border-radius: 8px;
+background-color: #f8fafc;
+transition: all 0.3s ease;
+}
+.permissions-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 12px;
+margin-top: 10px;
+}
+.perm-label {
+font-weight: 500;
+color: #475569;
+display: flex;
+align-items: center;
+gap: 8px;
+cursor: pointer;
+}
+.perm-label input[type="checkbox"] {
+width: auto;
+cursor: pointer;
+}
+button.save-btn {
+background: var(--accent-orange);
+color: white;
+border: none;
+padding: 14px;
+width: 100%;
+border-radius: 6px;
+cursor: pointer;
+font-weight: bold;
+text-transform: uppercase;
+margin-top: 15px;
+font-size: 0.95rem;
+box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2);
+}
+button.save-btn:hover {
+background-color: #c2410c;
+}
+button.cancel-btn {
+background: #64748b;
+color: white;
+border: none;
+padding: 14px;
+width: 100%;
+border-radius: 6px;
+cursor: pointer;
+font-weight: bold;
+text-transform: uppercase;
+margin-top: 10px;
+font-size: 0.95rem;
+display: none;
+}
+button.cancel-btn:hover {
+background: #475569;
+}
+table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 20px;
+}
+th {
+background: var(--sidebar-dark);
+color: white;
+padding: 12px;
+text-align: left;
+font-size: 0.8rem;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+}
+td {
+padding: 12px;
+border-bottom: 1px solid #e2e8f0;
+font-size: 0.9rem;
+}
+tr:hover td {
+background-color: #f8fafc;
+}
+.del-btn {
+background: var(--danger-red);
+color: white;
+border: none;
+padding: 6px 12px;
+border-radius: 4px;
+cursor: pointer;
+font-weight: 600;
+margin-left: 5px;
+}
+.del-btn:hover {
+background: #dc2626;
+}
+.edit-btn {
+background: #3b82f6;
+color: white;
+border: none;
+padding: 6px 12px;
+border-radius: 4px;
+cursor: pointer;
+font-weight: 600;
+}
+.edit-btn:hover {
+background: #2563eb;
+}
+.btn-back {
+background: #fff;
+border: 1px solid #cbd5e1;
+padding: 8px 15px;
+border-radius: 4px;
+cursor: pointer;
+margin-bottom: 20px;
+display: inline-block;
+color: #334155;
+text-decoration: none;
+font-size: 13px;
+font-weight: 500;
+}
+.btn-back:hover {
+background: #f8fafc;
+border-color: #94a3b8;
+}
+.badge {
+background: #e2e8f0;
+padding: 4px 10px;
+border-radius: 4px;
+font-size: 0.75rem;
+font-weight: bold;
+color: var(--sidebar-dark);
+}
+.perm-badge {
+background: #dbeafe;
+color: #1e40af;
+padding: 2px 6px;
+border-radius: 4px;
+font-size: 0.7rem;
+display: inline-block;
+margin: 1px;
+}
+</style>
+</head>
+<body>
+<a href="dashboard.html" class="btn-back">Back to Dashboard</a>
+
+<!-- Flex Container to hold both sections side-by-side -->
+<div style="display: flex; gap: 30px; max-width: 1400px; margin: auto; align-items: flex-start;">
+    
+    <!-- LEFT SIDE: Add/Edit User Form Box -->
+    <div class="container" style="flex: 1; min-width: 450px; margin: 0;">
+        <h2 id="formTitle">Add System User</h2>
+        <form id="userForm">
+            <input type="hidden" id="userId" value="" />
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" required placeholder="Enter username" />
+            </div>
+            <div class="form-group">
+                <label id="passwordLabel">Password</label>
+                <input type="password" id="password" required placeholder="Enter password" />
+            </div>
+            <div class="form-group">
+                <label>User Type / Role</label>
+                <select id="usertype" onchange="togglePermissionsGrid()">
+                    <option value="User">User (Restricted Features)</option>
+                    <option value="Admin">Admin (All Features Allowed)</option>
+                </select>
+            </div>
+ 
+<!-- POS / EDUPULSE COMPATIBLE PERMISSIONS CHECKBOXES -->
+<div class="permissions-box" id="permissionsGroup">
+    <label>Feature Level Accessibility Allowed</label>
+    <div class="permissions-grid">
+        <label class="perm-label"><input type="checkbox" value="navclasses" /> 🏫 Classes Management</label>
+        <label class="perm-label"><input type="checkbox" value="navstudents" /> 👨‍🎓 Students Ledger</label>
+        <label class="perm-label"><input type="checkbox" value="navfee" /> 💰 Fee Collections </label>
+        <label class="perm-label"><input type="checkbox" value="navexams" /> 📝 Exam / Marksheet </label>
+        <label class="perm-label"><input type="checkbox" value="navstaff" /> 👔 Staff Directories</label>
+        <label class="perm-label"><input type="checkbox" value="navexpenses" /> 💸 Expense Registries</label>
+        <label class="perm-label"><input type="checkbox" value="navroles" /> ⚙️ User Role Management</label>
+        <label class="perm-label"><input type="checkbox" value="btndb" /> 📁 Core DB Location</label>
+        <label class="perm-label" style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 4px;">
+            <input type="checkbox" value="dashstatscards" /> 📊 Show Dashboard Metric Stats Cards
+        </label>
+    </div>
+</div>
+
+
+            <button type="submit" id="submitBtn" class="save-btn">Save User Account</button>
+            <button type="button" id="cancelBtn" class="cancel-btn" onclick="resetFormState()">Cancel Edit</button>
+        </form>
+    </div>
+
+    <!-- RIGHT SIDE: Existing Profiles Table Box -->
+    <div class="container" style="flex: 1.5; margin: 0;">
+        <h3>Existing Application Profiles</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Assigned Permissions</th>
+                    <th style="text-align:right;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+        </table>
+    </div>
+
+</div>
+<script>
+let globalUsersList = [];
+
+document.addEventListener('DOMContentLoaded', loadUsers);
+
+// Safely parses and normalizes strings to lowercase arrays
+function safeParsePermissions(rawJson) {
+    if (!rawJson) return [];
+    let arr = [];
+    try {
+        let parsed = JSON.parse(rawJson);
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        arr = Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        if (typeof rawJson === 'string') {
+            arr = rawJson.replace(/[\[\]"']/g, '').split(',').map(s => s.trim()).filter(Boolean);
+        }
+    }
+    // Convert every string value to lowercase to resolve case-sensitivity mismatches
+    return arr.map(item => String(item).toLowerCase());
+}
+
+function togglePermissionsGrid() {
+    const roleType = document.getElementById('usertype').value;
+    const block = document.getElementById('permissionsGroup');
+    const boxes = block.querySelectorAll('input[type="checkbox"]');
+    
+    if (roleType === 'Admin') {
+        block.style.opacity = '0.5';
+        block.style.pointerEvents = 'none';
+        boxes.forEach(cb => cb.checked = true);
+    } else {
+        block.style.opacity = '1';
+        block.style.pointerEvents = 'auto';
+    }
+}
+
+async function loadUsers() {
+    try {
+        const users = await window.authAPI.getAllUsers();
+        if (!users || !Array.isArray(users)) {
+            document.getElementById('userTableBody').innerHTML = `
+                <tr><td colspan="5" style="text-align:center; color:#7f8c8d;">No user data found.</td></tr>`;
+            return;
+        }
+        
+        globalUsersList = users;
+        
+        const tableRows = users.map(user => {
+            const isSystemAdmin = user.username && user.username.toLowerCase() === 'admin';
+            const currentRole = user.usertype || user.role || user.user_type || (isSystemAdmin ? 'Admin' : 'User');
+
+            const actionButton = isSystemAdmin
+                ? '<i>System Profile</i>'
+                : `<div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                    <button type="button" class="edit-btn" onclick="startEditUser(${user.id})" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0;" title="Edit Profile">✏️</button>
+                    <button type="button" class="del-btn" onclick="deleteUser(${user.id})" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 0;" title="Delete Profile">🗑️</button>
+                   </div>`;
+
+            let visualBadges = '';
+            const arrayKeys = safeParsePermissions(user.permissions);
+
+            if (currentRole.toLowerCase() === 'admin' || arrayKeys.includes('all')) {
+                visualBadges = '<span class="perm-badge" style="background: #dcfce7; color: #15803d; border-color: #bbf7d0;">All Access Keys</span>';
+            } else if (arrayKeys.length > 0) {
+                visualBadges = arrayKeys.map(k => `<span class="perm-badge">${k}</span>`).join(' ');
+            } else {
+                visualBadges = '<span class="perm-badge" style="background:#fee2e2; color:#991b1b; border-color:#fecaca;">No Permissions</span>';
+            }
+
+            return `<tr>
+                <td>#${user.id}</td>
+                <td><strong>${user.username || ''}</strong></td>
+                <td><span class="badge">${currentRole}</span></td>
+                <td><div style="display:flex; flex-wrap:wrap; gap:4px;">${visualBadges}</div></td>
+                <td style="text-align:right;">${actionButton}</td>
+            </tr>`;
+        }).join('');
+        
+        document.getElementById('userTableBody').innerHTML = tableRows;
+    } catch (error) {
+        console.error("Failed to render tables:", error);
+    }
+}
+
+function startEditUser(id) {
+    const user = globalUsersList.find(u => u.id === id);
+    if (!user) return;
+
+    const currentRole = user.usertype || user.role || user.user_type || 'User';
+
+    document.getElementById('userId').value = user.id;
+    document.getElementById('username').value = user.username;
+    document.getElementById('password').value = '';
+    document.getElementById('password').removeAttribute('required');
+    document.getElementById('password').placeholder = "Leave blank to keep old password";
+    document.getElementById('passwordLabel').innerText = "Password (Optional)";
+    document.getElementById('usertype').value = currentRole;
+    document.getElementById('formTitle').innerText = "Edit System User";
+    document.getElementById('submitBtn').innerText = "Update User Account";
+    document.getElementById('cancelBtn').style.display = "block";
+    
+    togglePermissionsGrid();
+
+    const block = document.getElementById('permissionsGroup');
+    const checkboxes = block.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false); // Clear checkboxes first
+
+    const arrayKeys = safeParsePermissions(user.permissions);
+    
+    checkboxes.forEach(cb => {
+        // Compare values by converting checkbox values to lowercase
+        if (arrayKeys.includes(cb.value.toLowerCase())) {
+            cb.checked = true;
+        }
+    });
+}
+
+function resetFormState() {
+    document.getElementById('userId').value = "";
+    document.getElementById('userForm').reset();
+    document.getElementById('password').setAttribute('required', 'required');
+    document.getElementById('password').placeholder = "Enter password";
+    document.getElementById('passwordLabel').innerText = "Password";
+    document.getElementById('formTitle').innerText = "Add System User";
+    document.getElementById('submitBtn').innerText = "Save User Account";
+    document.getElementById('cancelBtn').style.display = "none";
+    togglePermissionsGrid();
+}
+
+document.getElementById('userForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('userId').value;
+    const roleType = document.getElementById('usertype').value;
+    const chosenPermissions = [];
+
+    const block = document.getElementById('permissionsGroup');
+    block.querySelectorAll('input[type="checkbox"]:checked').forEach(box => {
+        chosenPermissions.push(box.value.toLowerCase()); // Save in clean lowercase format
+    });
+
+    const userData = {
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+        usertype: roleType,
+        permissions: JSON.stringify(chosenPermissions)
+    };
+
+    try {
+        let res;
+        if (id) {
+            userData.id = parseInt(id);
+            res = await window.authAPI.updateUser(userData);
+            if (res.success) { alert("User Updated Successfully!"); resetFormState(); loadUsers(); }
+        } else {
+            res = await window.authAPI.addUser(userData);
+            if (res.success) { alert("User Added Successfully!"); resetFormState(); loadUsers(); }
+        }
+    } catch (err) {
+        console.error("IPC communication error:", err);
+    }
+};
+
+async function deleteUser(id) {
+    if (confirm("Are you sure you want to permanently delete this user?")) {
+        try {
+            const res = await window.authAPI.deleteUser(id);
+            if (res.success) loadUsers();
+        } catch (err) {
+            console.error("Delete operation failed:", err);
+        }
+    }
+}
+</script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Management</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        
+        button { background-color: #5d4037; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; transition: background 0.3s; }
+        button:hover { background-color: #4e342e; }
+        .btn-dash { margin-bottom: 15px; background-color: #2c3e50; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; }
+        
+        /* Modal Styles */
+        #reportModal { 
+            display: none; position: fixed; z-index: 999; left: 0; top: 0; 
+            width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); 
+        }
+        .modal-content { 
+            background: white; margin: 5% auto; padding: 30px; border-radius: 12px; 
+            width: 70%; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+        }
+   .refresh-btn { background: white; color: black; border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #reportData, #reportData * { visibility: visible; }
+            #reportData { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="refresh-btn" onclick="window.location.href='../dashboard.html'">Dashboard</button>
+
+    <div class="card">
+        <h2>+ Add New Expense</h2>
+        <form id="expenseForm">
+            <div class="form-group">
+                <label>Expense Detail</label>
+                <input type="text" id="expenseName" placeholder="e.g. Electricity Bill" required>
+            </div>
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="number" id="expenseAmount" placeholder="0.00" step="0.01" required>
+            </div>
+            <button type="submit" style="width: 100%;">Save Expense</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>📊 Expense Report</h2>
+        <div style="display: flex; gap: 10px; align-items: flex-end;">
+            <div style="flex: 1;">
+                <label>Select Month</label>
+                <select id="filterMonth"><option value="">Select Month</option></select>
+            </div>
+            <div style="flex: 1;">
+                <label>Select Year</label>
+                <select id="filterYear"><option value="">Select Year</option></select>
+            </div>
+            <button onclick="openReport()" style="background-color: #2c3e50; height: 40px;">Get Report</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Recent Expenses</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Date</th>
+                    <th>Period</th>
+                    <th style="text-align:right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody id="expenseTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal">
+        <div class="modal-content">
+            <div class="no-print" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0;">Expense Summary</h2>
+                <div>
+                    <button onclick="window.print()" style="background:#2ecc71; margin-right:10px;">🖨️ Print / Save PDF</button>
+                    <button onclick="closeModal()" style="background:#e74c3c;">Close</button>
+                </div>
+            </div>
+            <div id="reportData">
+                <h1 style="text-align:center;">Monthly Expense Statement</h1>
+                <p id="reportPeriod" style="text-align:center; font-weight:bold; color:#555;"></p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Date</th>
+                            <th style="text-align:right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody"></tbody>
+                </table>
+                <div style="margin-top:20px; text-align:right; border-top: 2px solid #333; padding-top: 10px;">
+                    <h3 id="modalTotalAmount">Total: 0.00</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await populateFilters();
+            await loadExpenses();
+        });
+
+        // --- FIXED FUNCTION: Corrected Year Mapping ---
+        async function populateFilters() {
+            const filters = await window.api.getExpenseFilters();
+            const mSelect = document.getElementById('filterMonth');
+            const ySelect = document.getElementById('filterYear');
+
+            // Populate Months
+            mSelect.innerHTML = '<option value="">Select Month</option>' + 
+                filters.months.map(m => `<option value="${m.exp_month}">${m.exp_month}</option>`).join('');
+            
+            // Fixed line: Changed m.exp_year to y.exp_year
+            ySelect.innerHTML = '<option value="">Select Year</option>' + 
+                filters.years.map(y => `<option value="${y.exp_year}">${y.exp_year}</option>`).join('');
+        }
+
+        async function loadExpenses() {
+            const rows = await window.api.getExpenses({ month: '', year: '' }); // Load all for the main table
+            const tableBody = document.getElementById('expenseTableBody');
+            tableBody.innerHTML = rows.map(item => `
+                <tr>
+                    <td>${item.expence}</td>
+                    <td>${item.created_at || 'N/A'}</td>
+                    <td>${item.exp_month} ${item.exp_year}</td>
+                    <td style="text-align:right;">${parseFloat(item.exp_amount).toLocaleString()}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" style="text-align:center;">No data found</td></tr>';
+        }
+
+        document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                expense: document.getElementById('expenseName').value,
+                amount: document.getElementById('expenseAmount').value
+            };
+            const result = await window.api.addExpense(data);
+            if (result.success) {
+                alert("Expense Saved!");
+                document.getElementById('expenseForm').reset();
+                await populateFilters();
+                await loadExpenses();
+            }
+        });
+
+        async function openReport() {
+            const month = document.getElementById('filterMonth').value;
+            const year = document.getElementById('filterYear').value;
+
+            if (!month || !year) {
+                alert("Please select both Month and Year!");
+                return;
+            }
+
+            const rows = await window.api.getExpenses({ month, year });
+            const modalTableBody = document.getElementById('modalTableBody');
+            let total = 0;
+
+            document.getElementById('reportPeriod').innerText = `Period: ${month} ${year}`;
+            
+            modalTableBody.innerHTML = rows.map(item => {
+                const amt = parseFloat(item.exp_amount || 0);
+                total += amt;
+                return `<tr><td>${item.expence}</td><td>${item.created_at}</td><td style="text-align:right;">${amt.toLocaleString()}</td></tr>`;
+            }).join('');
+
+            document.getElementById('modalTotalAmount').innerText = `Total: ${total.toLocaleString()}`;
+            document.getElementById('reportModal').style.display = "block";
+        }
+
+        function closeModal() { document.getElementById('reportModal').style.display = "none"; }
+    </script>
+</body>
+</html>

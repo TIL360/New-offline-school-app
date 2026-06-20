@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Leaving Certificate</title>
+    <style>
+        :root {
+            --primary-color: #1e293b;
+            --border-gold: #c5a059;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 📄 CERTIFICATE CONTAINER */
+        .certificate-container {
+            width: 800px;
+            padding: 50px;
+            background: white;
+            border: 15px solid var(--primary-color);
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        /* Inner Decorative Border */
+        .certificate-container::after {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 2px solid var(--border-gold);
+            pointer-events: none;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+        }
+
+        .school-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 24px;
+            text-decoration: underline;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .content {
+            line-height: 2;
+            font-size: 18px;
+            text-align: justify;
+        }
+
+        .data-field {
+            font-weight: bold;
+            border-bottom: 1px dotted #000;
+            padding: 0 10px;
+            display: inline-block;
+        }
+
+        .footer {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sig-box {
+            text-align: center;
+            width: 200px;
+            border-top: 1px solid #000;
+            padding-top: 10px;
+        }
+
+        /* 🖨️ PRINT OPTIMIZATION */
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print { display: none !important; }
+            .certificate-container { box-shadow: none; margin: 0; border-width: 10px; }
+        }
+
+        .no-print {
+            margin-bottom: 20px;
+        }
+
+        .btn-print {
+            padding: 10px 25px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <button class="btn-print" onclick="window.print()">🖨️ Print Certificate</button>
+        <button class="btn-print" style="background:#64748b" onclick="window.history.back()">Back</button>
+    </div>
+
+    <div class="certificate-container" id="certArea">
+        <div class="header">
+            <h1 class="school-name">YOUR SCHOOL NAME HERE</h1>
+            <p>123 Education Lane, City Name, Country | Phone: +123 456 789</p>
+        </div>
+
+        <div class="title">SCHOOL LEAVING CERTIFICATE</div>
+
+        <div class="content">
+            This is to certify that <span id="student_name" class="data-field">..........</span> 
+            son/daughter of <span id="father_name" class="data-field">..........</span> 
+            having Registration No <span id="reg_no" class="data-field">..........</span> 
+            was a student of this institution in Class <span id="class" class="data-field">..........</span>.
+            <br><br>
+            According to the school records, his/her Date of Birth is 
+            <span id="dob" class="data-field">..........</span>. 
+            He/She has paid all school dues and left the school on <span id="leaving_date" class="data-field">..........</span>.
+            <br><br>
+            His/Her character and conduct during the stay in school was 
+            <span class="data-field">Good</span>.
+        </div>
+
+        <div class="footer">
+            <div class="sig-box">Class Teacher</div>
+            <div class="sig-box">School Seal</div>
+            <div class="sig-box">Principal Signature</div>
+        </div>
+    </div>
+
+    <script>
+        // Extract Student ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentId = urlParams.get('id');
+
+        async function loadCertificateData() {
+            if (!studentId) return;
+
+            // Fetch specific student details using your API
+            const student = await window.api.getStudentById(studentId); 
+
+            if (student) {
+                document.getElementById('student_name').innerText = student.student_name;
+                document.getElementById('father_name').innerText = student.father_name;
+                document.getElementById('reg_no').innerText = student.registration_no;
+                document.getElementById('class').innerText = student.current_class;
+                document.getElementById('dob').innerText = student.dob; 
+                // Set current date as leaving date
+                document.getElementById('leaving_date').innerText = new Date().toLocaleDateString();
+            }
+        }
+
+        loadCertificateData();
+    </script>
+</body>
+</html>

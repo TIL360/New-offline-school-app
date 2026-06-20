@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 40px; color: var(--primary); }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .student-info { background: #f1f4f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .info-label { font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase; }
+        .info-value { font-size: 16px; font-weight: 600; }
+
+        .fee-breakdown { margin-bottom: 20px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+        .fee-row { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #eee; }
+        .fee-row.total { background: var(--primary); color: white; font-weight: bold; }
+        
+        .input-group { margin-top: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="number"] { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 20px; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
+        input:focus { border-color: var(--success); }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 25px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        .btn-submit { background: var(--success); color: white; font-size: 16px; }
+        .btn-back { background: #95a5a6; color: white; }
+        button:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="../fee/feelist.html" class="back-link">← Back to Main Fee Record</a>
+    
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">💰</span>
+            <h2 style="margin:0;">Collect Fee</h2>
+        </div>
+        <span id="invoicePeriod" style="background: #eef2f7; padding: 5px 12px; border-radius: 20px; font-size: 14px; color: #666;"></span>
+    </div>
+
+    <div class="student-info">
+        <div><div class="info-label">STUDENT NAME</div><div class="info-value" id="sName">---</div></div>
+        <div><div class="info-label">REG. NO</div><div class="info-value" id="sReg">---</div></div>
+        <div><div class="info-label">CLASS</div><div class="info-value" id="sClass">---</div></div>
+        <div><div class="info-label">FATHER NAME</div><div class="info-value" id="sFather">---</div></div>
+    </div>
+
+    <div class="fee-breakdown">
+        <div class="fee-row"><span>Total Payable</span> <span id="fTotal">Rs. 0</span></div>
+        <div class="fee-row" style="color: #28a745;"><span>Already Collected</span> <span id="fCollected">Rs. 0</span></div>
+        <div class="fee-row total" style="background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-top: 10px;">
+            <span>Remaining Balance</span> <span id="fBalance">Rs. 0</span>
+        </div>
+    </div>
+
+    <!-- STYLED DATE INPUT -->
+    <div class="input-group" style="margin-top: 20px;">
+        <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">Collection Date</label>
+        <input type="date" id="colDate" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: border 0.3s;">
+    </div>
+
+    <div class="input-group" style="margin-top: 15px;">
+        <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #333;">Amount Received</label>
+        <input type="number" id="payInput" placeholder="0" autofocus style="width: 100%; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 18px; outline: none;">
+    </div>
+
+    <div class="btn-group" style="display: flex; gap: 15px; margin-top: 25px;">
+        <button class="btn-back" onclick="window.api.changePage('components/fee/feelist.html')" style="flex: 1; padding: 15px; border-radius: 8px; border: none; background: #95a5a6; color: white; cursor: pointer; font-weight: bold;">Cancel</button>
+        <button class="btn-submit" onclick="submitFee()" style="flex: 1; padding: 15px; border-radius: 8px; border: none; background: #2ecc71; color: white; cursor: pointer; font-weight: bold; font-size: 16px;">Post Payment</button>
+    </div>
+</div>
+
+<script>
+    const feeId = localStorage.getItem('collectFeeId');
+    let totalOutstanding = 0; 
+
+    document.addEventListener('DOMContentLoaded', loadData);
+
+    async function loadData() {
+        // Set default date to Today's date in YYYY-MM-DD format
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('colDate').value = today;
+
+        const record = await window.api.getFeeRecordById(feeId);
+        if(!record) return alert("Record not found!");
+
+        document.getElementById('sName').innerText = record.student_name;
+        document.getElementById('sReg').innerText = record.registration_no;
+        document.getElementById('sClass').innerText = record.current_class;
+        document.getElementById('sFather').innerText = record.father_name;
+        document.getElementById('invoicePeriod').innerText = `${record.invoice_month} ${record.invoice_year}`;
+        
+        const grandTotal = record.total_fee + record.arrears;
+        const remaining = grandTotal - record.collection;
+
+        document.getElementById('fTotal').innerText = `Rs. ${grandTotal.toLocaleString()}`;
+        document.getElementById('fCollected').innerText = `Rs. ${record.collection.toLocaleString()}`;
+        document.getElementById('fBalance').innerText = `Rs. ${remaining.toLocaleString()}`;
+        
+        totalOutstanding = remaining;
+        document.getElementById('payInput').value = remaining > 0 ? remaining : 0; 
+    }
+
+    async function submitFee() {
+        const amount = parseFloat(document.getElementById('payInput').value);
+        const colDate = document.getElementById('colDate').value;
+        
+        if(isNaN(amount) || amount < 0) {
+            return alert("Please enter a valid amount");
+        }
+
+        if(!colDate) {
+            return alert("Please select a collection date");
+        }
+
+        if(confirm(`Confirm payment of Rs. ${amount} for date ${colDate}?`)) {
+            try {
+                // Ensure backend function is updated to receive 'date'
+                await window.api.updateFeeCollection({ 
+                    id: feeId, 
+                    amount: amount, 
+                    date: colDate 
+                });
+                
+                alert("Payment successfully recorded!");
+                window.api.changePage('components/fee/feelist.html');
+            } catch (err) {
+                console.error(err);
+                alert("Error saving payment. Check console for details.");
+            }
+        }
+    }
+</script>
+
+
+
+
+</body>
+</html>

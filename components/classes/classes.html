@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Management</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #f8fafc;
+            --text: #1e293b;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 40px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        
+        h2 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #eef2ff; padding-bottom: 10px; }
+        
+        .input-group { display: flex; gap: 10px; margin: 25px 0; }
+        input { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        
+        button { cursor: pointer; padding: 10px 20px; border-radius: 6px; border: none; font-weight: 600; transition: 0.2s; }
+        #saveBtn { background: var(--primary); color: white; }
+        #saveBtn:hover { background: #4338ca; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f1f5f9; text-align: left; padding: 12px; font-size: 0.9rem; color: #64748b; text-transform: uppercase; }
+        td { padding: 15px 12px; border-bottom: 1px solid #f1f5f9; }
+        tr:hover { background: #fdfdff; }
+        
+        .action-btn { background: none; font-size: 1.1rem; padding: 5px; }
+        .edit-btn:hover { filter: drop-shadow(0 0 2px orange); }
+        .del-btn:hover { filter: drop-shadow(0 0 2px red); }
+           .refresh-btn { background: white; border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+
+    </style>
+</head>
+<body>
+
+
+        <button class="refresh-btn" onclick="window.location.href='../dashboard.html'">Dashboard</button>
+<div class="container">
+    <h2>Class Management</h2>
+    
+    <div class="input-group">
+        <input type="text" id="classInput" placeholder="Add new class (e.g. Nursery, Matric)">
+        <button onclick="saveClass()" id="saveBtn">Add Class</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 60px;">Ser.</th>
+                <th>Class Name</th>
+                <th style="width: 100px; text-align: center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="classTableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    let editingId = null;
+
+    async function loadClasses() {
+        try {
+            const classes = await window.api.getClasses();
+            const tbody = document.getElementById('classTableBody');
+            tbody.innerHTML = classes.map((c, index) => `
+                <tr>
+                    <td><strong>${index + 1}</strong></td>
+                    <td>${c.class_name}</td>
+                    <td style="text-align: center;">
+                        <button class="action-btn edit-btn" onclick="editClass(${c.id}, '${c.class_name}')" title="Edit">✏️</button>
+                        <button class="action-btn del-btn" onclick="removeClass(${c.id})" title="Delete">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (err) { console.error("Load Error:", err); }
+    }
+
+    async function saveClass() {
+        const input = document.getElementById('classInput');
+        const name = input.value.trim();
+        if (!name) return;
+
+        try {
+            if (editingId) {
+                await window.api.updateClass(editingId, name);
+                editingId = null;
+                document.getElementById('saveBtn').innerText = 'Add Class';
+            } else {
+                await window.api.addClass(name);
+            }
+            input.value = '';
+            loadClasses();
+        } catch (err) { alert("Error: Class might already exist!"); }
+    }
+
+    async function removeClass(id) {
+        if(confirm('Are you sure you want to delete this class?')) {
+            await window.api.deleteClass(id);
+            loadClasses();
+        }
+    }
+
+    function editClass(id, name) {
+        editingId = id;
+        document.getElementById('classInput').value = name;
+        document.getElementById('saveBtn').innerText = 'Update Class';
+        document.getElementById('classInput').focus();
+    }
+
+    loadClasses();
+</script>
+
+</body>
+</html>

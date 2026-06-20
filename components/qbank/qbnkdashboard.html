@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Question Bank Dashboard</title>
+  <style>
+    /* Main Theme matching your Attendance Dashboard */
+    body { 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      background-color: #f4f6f9; 
+      padding: 25px; 
+      color: #333; 
+      margin: 0;
+    }
+    
+    /* Top Header Bar Layout */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+    }
+    h2 { margin: 0; color: #1e293b; font-size: 22px; }
+    
+    .nav-btn {
+      background-color: #f8fafc;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background-color: #f1f5f9;
+      color: #1e293b;
+    }
+
+    /* Dashboard Main Container Box */
+    .dashboard-container {
+      background: white; 
+      padding: 30px; 
+      border-radius: 10px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
+      max-width: 800px;
+      margin: 0 auto;
+      border: 1px solid #e2e8f0;
+      text-align: center;
+    }
+
+    h3 {
+      margin-top: 0;
+      margin-bottom: 25px;
+      color: #0f172a;
+      font-size: 20px;
+    }
+
+    /* Flex Grid Layout for Main Action Buttons */
+    .button-grid {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    /* Style for big navigation link buttons */
+    .menu-card {
+      flex: 1;
+      max-width: 250px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #1e293b;
+      font-weight: bold;
+      font-size: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      transition: all 0.2s ease-in-out;
+    }
+
+    /* Color styles matching your system buttons */
+    .menu-card.add-q {
+      border-top: 4px solid #003049;
+    }
+    .menu-card.build-p {
+      border-top: 4px solid #bd081c;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      background-color: #ffffff;
+    }
+
+    .icon {
+      font-size: 32px;
+    }
+
+    .description {
+      font-weight: normal;
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Section -->
+  <div class="header-bar">
+    <h2>Exam Question Bank & Paper Builder</h2>
+    <a href="dashboard.html" class="nav-btn">⬅️ Back to Main Dashboard</a>
+  </div>
+
+  <!-- Dashboard Container Box -->
+  <div class="dashboard-container">
+    <h3>Question Bank Navigation Options</h3>
+    
+    <div class="button-grid">
+      <!-- Button Option 1: Open Add Question Page -->
+      <a href="addq.html" class="menu-card add-q">
+        <span class="icon">📝</span>
+        <span>Add Question</span>
+        <span class="description">Save new questions, MCQs, and fill-in-the-blanks to your bank.</span>
+      </a>
+
+      <!-- Button Option 2: Open Build Exam Paper Page -->
+      <a href="build-paper.html" class="menu-card build-p">
+        <span class="icon">📜</span>
+        <span>Build Exam Paper</span>
+        <span class="description">Filter by class or lesson and create complete printable exam layouts.</span>
+      </a>
+    </div>
+  </div>
+
+</body>
+</html>

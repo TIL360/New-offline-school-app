@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Monthly Report</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --container-bg: #ffffff;
+            --primary: #003049;
+            --primary-hover: #004b73;
+            --accent-red: #d62828;
+            --accent-red-hover: #b51d1d;
+            --accent-green: #2ec4b6;
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 crowd 10px 25px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 30px 20px;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Top Button Navigation */
+        .top-nav {
+            width: 100%;
+            max-width: 1140px;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--primary);
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-btn:hover {
+            color: white;
+            background-color: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        /* Card Container */
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 24px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #e9ecef;
+            padding: 4px;
+            border-radius: 8px;
+            gap: 4px;
+            margin-bottom: 25px;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--container-bg);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Controls Layout Alignment */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            align-items: end;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        select, input[type="month"] {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            padding: 11px 20px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn-pdf { background-color: var(--accent-red); }
+        .btn-pdf:hover { background-color: var(--accent-red-hover); }
+
+        /* Modern Table Summary Layout */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td { padding: 14px 18px; text-align: left; }
+        th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid var(--border-color);
+            font-weight: 600;
+        }
+        td { border-bottom: 1px solid var(--border-color); }
+
+        /* Status Pills Badges */
+        .badge {
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .badge-present { background-color: #e8f5e9; color: #2e7d32; }
+        .badge-absent { background-color: #ffebee; color: #c62828; }
+        .badge-leave { background-color: #fff8e1; color: #f57f17; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <a href="./dashboard.html" class="nav-btn">📊 Dashboard</a>
+    <a href="./attendance-report.html" class="nav-btn">📋 Attendance Report</a>
+    <a href="./attendance-report2.html" class="nav-btn">📈 Attendance Grid Report</a>
+</div>
+
+<div class="container">
+    <h2>📊 Monthly Attendance Reports</h2>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('student')">Student Reports</button>
+        <button class="tab-btn" onclick="switchTab('staff')">Staff Reports</button>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="report-month">Select Month</label>
+            <input type="month" id="report-month">
+        </div>
+        <div class="control-group" id="class-select-container">
+            <label for="class-dropdown">Select Class</label>
+            <select id="class-dropdown">
+                <option value="">-- Choose Class --</option>
+            </select>
+        </div>
+        <button class="btn" onclick="loadMonthlyReport()">⚙️ Generate Report</button>
+        <button class="btn btn-pdf" onclick="window.api.saveToPdf()">🖨️ Print / Save PDF</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr id="table-headers"></tr>
+        </thead>
+        <tbody id="table-body">
+            <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Select filters above and click generate.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    let currentTab = 'student';
+
+const now = new Date();
+const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+document.getElementById('report-month').value = currentYearMonth;
+
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const classes = await window.api.getClasses();
+        const dropdown = document.getElementById('class-dropdown');
+        if (classes && dropdown) {
+            classes.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls.class_name;
+                opt.textContent = cls.class_name;
+                dropdown.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error(err);
+    }
+});
+
+function switchTab(tabName, event) {
+    currentTab = tabName;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+
+    document.getElementById('class-select-container').style.display = (tabName === 'staff') ? 'none' : 'block';
+
+    // Reset table content
+    document.getElementById('table-body').innerHTML = `
+        <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">Please reload sheet listings.</td>
+        </tr>`;
+}
+
+async function loadMonthlyReport() {
+    const yearMonth = document.getElementById('report-month').value;
+    const headersTr = document.getElementById('table-headers');
+    const bodyTbody = document.getElementById('table-body');
+
+    if (!yearMonth) {
+        alert("Please pick a month first.");
+        return;
+    }
+
+    bodyTbody.innerHTML = `
+        <tr>
+            <td colspan="7" style="text-align: center; padding: 30px;">Processing calculations...</td>
+        </tr>`;
+
+    if (currentTab === 'student') {
+        const className = document.getElementById('class-dropdown').value;
+        if (!className) {
+            alert("Please select a class stream.");
+            return;
+        }
+
+        headersTr.innerHTML = `
+            <th>Reg No</th>
+            <th>Roll No</th>
+            <th>Student Name</th>
+            <th>Present Count</th>
+            <th>Absent Count</th>
+            <th>Leave Count</th>
+            <th>Attendance Ratio</th>`;
+
+        const data = await window.api.getStudentMonthlyReport({ className, yearMonth });
+
+        if (!data || data.length === 0) {
+            bodyTbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; color: red; padding: 30px;">No summary data found for this period.</td>
+                </tr>`;
+            return;
+        }
+
+        bodyTbody.innerHTML = '';
+        data.forEach(row => {
+            const pct = row.total_days > 0 ? Math.round((row.total_present / row.total_days) * 100) : 0;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.registration_no}</td>
+                <td>${row.roll_no}</td>
+                <td>${row.student_name}</td>
+                <td>${row.total_present} Days</td>
+                <td>${row.total_absent} Days</td>
+                <td>${row.total_leave} Days</td>
+                <td>${pct}%</td>`;
+            bodyTbody.appendChild(tr);
+        });
+    } else if (currentTab === 'staff') {
+        headersTr.innerHTML = `
+            <th>Employee ID</th>
+            <th>Employee Name</th>
+            <th>Designation</th>
+            <th>Present Count</th>
+            <th>Absent Count</th>
+            <th>Leave Count</th>
+            <th>Attendance Ratio</th>`;
+
+        const data = await window.api.getStaffMonthlyReport({ yearMonth });
+
+        if (!data || data.length === 0) {
+            bodyTbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; color: red; padding: 30px;">No employee data records discovered.</td>
+                </tr>`;
+            return;
+        }
+
+        bodyTbody.innerHTML = '';
+        data.forEach(row => {
+            const pct = row.total_days > 0 ? Math.round((row.total_present / row.total_days) * 100) : 0;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>EMP-${row.staff_id}</td>
+                <td><b>${row.name}</b></td>
+                <td><i>${row.designation}</i></td>
+                <td><span class="badge badge-present">${row.total_present} Days</span></td>
+                <td><span class="badge badge-absent">${row.total_absent} Days</span></td>
+                <td><span class="badge badge-leave">${row.total_leave} Days</span></td>
+                <td><strong>${pct}%</strong></td>`;
+            bodyTbody.appendChild(tr);
+        });
+    }
+}
+
+</script>

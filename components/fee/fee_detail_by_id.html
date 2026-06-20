@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Fee History</title>
+    <style>
+        :root { --primary: #4f46e5; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 30px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; background: #f8fafc; color: #64748b; font-size: 0.8rem; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .paid { background: #dcfce7; color: #166534; }
+        .unpaid { background: #fee2e2; color: #991b1b; }
+        .back-btn { text-decoration: none; color: var(--primary); font-weight: bold; margin-bottom: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="../student/student_list.html" class="back-btn">← Back to Students</a>
+    
+    <div class="card">
+        <div class="header">
+            <div>
+                <h2 id="stuName" style="margin:0; color:var(--primary);">Loading...</h2>
+                <small id="stuReg" style="color:#64748b;"></small>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.8rem; color:#64748b;">Total Outstanding</div>
+                <div id="totalBalance" style="font-size: 1.5rem; font-weight: bold; color:#dc2626;">Rs. 0</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Month/Year</th>
+                    <th>Invoice Date</th>
+                    <th>Total Fee</th>
+                    <th>Paid Amount</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="feeHistoryBody"></tbody>
+        </table>
+    </div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const studentId = urlParams.get('id');
+
+    async function loadHistory() {
+        try {
+            // 1. Fetch data from backend
+            const response = await window.api.getStudentFeeHistory(studentId);
+            
+            if (!response || response.history.length === 0) {
+                document.getElementById('stuName').innerText = "No Records Found";
+                return;
+            }
+
+            // 2. Set Header Info
+            const student = response.student;
+            document.getElementById('stuName').innerText = student.student_name || "Student Name";
+            document.getElementById('stuReg').innerText = "Reg No: " + (student.registration_no || "N/A");
+            
+            let totalOutstanding = 0;
+            const tbody = document.getElementById('feeHistoryBody');
+            
+            // 3. Build Table Rows
+            tbody.innerHTML = response.history.map(f => {
+                const balance = parseFloat(f.balance) || 0;
+                totalOutstanding += balance;
+
+                // Determine Status based on balance
+                const statusLabel = balance <= 0 ? 'PAID' : 'PENDING';
+                const statusClass = balance <= 0 ? 'paid' : 'unpaid';
+
+                return `
+                    <tr>
+                        <td><strong>${f.invoice_month} ${f.invoice_year}</strong></td>
+                        <td>${new Date(f.created_at).toLocaleDateString()}</td>
+                        <td>Rs. ${(f.total_fee || 0).toLocaleString()}</td>
+                        <td>Rs. ${(f.collection || 0).toLocaleString()}</td>
+                        <td style="font-weight:bold; color: ${balance > 0 ? '#dc2626' : '#16a34a'}">
+                            Rs. ${balance.toLocaleString()}
+                        </td>
+                        <td><span class="status ${statusClass}">${statusLabel}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            // 4. Update Outstanding Total
+            document.getElementById('totalBalance').innerText = `Rs. ${totalOutstanding.toLocaleString()}`;
+
+        } catch (err) {
+            console.error("Failed to load history:", err);
+            document.getElementById('stuName').innerText = "Error Loading Data";
+        }
+    }
+
+    loadHistory();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- Strict Security Policy for Offline Apps -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+<title>EduPulse || 2026</title>
+<style>
+:root {
+  --sidebar-bg: #0f172a;
+  --primary: #6366f1;
+  --bg-body: #f1f5f9;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-body);
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  color: var(--text-main);
+}
+/* --- SIDEBAR --- */
+.sidebar {
+  width: 260px;
+  background: var(--sidebar-bg);
+  color: white;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar h1 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #818cf8;
+  margin-bottom: 40px;
+  text-align: center;
+}
+.nav-group {
+  flex: 1;
+  overflow-y: auto;
+}
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: 500;
+  transition: 0.2s;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+.nav-btn:hover,
+.nav-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.nav-btn.active {
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+.logout-btn {
+  margin-top: auto;
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.1);
+}
+/* --- MAIN CONTENT --- */
+.main {
+  flex: 1;
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  overflow-y: auto;
+}
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.welcome-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+.welcome-header p {
+  margin: 5px 0 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.status-badge {
+  background: white;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  font-size: 0.9rem;
+}
+/* --- STAT CARDS --- */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.stat-card {
+  background: var(--card-bg);
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid #f1f5f9;
+}
+.icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  background: #e0e7ff;
+}
+.stat-info small {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.stat-info div {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-top: 2px;
+}
+/* --- QUICK ACTIONS --- */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.action-card {
+  background: white;
+  padding: 25px;
+  border-radius: 18px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text-main);
+  border: 1px solid #e2e8f0;
+  transition: 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.action-card:hover {
+  border-color: var(--primary);
+  background: #f8fafc;
+  transform: translateY(-3px);
+}
+.action-card span {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--primary);
+}
+</style>
+</head>
+<body>
+<div class="sidebar">
+<h1>🎓 EDUPULSE</h1>
+<div class="nav-group">
+<a href="#" class="nav-btn active">🏠 Dashboard</a>
+<a href="classes/classes.html" class="nav-btn" id="navClasses">🏫 Add Classes</a>
+<a href="student/student_list.html" class="nav-btn" id="navStudents">👨‍🎓 Students</a>
+<a href="fee/feelist.html" class="nav-btn" id="navFee">💰 Fee</a>
+<a href="results/result_entry.html" class="nav-btn" id="navExams">📝 Exams</a>
+<a href="staff/staff.html" class="nav-btn" id="navStaff">👔 Staff</a>
+<a href="expenses/expense.html" class="nav-btn" id="navExpenses">💸 Expenses</a>
+<a href="newuser.html" class="nav-btn" id="navRoles">⚙️ Roles</a>
+<button id="btnPassword" onclick="document.getElementById('passwordModal').style.display='block'" class="nav-btn ">
+<span style="margin-right: 8px;">🔒</span> Change Password
+</button>
+</div>
+<!-- <button id="btnDB" class="nav-btn logout-btn" onclick="window.authAPI.openDBFolder()">📁 DB Folder</button> -->
+<button onclick="logout()" class="nav-btn logout-btn">🚪 Logout</button>
+</div>
+<div class="main">
+<div class="header-row">
+<div class="welcome-header">
+<h2 id="welcomeText">Welcome, Administrator</h2>
+<p id="currentDate"></p>
+</div>
+<div class="status-badge">💻 Offline System</div>
+</div>
+<!-- <div id="license-badge" style="background: white; padding: 15px 25px; border-radius: 12px; font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom:30px; box-shadow:0 2px 4px rgba(0,0,0,0.05)">
+License Status: <span id="license-info">Validity Period: </span>
+</div> -->
+<div class="stats-row">
+<div class="stat-card" id="cardStudents">
+<div class="icon-box">👥</div>
+<div class="stat-info"><small>Students</small><div id="statStudents">0</div></div>
+</div>
+<div class="stat-card" id="cardReceivables">
+<div class="icon-box" style="background:#dcfce7">📈</div>
+<div class="stat-info"><small>Receivables</small><div id="statReceivables">0</div></div>
+</div>
+<div class="stat-card" id="cardBalance">
+<div class="icon-box" style="background:#ffedd5">🏦</div>
+<div class="stat-info"><small>Balance</small><div id="statBalance">0</div></div>
+</div>
+<div class="stat-card" id="cardFeeReceived">
+<div class="icon-box" style="background:#d1fae5">💵</div>
+<div class="stat-info"><small>Fee Received</small><div id="statFeeReceived">0</div></div>
+</div>
+<div class="stat-card" id="cardSalaries">
+<div class="icon-box" style="background:#fee2e2">💸</div>
+<div class="stat-info"><small>Salaries</small><div id="statSalaries">0</div></div>
+</div>
+<div class="stat-card" id="cardExpenses">
+<div class="icon-box" style="background:#fde68a">💸</div>
+<div class="stat-info"><small>Expenses</small><div id="statExpenses">0</div></div>
+</div>
+</div>
+<h3 id="quickActionsTitle">Quick Actions</h3>
+<div class="action-grid" id="quickActionsGrid">
+<a href="results/result_entry.html" class="action-card" id="actionExams">
+<div style="font-size: 2.5rem; margin-bottom:10px">📄</div>
+<span style="font-weight:bold; display:block">Exams</span>
+<p style="font-size:0.85rem; color:#64748b; margin-top:5px">Manage Marksheets</p>
+</a>
+<a href="fee/feelist.html" class="action-card" id="actionFees">
+<div style="font-size: 2.5rem; margin-bottom:10px">💳</div>
+<span style="font-weight:bold; display:block">Fees</span>
+<p style="font-size:0.85rem; color:#64748b; margin-top:5px">Collect Payments</p>
+</a>
+<a href="student/stu_personal_info.html" class="action-card" id="actionEnroll">
+<div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
+<span style="font-weight:bold; display:block">Enroll</span>
+<p style="font-size:0.85rem; color:#64748b; margin-top:5px">New Admissions</p>
+</a>
+<a href="attendance.html" class="action-card" id="actionEnroll">
+<div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
+<span style="font-weight:bold; display:block">Attendance</span>
+<p style="font-size:0.85rem; color:#64748b; margin-top:5px">New Admissions</p>
+</a>
+
+
+<a href="./qbank/qbnkdashboard.html" class="action-card" id="actionEnroll">
+<div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
+<span style="font-weight:bold; display:block">Question Papers</span>
+<p style="font-size:0.85rem; color:#64748b; margin-top:5px">Q Bank</p>
+</a>
+
+
+<a href="shop_ledger.html" class="action-card" id="actionEnroll">
+<div style="font-size: 2.5rem; margin-bottom:10px">🏦</div>
+<span style="font-weight:bold; display:block">School Ledger</span>
+<p style="font-size:0.85rem; color:#64748b; margin-top:5px">All Entries</p>
+</a>
+
+</div>
+</div>
+</div>
+
+</div>
+<div id="passwordModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000;">
+<div style="background:white; width:350px; margin: 10% auto; padding:25px; border-radius:8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+<h3 style="margin-top:0;">Change Password</h3>
+<label>Current Password:</label>
+<input type="password" id="currentPass" style="width:100%; margin-bottom:15px; padding:8px;">
+<label>New Password:</label>
+<input type="password" id="newPass" style="width:100%; margin-bottom:15px; padding:8px;">
+<label>Confirm New Password:</label>
+<input type="password" id="confirmPass" style="width:100%; margin-bottom:20px; padding:8px;">
+<div style="display:flex; justify-content: space-between;">
+<button onclick="submitPasswordChange()" style="background:#28a745; color:white; border:none; padding:10px 15px; cursor:pointer; border-radius:4px;">Update Password</button>
+<button onclick="document.getElementById('passwordModal').style.display='none'" style="background:#dc3545; color:white; border:none; padding:10px 15px; cursor:pointer; border-radius:4px;">Cancel</button>
+</div>
+</div>
+</div>
+<script>
+const SYNC_URL = 'http://localhost/website/sync_stats.php';
+
+async function syncToWebsite(stats) {
+  if (!navigator.onLine) return;
+  try {
+    await fetch(SYNC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        students: stats.activeStudents || 0,
+        receivables: stats.receivables || 0,
+        balance: stats.balance || 0,
+        salaries: stats.salaries || 0,
+        fee_received: stats.feeReceived || 0,
+        expenses: stats.expenses || 0
+      })
+    });
+    console.log("📁 MySQL Website Synced");
+  } catch (err) {
+    console.error("📁 Sync Error:", err);
+  }
+}
+
+window.addEventListener('online', loadStats);
+
+async function loadStats() {
+  try {
+    if (window.api && window.api.getDashboardStats) {
+      const stats = await window.api.getDashboardStats();
+      document.getElementById('statStudents').innerText = stats.activeStudents || 0;
+      document.getElementById('statReceivables').innerText = stats.receivables || 0;
+      document.getElementById('statBalance').innerText = stats.balance || 0;
+      document.getElementById('statSalaries').innerText = stats.salaries || 0;
+      document.getElementById('statFeeReceived').innerText = stats.feeReceived || 0;
+      document.getElementById('statExpenses').innerText = stats.expenses || 0;
+      syncToWebsite(stats);
+    }
+  } catch (e) {
+    console.log("Stats fetch skipped.");
+  }
+}
+
+async function updateLicenseDisplay() {
+  try {
+    if (window.api && window.api.getLicenseStatus) {
+      const status = await window.api.getLicenseStatus();
+      if (status) document.getElementById('license-info').innerText = status;
+    }
+  } catch (e) {
+    console.log("License check skipped.");
+  }
+}
+
+function logout() {
+  sessionStorage.clear();
+  window.location.href = "login.html";
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const user = JSON.parse(sessionStorage.getItem('currentUser') || '{"username": "User1"}');
+  document.getElementById('welcomeText').innerText = `Welcome, ${user.username}`;
+  document.getElementById('currentDate').innerText = new Date().toDateString();
+
+  const isAdmin = user.username.toLowerCase() === 'admin';
+
+  if (!isAdmin) {
+    let perms = [];
+    try {
+      perms = typeof user.permissions === 'string' ? JSON.parse(user.permissions) : (user.permissions || []);
+    } catch(e) {
+      perms = [];
+    }
+    const modules = [
+      { key: 'navClasses', elements: ['navClasses'] },
+      { key: 'navStudents', elements: ['navStudents', 'cardStudents', 'actionEnroll'] },
+      { key: 'navFee', elements: ['navFee', 'cardReceivables', 'cardBalance', 'cardFeeReceived', 'actionFees'] },
+      { key: 'navExams', elements: ['navExams', 'actionExams'] },
+      { key: 'navStaff', elements: ['navStaff', 'cardSalaries'] },
+      { key: 'navExpenses', elements: ['navExpenses', 'cardExpenses'] },
+      { key: 'navRoles', elements: ['navRoles'] },
+      { key: 'btnDB', elements: ['btnDB'] }
+    ];
+    // Convert all user permissions to lowercase for accurate checking
+    const lowercasePerms = perms.map(p => String(p).toLowerCase());
+
+    modules.forEach(mod => {
+      // Check using lowercase keys to avoid case mismatch
+      if (!lowercasePerms.includes(mod.key.toLowerCase())) {
+        mod.elements.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+      }
+    });
+
+    const quickActions = ['actionExams', 'actionFees', 'actionEnroll'];
+    const allActionsHidden = quickActions.every(id => {
+      const el = document.getElementById(id);
+      return !el || el.style.display === 'none';
+    });
+    if (allActionsHidden) {
+      const titleEl = document.getElementById('quickActionsTitle');
+      const gridEl = document.getElementById('quickActionsGrid');
+      if (titleEl) titleEl.style.display = 'none';
+      if (gridEl) gridEl.style.display = 'none';
+    }
+    
+    // REMOVED FORCED HIDING OF THE CHANGE PASSWORD BUTTON FROM HERE
+    // Every user will now retain access to this element by default
+  }
+
+  loadStats();
+  updateLicenseDisplay();
+});
+
+async function submitPasswordChange() {
+  const oldPass = document.getElementById('currentPass').value;
+  const newPass = document.getElementById('newPass').value;
+  const confirmPass = document.getElementById('confirmPass').value;
+
+  if (newPass !== confirmPass) {
+    alert("Validation Error: New passwords do not match. Please retype them.");
+    document.getElementById('confirmPass').focus();
+    return;
+  }
+
+  try {
+    const userStr = sessionStorage.getItem('currentUser');
+    if (!userStr) {
+      alert("Session expired. Please log back into the app.");
+      window.location.href = "login.html";
+      return;
+    }
+    const currentUser = JSON.parse(userStr);
+    const response = await window.authAPI.changePassword(oldPass, newPass, currentUser.username);
+    if (response && response.success) {
+      alert("System access password updated successfully!");
+      document.getElementById('passwordChangeForm').reset();
+      document.getElementById('passwordModal').style.display = 'none';
+    } else {
+      alert("Security Error: " + (response.message || "Current password credentials do not match."));
+    }
+  } catch (error) {
+    console.error("IPC Password transition failure logs:", error);
+    alert("System driver error occurred during execution.");
+  }
+}
+</script>
+
+</body>
+</html>

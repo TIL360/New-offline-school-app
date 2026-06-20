@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Build Exam Paper</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      background-color: #f4f6f9; 
+      padding: 15px 25px; 
+      color: #333; 
+      margin: 0;
+      height: 100vh;
+      box-sizing: border-box;
+      overflow: hidden; /* Lock page window scrolling */
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+    }
+    h2 { margin: 0; color: #1e293b; font-size: 20px; }
+    .nav-btn {
+      background-color: #f8fafc;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .nav-btn:hover {
+      background-color: #f1f5f9;
+      color: #1e293b;
+    }
+    .box { 
+      background: white; 
+      padding: 20px; 
+      border-radius: 10px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
+      border: 1px solid #e2e8f0;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: calc(100vh - 85px); /* Forces card wrapper container to fit on screen */
+      display: flex;
+      flex-direction: column;
+    }
+    h3 { 
+      margin-top: 0; 
+      margin-bottom: 15px; 
+      color: #0f172a; 
+      font-size: 15px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+    
+    /* Filters in a space-saving top grid row */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr) auto;
+      gap: 15px;
+      align-items: flex-end;
+      margin-bottom: 20px;
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .form-group { margin-bottom: 0; } /* Remove vertical bottom margin spacing */
+    label { 
+      display: block; 
+      font-weight: 600; 
+      margin-bottom: 6px; 
+      font-size: 12px; 
+      color: #475569;
+    }
+    input, select { 
+      width: 100%; 
+      padding: 8px 10px; 
+      box-sizing: border-box; 
+      border: 1px solid #cbd5e1; 
+      border-radius: 6px; 
+      font-size: 13px;
+      color: #1e293b;
+      background-color: white;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #bd081c;
+      box-shadow: 0 0 0 3px rgba(189, 8, 28, 0.1);
+    }
+    .btn-load { 
+      background: linear-gradient(135deg, #bd081c, #dc3545); 
+      color: white; 
+      border: none; 
+      padding: 9px 20px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-weight: bold; 
+      font-size: 13px;
+      box-shadow: 0 2px 6px rgba(189,8,28,0.2);
+      height: 36px;
+    }
+    .btn-load:hover { background: linear-gradient(135deg, #a00718, #c82333); }
+    
+    /* Scrollable isolated pool frame container area */
+    .pool-wrapper {
+      flex: 1;
+      overflow-y: auto; /* Independent vertical scrollbar for list only */
+      padding-right: 5px;
+      margin-top: 10px;
+    }
+
+    .q-item { 
+      background: #f8fafc; 
+      padding: 14px; 
+      border-left: 4px solid #bd081c; 
+      margin-bottom: 10px; 
+      border-radius: 6px;
+      border-top: 1px solid #edf2f7;
+      border-right: 1px solid #edf2f7;
+      border-bottom: 1px solid #edf2f7;
+    }
+    .btn-add-paper {
+      background-color: #003049;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .btn-add-paper:hover { background-color: #002133; }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <h2>Exam Paper Builder</h2>
+    <a href="qbnkdashboard.html" class="nav-btn">⬅️ Back to Dashboard</a>
+  </div>
+
+  <div class="box">
+    <h3>2. Build Exam Paper Layout</h3>
+    
+    <!-- Horizontal Top Control Config bar -->
+    <div class="filter-grid">
+      <div class="form-group">
+        <label>Select Exam Target</label>
+        <select id="examType"></select>
+      </div>
+      <div class="form-group">
+        <label>Filter Class</label>
+        <select id="filterClass"></select>
+      </div>
+      <div class="form-group">
+        <label>Filter Subject</label>
+        <select id="filterSubject">
+          <option value="English">English</option>
+          <option value="Maths">Maths</option>
+          <option value="Urdu">Urdu</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Filter Lesson Number</label>
+        <input type="number" id="filterLessonNo" placeholder="All Lessons">
+      </div>
+      <button onclick="loadQuestions()" class="btn-load">🔍 Load Available Questions</button>
+    </div>
+    
+    <h4 style="margin: 0 0 10px 0; color:#1e293b; font-size:14px;">Questions Pool</h4>
+    
+    <!-- Clean, scrollable list wrapper box container -->
+    <div class="pool-wrapper" id="questionsPool">
+      <p style="color:gray; font-style:italic; margin:0;">Configure filters and execute load commands above to view items...</p>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      populateClassDropdowns();
+      populateExamDropdown();
+    });
+
+    async function populateClassDropdowns() {
+      try {
+        const classes = await window.api.getClasses();
+        const filterDropdown = document.getElementById('filterClass');
+        filterDropdown.innerHTML = '';
+        classes.forEach(c => {
+          const classNameText = c.name || c.class_name || `Class ${c.id}`;
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = classNameText;
+          filterDropdown.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("Failed to populate dropdowns:", err);
+      }
+    }
+
+    async function populateExamDropdown() {
+      try {
+        const response = await window.api.getDropdownData();
+        const examDropdown = document.getElementById('examType');
+        if (!examDropdown) return;
+        examDropdown.innerHTML = '';
+        if (response && response.success && response.exams) {
+          response.exams.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.exam_name;
+            opt.textContent = e.exam_name;
+            examDropdown.appendChild(opt);
+          });
+        } else {
+          examDropdown.innerHTML = '<option value="">No Exams Configured</option>';
+        }
+      } catch (err) {
+        console.error("Error linking dropdown contents:", err);
+      }
+    }
+
+    async function loadQuestions() {
+      const classId = parseInt(document.getElementById('filterClass').value);
+      const subject = document.getElementById('filterSubject').value;
+      const lessonNo = document.getElementById('filterLessonNo').value ? parseInt(document.getElementById('filterLessonNo').value) : null;
+      
+      const questions = await window.api.getQuestions(classId, subject, lessonNo);
+      const container = document.getElementById('questionsPool');
+      container.innerHTML = '';
+
+      if (!questions || questions.length === 0) {
+        container.innerHTML = '<p style="color:gray; font-style:italic;">No questions found for this selection.</p>';
+        return;
+      }
+
+      questions.forEach(q => {
+        const div = document.createElement('div');
+        div.className = 'q-item';
+        let questionHtml = `<div style="font-weight: 600; color: #1e293b; font-size: 14px;"><span style="color: #bd081c;">[${q.question_type}]</span> (Lesson ${q.lesson_no || 'N/A'}) ${q.question_text}</div>`;
+        
+        if (q.question_type === 'MCQ') {
+          questionHtml += `<div style="margin: 10px 0; padding-left: 5px; font-size: 13px; color: #64748b; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div><strong style="color:#475569;">A)</strong> ${q.opt1 || ''}</div>
+            <div><strong style="color:#475569;">B)</strong> ${q.opt2 || ''}</div>
+            <div><strong style="color:#475569;">C)</strong> ${q.opt3 || ''}</div>
+            <div><strong style="color:#475569;">D)</strong> ${q.opt4 || ''}</div>
+          </div>`;
+        }
+        
+        questionHtml += `<div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 12px; font-weight: 600; margin-bottom: 0; color: #64748b;">Marks:</label>
+            <input type="number" id="marks-${q.id}" style="width:55px; padding:5px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;" value="2">
+          </div>
+          <button onclick="addToPaper('${subject}', ${classId}, ${q.id})" class="btn-add-paper">➕ Add to Paper</button>
+        </div>`;
+        
+        div.innerHTML = questionHtml;
+        container.appendChild(div);
+      });
+    }
+
+    async function addToPaper(paperName, classId, questionId) {
+      const examType = document.getElementById('examType').value;
+      if(!examType) {
+        alert("Please select a valid Exam Target before adding questions.");
+        return;
+      }
+      const marks = parseFloat(document.getElementById(`marks-${questionId}`).value) || 1;
+      await window.api.addQuestionToPaper({ examType, paperName, classId, questionId, marks });
+      alert(`Question successfully added to the ${examType} (${paperName}) exam paper!`);
+    }
+  </script>
+</body>
+</html>

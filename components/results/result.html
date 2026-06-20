@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Class Wise Result Report</title>
+    <style>
+        :root { --primary-blue: #2e08b6; --bg-gray: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: #e0e0e0; margin: 0; padding: 20px; }
+        
+        /* UI Header - Filter Section */
+        .filter-card { 
+            background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: flex-end; 
+        }
+        .filter-group { flex: 1; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; }
+        select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+        .btn-print { background: var(--primary-blue); }
+        .btn-edit-row { 
+            background: #ff9800; color: white; border: none; padding: 4px 8px; 
+            border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; 
+        }
+
+        /* Report Paper Styling */
+        .report-paper { 
+            background: white; width: 297mm; min-height: 210mm; padding: 10mm; 
+            margin: auto; box-shadow: 0 0 20px rgba(0,0,0,0.2); box-sizing: border-box; 
+        }
+        .header-title { text-align: center; font-size: 24px; font-weight: bold; text-decoration: underline; margin-bottom: 15px; }
+        .info-section { margin-bottom: 10px; line-height: 1.4; font-weight: bold; }
+        
+        /* Table Structure */
+        table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; table-layout: auto; }
+        th, td { border: 1px solid #000; padding: 4px 2px; }
+        th { background: #f2f2f2; }
+        .name-col { width: 160px; text-align: left; padding-left: 5px; }
+
+        /* Modal Styling for Editing */
+        .modal-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; 
+        }
+        .modal-content { 
+            background: white; padding: 20px; border-radius: 10px; width: 550px; 
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3); 
+        }
+        .modal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px; }
+        .modal-input-group label { font-size: 11px; color: #555; display: block; margin-bottom: 3px; }
+        .modal-input-group input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+
+        /* LANDSCAPE PRINT LOGIC */
+        @page { size: landscape; margin: 10mm; }
+        /* Print Settings */
+@media print {
+    /* Hide the Filter Bar (Back/Exam/Class/Print buttons) */
+    .filter-card, .btn-print-hide {
+        display: none !important;
+    }
+
+    /* Hide the Action column in the table */
+    th:nth-last-child(1), 
+    td:nth-last-child(1) {
+        display: none !important;
+    }
+
+    /* Ensure table takes full width on paper */
+    table {
+        width: 100% !important;
+        border-collapse: collapse;
+    }
+}
+    </style>
+</head>
+<body>
+    
+    
+    <!-- Top Navigation & Filters -->
+       <div class="filter-card">
+  <div class="filter-group">
+    <label>Select Exam</label>
+    <select id="selectExam"><option value="">-- Choose Exam --</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Select Class</label>
+    <select id="selectClass"><option value="">-- Choose Class --</option></select>
+  </div>
+  <button class="btn btn-print" onclick="window.print()">Print Report</button>
+  <!-- New Progress Reports Button -->
+  <button class="btn btn-print" onclick="navigateToProgressReports()">Progress Reports</button>
+  <button class="btn btn-print" onclick="window.location.href='./result_entry.html'">Back</button>
+</div>
+
+
+    <!-- The Result Report (Printable Area) -->
+    <div class="report-paper">
+        <div class="header-title">Class Wise Result - <span id="displayExam">...</span></div>
+        <div class="info-section">
+            Class Name: <span id="displayClass">...</span><br>
+            Section: <span id="displaySection">A</span>
+        </div>
+
+        <table>
+            <thead>
+                <!-- These IDs are critical for the script to work -->
+                <tr id="mainHeaderRow"></tr>
+                <tr id="totalMarksRow"></tr>
+            </thead>
+            <tbody id="resultBody">
+                <!-- Data injected here -->
+            </tbody>
+        </table>
+
+        <div style="margin-top: 20px; display: flex; justify-content: space-between; font-weight: bold; font-size: 12px;">
+            <div id="printDate"></div>
+            <div>Page 1 of 1</div>
+        </div>
+    </div>
+
+    <!-- Edit Marks Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content">
+            <h3 id="modalStudentName" style="margin-top:0; color:var(--primary-blue); border-bottom: 2px solid #eee; padding-bottom:10px;">Update Marks</h3>
+            <div class="modal-grid" id="modalInputContainer"></div>
+            <div style="margin-top: 20px; text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
+                <button class="btn" onclick="closeModal()" style="background:#666; margin-right:8px;">Cancel</button>
+                <button class="btn" onclick="saveModalMarks()" style="background:#28a745;">Save Marks</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let currentData = [];
+    let activeStudentIndex = null;
+
+    // List of all subject fields as per your database schema
+    const subjectsList = [
+        { id: 'Urdu', set: 'urdu_setmarks', obt: 'urdu_obt' },
+        { id: 'Eng', set: 'eng_setmarks', obt: 'eng_obt' },
+        { id: 'Math', set: 'math_setmarks', obt: 'math_obt' },
+        { id: 'SST', set: 'sst_setmarks', obt: 'sst_obt' },
+        { id: 'Isl', set: 'islamiat_setmarks', obt: 'islamiat_obt' },
+        { id: 'Sci', set: 'science_setmarks', obt: 'science_obt' },
+        { id: 'Phy', set: 'physics_setmarks', obt: 'physics_obt' },
+        { id: 'Chem', set: 'chemistry_setmarks', obt: 'chemistry_obt' },
+        { id: 'Bio', set: 'biology_setmarks', obt: 'biology_obt' },
+        { id: 'Comp', set: 'computer_setmarks', obt: 'computer_obt' },
+        { id: 'Draw', set: 'drawing_setmarks', obt: 'drawing_obt' },
+        { id: 'Geog', set: 'geography_setmarks', obt: 'geography_obt' }
+    ];
+
+    // Initialize Dropdowns
+    window.addEventListener('DOMContentLoaded', async () => {
+        document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        const res = await window.api.getDropdownData();
+        if (res.success) {
+            res.exams.forEach(e => document.getElementById('selectExam').add(new Option(e.exam_name, e.exam_id)));
+            res.classes.forEach(c => document.getElementById('selectClass').add(new Option(c.class_name, c.class_name)));
+        }
+    });
+
+    document.getElementById('selectClass').addEventListener('change', fetchReport);
+    document.getElementById('selectExam').addEventListener('change', fetchReport);
+
+    async function fetchReport() {
+        const examId = document.getElementById('selectExam').value;
+        const className = document.getElementById('selectClass').value;
+        if (!examId || !className) return;
+
+        document.getElementById('displayExam').innerText = document.getElementById('selectExam').options[document.getElementById('selectExam').selectedIndex].text;
+        document.getElementById('displayClass').innerText = className;
+
+        const response = await window.api.getReportData({ examId, className });
+        if (response.success) {
+            currentData = response.data;
+            renderTable();
+        }
+    }
+
+    function renderTable() {
+        const body = document.getElementById('resultBody');
+        const headerRow = document.getElementById('mainHeaderRow');
+        const totalRow = document.getElementById('totalMarksRow');
+        
+        // This is the check that was failing in your screenshot
+        if (!body || !headerRow || !totalRow) {
+            console.error("Missing table IDs in HTML! Check your table structure.");
+            return;
+        }
+
+        body.innerHTML = "";
+
+        if (currentData.length > 0) {
+            const firstStudent = currentData[0];
+            const activeSubs = subjectsList.filter(sub => firstStudent[sub.set] > 0);
+
+            // 1. Build Headers
+            headerRow.innerHTML = `
+                <th rowspan="2">Reg No</th><th rowspan="2" class="name-col">Name</th>
+                ${activeSubs.map(sub => `<th>${sub.id}</th>`).join('')}
+                <th rowspan="2">Obt</th><th rowspan="2">Total</th><th rowspan="2">%age</th>
+                <th rowspan="2">Grade</th><th rowspan="2">Pos</th><th rowspan="2">Result</th>
+                <th rowspan="2" class="btn-print-hide">Action</th>
+            `;
+
+            // 2. Build Setmarks Row
+            totalRow.innerHTML = activeSubs.map(sub => `<th>${firstStudent[sub.set]}</th>`).join('');
+
+            // 3. Populate Student Data
+            currentData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.registration_no || '-'}</td>
+                    <td class="name-col">
+  <a href="#" onclick="openSingleReport('${row.student_id}')" style="color: blue; cursor: pointer;">
+    ${row.student_name}
+  </a>
+</td>
+                    ${activeSubs.map(sub => `<td>${row[sub.obt]}</td>`).join('')}
+                    <td style="font-weight:bold">${row.total_obt}</td>
+                    <td>${row.total_setmarks}</td>
+                    <td>${row.percentage ? parseFloat(row.percentage).toFixed(0) : '0'}%</td>
+                    <td>${row.grade || '-'}</td>
+                    <td>${row.position || '-'}</td>
+                    <td>${row.result_status || '-'}</td>
+                    <td class="btn-print-hide"><button class="btn-edit-row" onclick="openModal(${index})">Edit</button></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+    }
+
+    function openModal(index) {
+        activeStudentIndex = index;
+        const student = currentData[index];
+        document.getElementById('modalStudentName').innerText = `Update Marks: ${student.student_name}`;
+        const container = document.getElementById('modalInputContainer');
+        container.innerHTML = "";
+
+        subjectsList.forEach(sub => {
+            if (student[sub.set] > 0) {
+                container.innerHTML += `
+                <div class="modal-input-group">
+                    <label>${sub.id} (Max: ${student[sub.set]})</label>
+                    <input type="number" id="modal_${sub.obt}" value="${student[sub.obt]}" max="${student[sub.set]}" min="0">
+                </div>`;
+            }
+        });
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+
+async function saveModalMarks() {
+    const student = currentData[activeStudentIndex];
+    const examId = document.getElementById('selectExam').value;
+    const className = document.getElementById('selectClass').value;
+
+    // 1. Collect updated marks from modal inputs
+    subjectsList.forEach(sub => {
+        const input = document.getElementById(`modal_${sub.obt}`);
+        if (input) student[sub.obt] = parseFloat(input.value) || 0;
+    });
+
+    // 2. Save to Database
+    const res = await window.api.updateStudentMarks(student);
+    
+    if (res.success) {
+        // 3. IMMEDIATELY recalculate positions for this class
+        await window.api.recalculatePositions({ examId, className });
+        
+        // 4. Refresh UI
+        closeModal();
+        fetchReport(); // This will now show "1" instead of "-"
+    } else {
+        alert("Save failed: " + res.error);
+    }
+}
+
+ function navigateToProgressReports() {
+            const examId = document.getElementById('selectExam').value;
+            const className = document.getElementById('selectClass').value;
+
+            if (!examId || !className) {
+                alert("Please select both Exam and Class first!");
+                console.warn({examId, className})
+                return;
+            }
+            window.location.href = `progress_reports.html?examId=${examId}&className=${className}`;
+        }
+
+        window.onload = loadInitialData;
+
+function openSingleReport(studentId) {
+    const examId = document.getElementById('selectExam').value;
+    // Redirect to progress_reports.html with an extra studentId parameter
+    window.location.href = `progress_reports.html?examId=${examId}&studentId=${studentId}`;
+}
+
+</script>
+</body>
+</html>

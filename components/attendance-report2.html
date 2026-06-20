@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sheet Attendance Report Grid</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --container-bg: #ffffff;
+            --primary: #003049;
+            --accent-red: #d62828;
+            --accent-red-hover: #b51d1d;
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --border-color: #333333;
+            --border-light: #dee2e6;
+            --shadow-md: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 30px 20px;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 1140px;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--primary);
+            background: var(--container-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-btn:hover {
+            color: white;
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+        }
+
+        h2 { margin-top: 0; color: var(--primary); }
+
+        .tabs {
+            display: flex;
+            background: #e9ecef;
+            padding: 4px;
+            border-radius: 8px;
+            gap: 4px;
+            margin-bottom: 25px;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            background: var(--container-bg);
+            color: var(--primary);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            align-items: end;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-light);
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        .control-group label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+
+        select, input[type="month"] {
+            padding: 10px 14px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 14px; width: 100%;
+        }
+
+        .btn {
+            padding: 11px 20px; background-color: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; height: 40px;
+        }
+        .btn-pdf { background-color: var(--accent-red); }
+        .btn-pdf:hover { background-color: var(--accent-red-hover); }
+
+        .report-header-text { margin-bottom: 15px; font-weight: bold; font-size: 16px; color: #444; }
+        .table-wrapper { width: 100%; overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 800px; }
+        th, td { border: 1px solid var(--border-color); padding: 8px 6px; text-align: center; font-size: 13px; font-family: monospace; }
+        th { background-color: #f4f4f4; font-weight: bold; font-family: sans-serif; }
+        .name-col { text-align: left; padding-left: 8px; font-family: sans-serif; font-weight: 500; min-width: 140px; }
+
+        /* Crisp Cell Mark Elements */
+        .status-P { color: #2e7d32; font-weight: bold; }
+        .status-A { color: #c62828; font-weight: bold; background-color: #ffebee; }
+        .status-L { color: #f57f17; font-weight: bold; background-color: #fff8e1; }
+        .status-blank { color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="top-nav">
+    <a href="./dashboard.html" class="nav-btn">📊 Dashboard</a>
+    <a href="./attendance-report.html" class="nav-btn">📋 Attendance Report</a>
+    <a href="./attendance-report2.html" class="nav-btn">📈 Attendance Grid Report</a>
+</div>
+
+<div class="container">
+    <h2>📋 Grid Matrix Attendance Ledger</h2>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('student')">Student Grid View</button>
+        <button class="tab-btn" onclick="switchTab('staff')">Staff Grid View</button>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="report-month">Select Month</label>
+            <input type="month" id="report-month" />
+        </div>
+        <div class="control-group" id="class-select-container">
+            <label for="class-dropdown">Select Class</label>
+            <select id="class-dropdown">
+                <option value="">-- Choose Class --</option>
+            </select>
+        </div>
+        <button class="btn" onclick="generateGridLedger()">⚙️ Generate Sheet</button>
+        <button class="btn btn-pdf" onclick="window.api.saveToPdf()">🖨️ Print Report</button>
+    </div>
+
+    <div id="meta-display" class="report-header-text"></div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr id="thead-row">
+                    <th colspan="33" style="padding: 20px; color: var(--text-muted);">Select filters above and execute view generation template.</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-rows"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let currentTab = 'student';
+const now = new Date();
+document.getElementById('report-month').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const classes = await window.api.getClasses();
+        const dropdown = document.getElementById('class-dropdown');
+        if (classes && dropdown) {
+            classes.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls.class_name;
+                opt.textContent = cls.class_name;
+                dropdown.appendChild(opt);
+            });
+        }
+    } catch (err) { console.error(err); }
+});
+
+function switchTab(tabName) {
+    currentTab = tabName;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    if(event && event.target) event.target.classList.add('active');
+    document.getElementById('class-select-container').style.display = tabName === 'staff' ? 'none' : 'block';
+    document.getElementById('tbody-rows').innerHTML = '';
+    document.getElementById('thead-row').innerHTML = '<th colspan="33" style="padding: 20px; color: #888;">Please reload sheet records.</th>';
+    document.getElementById('meta-display').textContent = '';
+}
+
+async function generateGridLedger() {
+    const yearMonth = document.getElementById('report-month').value;
+    if (!yearMonth) { alert("Please pick a month target."); return; }
+    
+    const [year, month] = yearMonth.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    
+    const thead = document.getElementById('thead-row');
+    const tbody = document.getElementById('tbody-rows');
+    const metaDisplay = document.getElementById('meta-display');
+    
+    let headHtml = `<th>Ser</th><th>Name</th>`;
+    for (let i = 1; i <= daysInMonth; i++) {
+        headHtml += `<th>${i}</th>`;
+    }
+    thead.innerHTML = headHtml;
+
+    if (currentTab === 'student') {
+        const className = document.getElementById('class-dropdown').value;
+        if (!className) { alert("Please select a target class folder stream."); return; }
+        
+        metaDisplay.innerHTML = `Class: ${className} <span style="float:right;">Attendance Report - ${yearMonth}</span>`;
+        const { students, attendance } = await window.api.getStudentGridReport({ className, yearMonth });
+        
+        if (!students || students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${daysInMonth+2}" style="padding:20px; color:red;">No active students discovered.</td></tr>`;
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        students.forEach((student, index) => {
+            let rowHtml = `<td>${index + 1}</td><td class="name-col"><b>${student.student_name}</b></td>`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const match = attendance.find(a => a.student_id == student.id && a.day === day);
+                rowHtml += getCellStatusMark(match);
+            }
+            const tr = document.createElement('tr');
+            tr.innerHTML = rowHtml;
+            tbody.appendChild(tr);
+        });
+    } else {
+        metaDisplay.innerHTML = `Staff Roster <span style="float:right;">Attendance Report - ${yearMonth}</span>`;
+        const { staff, attendance } = await window.api.getStaffGridReport({ yearMonth });
+        
+        if (!staff || staff.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${daysInMonth+2}" style="padding:20px; color:red;">No active staff files found.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = '';
+        staff.forEach((member, index) => {
+            let rowHtml = `<td>${index + 1}</td><td class="name-col"><b>${member.name}</b> <small style="color:#6c757d;">(${member.designation})</small></td>`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const match = attendance.find(a => a.staff_id == member.id && a.day === day);
+                rowHtml += getCellStatusMark(match);
+            }
+            const tr = document.createElement('tr');
+            tr.innerHTML = rowHtml;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+function getCellStatusMark(match) {
+    if (!match) return `<td class="status-blank">-</td>`;
+    if (match.status === 'Present') return `<td class="status-P">P</td>`;
+    if (match.status === 'Absent') return `<td class="status-A">A</td>`;
+    if (match.status === 'Leave') return `<td class="status-L">L</td>`;
+    return `<td>-</td>`;
+}
+</script>
+
+</body>
+</html>

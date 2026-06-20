@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fee Management - Records</title>
+<style>
+:root { --primary: #2c3e50; --bg: #f4f7f6; --white: #ffffff; --danger: #e74c3c; --success: #27ae60; --purple: #8e44ad; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); padding: 20px; color: #333; margin: 0; }
+
+/* Header and Navigation */
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+h2 { color: var(--primary); margin: 0; font-weight: 600; }
+
+/* Table Styling */
+.table-container { background: var(--white); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 1150px; text-align: left; }
+th { background: var(--primary); color: white; padding: 14px 10px; font-size: 0.75rem; text-transform: uppercase; position: sticky; top: 0; }
+td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 0.85rem; vertical-align: middle; }
+tr:hover { background: #fcfcfc; }
+
+/* Text Utility */
+.txt-bold { font-weight: bold; }
+.txt-success { color: var(--success); font-weight: bold; }
+.txt-danger { color: var(--danger); font-weight: bold; }
+
+/* Button Groups & Actions */
+.btn-group { display: flex; gap: 8px; }
+.btn { border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
+.btn-edit { background: #3498db; color: white; }
+.btn-delete { background: var(--danger); color: white; }
+.btn-pay { background: var(--success); color: white; font-weight: bold; }
+.btn-invoice { background: linear-gradient(135deg, #e67e22, #d35400); color: white; border: none; }
+.refresh-btn { background: var(--white); border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+
+.filter-container { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: center; margin-bottom: 20px; }
+.filter-group { display: flex; flex-direction: column; gap: 5px; }
+.filter-group label { font-size: 12px; color: #666; font-weight: bold; }
+.nice-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 5px; min-width: 140px; outline: none; }
+
+.btn-action { border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; color: white; }
+.btn-filter { background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+.btn-print-all { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+.btn-other-fee { background: linear-gradient(135deg, var(--purple), #732d91); }
+
+/* Modals */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal-content { background: white; padding: 25px; border-radius: 12px; width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+/* Pagination */
+.pagination-bar { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; padding-bottom: 30px; }
+.page-btn { padding: 8px 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; }
+.page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h2>Fee Records</h2>
+    <div class="btn-group">
+        <button class="refresh-btn" onclick="loadFeeData()">Refresh List</button>
+        <button class="refresh-btn" onclick="window.location.href='../dashboard.html'">Dashboard</button>
+    </div>
+</div>
+
+<div class="filter-container">
+    <div class="filter-group">
+        <label>Month</label>
+        <select id="filterMonth" class="nice-select"><option value="">Select Month</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Year</label>
+        <select id="filterYear" class="nice-select"><option value="">Select Year</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Class</label>
+        <select id="filterClass" class="nice-select"><option value="">Select Class</option></select>
+    </div>
+    <button class="btn-filter" onclick="loadFeeData()">Apply Filters</button>
+    <div id="filterInfoDisplay" style="margin-left: 20px; font-weight: bold; color: #2c3e50; flex-grow: 1;"></div>
+    
+    <div class="btn-group">
+        <button class="btn-action btn-print-all"  title="Print Invoices of all selected records " onclick="viewBulkInvoices()"><span>🖨️ Print All</span></button>
+        <button class="btn-action btn-other-fee"  title="Add other fee for selected records" onclick="openOtherFeeModal()"><span>💰 Other Fee</span></button>
+    </div>
+</div>
+
+
+
+<div class="search-container" style="margin-bottom: 15px;">
+    <input type="text" id="feeSearch" onkeyup="filterFeeTable()" placeholder="🔍 Search records..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Inv #</th><th>Reg No / Student Name</th><th>Tuition</th><th>Adm</th>
+                <th>Exam</th><th>Lab</th><th>Sec.</th><th>Misc</th><th>Total</th>
+                <th>Collected</th><th>Bal</th><th>Arrears</th><th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="feeTableBody">
+            <tr><td colspan="14" style="text-align:center; padding: 40px; color: #7f8c8d;">Please apply filters to view records.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="paginationControls" class="pagination-bar"></div>
+
+<!-- Custom Modal for Admission Fee Edit -->
+<div id="singleEditModal" class="modal-overlay">
+    <div class="modal-content" style="width: 320px;">
+        <h3 id="editModalTitle" style="margin-top:0; font-size:16px; color: var(--primary);">Update Fee</h3>
+        <input type="hidden" id="editFeeId">
+        <div class="filter-group">
+            <label>Enter New Amount</label>
+            <input type="number" id="singleFeeValue" class="nice-select" style="width:90%">
+        </div>
+        <div class="filter-group">
+    <label>Only Misc Fee Remarks</label>
+    <!-- Changed from number to text -->
+    <input type="text" id="miscFeeRemarks" placeholder="other then misc type remarks here" class="nice-select" style="width:90%">
+</div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+            <button class="btn" style="background:#eee; color:#333;" onclick="closeSingleEdit()">Cancel</button>
+            <button class="btn btn-pay" onclick="saveSingleEdit()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Bulk Other Fees -->
+<div id="otherFeeModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">Update Other Fees</h3>
+        <p style="font-size:12px; color:#666; margin-bottom:15px;">Apply to current Class/Month/Year filters.</p>
+        <div class="filter-group"><label>Exam Fee</label><input type="number" id="newExamFee" class="nice-select" style="width:93%"></div>
+        <div class="filter-group"><label>Lab Fee</label><input type="number" id="newLabFee" class="nice-select" style="width:93%"></div>
+        <div class="filter-group"><label>Misc Fee</label><input type="number" id="newMiscFee" class="nice-select" style="width:93%"></div>
+        <div class="filter-group"><label>Misc Fee Remarks</label><input type="text" id="miscRemarks" class="nice-select" style="width:93%"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:25px;">
+            <button class="btn" style="background:#eee; color:#333;" onclick="closeOtherFeeModal()">Cancel</button>
+            <button class="btn btn-pay" onclick="applyBulkFeeUpdate()">Update All</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTableData = []; 
+let currentPage = 1;
+const recordsPerPage = 30;
+// Track which field we are currently editing
+let currentEditingField = ''; 
+
+document.addEventListener('DOMContentLoaded', async () => { await populateFilters(); });
+
+async function populateFilters() {
+    const data = await window.api.getFilterData();
+    const monthSelect = document.getElementById('filterMonth');
+    const yearSelect = document.getElementById('filterYear');
+    const classSelect = document.getElementById('filterClass');
+    data.months.forEach(m => monthSelect.innerHTML += `<option value="${m.invoice_month}">${m.invoice_month}</option>`);
+    data.years.forEach(y => yearSelect.innerHTML += `<option value="${y.invoice_year}">${y.invoice_year}</option>`);
+    data.classes.forEach(c => classSelect.innerHTML += `<option value="${c.class_name}">${c.class_name}</option>`);
+}
+
+async function loadFeeData() {
+    const month = document.getElementById('filterMonth').value;
+    const year = document.getElementById('filterYear').value;
+    const className = document.getElementById('filterClass').value;
+    if (!month || !year || !className) { alert("Please select all filters."); return; }
+    
+    document.getElementById('filterInfoDisplay').innerHTML = "Loading...";
+    currentTableData = await window.api.getFeeRecordsFilters({ month, year, className });
+    document.getElementById('filterInfoDisplay').innerHTML = `Found ${currentTableData.length} Records`;
+    renderPage(1);
+}
+
+function renderPage(page) {
+    currentPage = page;
+    const tableBody = document.getElementById('feeTableBody');
+    tableBody.innerHTML = '';
+    
+    const start = (page - 1) * recordsPerPage;
+    const pageData = currentTableData.slice(start, start + recordsPerPage);
+    const format = (v) => v ? `Rs. ${v.toLocaleString()}` : 'Rs. 0';
+
+    pageData.forEach(row => {
+        tableBody.innerHTML += `
+        <tr>
+            <td>${row.id}</td>
+            <td>${row.registration_no}<br/><strong>${row.student_name}</strong></td>
+            <td>${format(row.monthly_fee)}</td>
+            <td>${format(row.adm_fee)} <span onclick="openEdit('adm_fee', ${row.id}, ${row.adm_fee})" style="cursor:pointer; color:#3498db; margin-left:5px;">✏️</span></td>
+            <td>${format(row.exam_fee)} <span onclick="openEdit('exam_fee', ${row.id}, ${row.exam_fee})" style="cursor:pointer; color:#3498db; margin-left:5px;">✏️</span></td>
+            <td>${format(row.lab_fee)} <span onclick="openEdit('lab_fee', ${row.id}, ${row.lab_fee})" style="cursor:pointer; color:#3498db; margin-left:5px;">✏️</span></td>
+            <td>${row.section || '-'}</td>
+
+<td>
+    <div style="font-weight: bold;">
+        ${format(row.misc_fee)} 
+        <span onclick="openEdit('misc_fee', ${row.id}, ${row.misc_fee}, '${row.misc_remarks || ''}')" 
+              style="cursor:pointer; color:#3498db; margin-left:5px;">✏️</span>
+    </div>
+    <div style="font-size: 11px; color: #666; font-style: italic;">
+        ${row.misc_remarks || ''}
+    </div>
+</td>
+
+<td class="txt-bold">${format(row.total_fee + row.arrears)}</td>
+
+            <td class="txt-success">${format(row.collection)}</td>
+
+<td class="${(row.balance + row.arrears) > 0 ? 'txt-danger' : ''}">
+    ${format(row.total_fee + row.arrears - row.collection)}
+</td>
+
+            <td class="txt-danger">${format(row.arrears)}</td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-pay"  title="Collect Student Fee" onclick="collectFee(${row.id})">💰 </button>
+
+<button class="btn" style="background:#25D366; color:white;" 
+    onclick="sendWhatsAppReminder('${row.student_name}', '${row.total_fee}', '${row.arrears}', '${row.whatsapp}','${row.invoice_month}', '${row.monthly_fee}', '${row.adm_fee}', '${row.exam_fee}', '${row.misc_fee}', '${row.lab_fee}')">
+    📱
+</button>
+
+
+
+                    <button class="btn btn-invoice"  title="Generate Single Student Invoice for Current Month" onclick="viewInvoice(${row.id})">📄 </button>
+                    <button class="btn btn-delete"  title="Delete Record" onclick="deleteFee(${row.id})">✖</button>
+                </div>
+            </td>
+        </tr>`;
+    });
+    renderPaginationControls();
+}
+
+function renderPaginationControls() {
+    const totalPages = Math.ceil(currentTableData.length / recordsPerPage);
+    const container = document.getElementById('paginationControls');
+    container.innerHTML = '';
+    if (totalPages <= 1) return;
+    for (let i = 1; i <= totalPages; i++) {
+        container.innerHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="renderPage(${i})">${i}</button>`;
+    }
+}
+
+/** 
+ * Unified Edit Function
+ * @param {string} field - The DB column name (adm_fee, exam_fee, etc.)
+ * @param {number} id - Record ID
+ * @param {number} val - Current Value
+ */
+function openEdit(field, id, val, remarks = '') {
+    currentEditingField = field;
+    const friendlyName = field.replace('_', ' ').toUpperCase();
+    
+    document.getElementById('editFeeId').value = id;
+    document.getElementById('singleFeeValue').value = val;
+    
+    // This line puts the remarks into the box
+    document.getElementById('miscFeeRemarks').value = remarks;
+    
+    document.getElementById('editModalTitle').innerText = `Update ${friendlyName} (ID: ${id})`;
+    document.getElementById('singleEditModal').style.display = 'flex';
+}
+
+function closeSingleEdit() { 
+    document.getElementById('singleEditModal').style.display = 'none'; 
+}
+
+async function saveSingleEdit() {
+    const id = document.getElementById('editFeeId').value;
+    const value = parseFloat(document.getElementById('singleFeeValue').value) || 0;
+    
+    // CHANGE THIS LINE: Pull from miscFeeRemarks, not singleFeeValue
+    const remarks = document.getElementById('miscFeeRemarks').value || "";    
+
+    const result = await window.api.updateSingleFeeField({ 
+        id, 
+        field: currentEditingField, 
+        value,
+        remarks // This will now send the text instead of the number
+    });
+
+    if (result.success) {
+        closeSingleEdit();
+        loadFeeData(); // Refresh the table
+    }
+}
+
+function openOtherFeeModal() { if(currentTableData.length > 0) document.getElementById('otherFeeModal').style.display = 'flex'; }
+function closeOtherFeeModal() { document.getElementById('otherFeeModal').style.display = 'none'; }
+
+async function applyBulkFeeUpdate() {
+    const data = {
+        exam: parseFloat(document.getElementById('newExamFee').value) || 0,
+        lab: parseFloat(document.getElementById('newLabFee').value) || 0,
+        misc: parseFloat(document.getElementById('newMiscFee').value) || 0,
+        remarks: document.getElementById('miscRemarks').value || 0,
+        month: document.getElementById('filterMonth').value,
+        year: document.getElementById('filterYear').value,
+        className: document.getElementById('filterClass').value
+    };
+    const result = await window.api.bulkUpdateFees(data);
+    if(result.success) { alert(`Updated ${result.count} records.`); closeOtherFeeModal(); loadFeeData(); }
+}
+
+function filterFeeTable() {
+    const filter = document.getElementById('feeSearch').value.toLowerCase().trim();
+    const rows = document.getElementById('feeTableBody').getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+        rows[i].style.display = rows[i].innerText.toLowerCase().includes(filter) ? "" : "none";
+    }
+}
+
+function viewInvoice(id) {
+    // Determine the correct path relative to your project root
+    const url = `invoice.html?id=${id}&mode=single`; 
+    
+    // Open in child window
+    window.open(url, '_blank', 'width=900,height=800,scrollbars=yes');
+}
+
+function viewBulkInvoices() {
+    if (currentTableData.length === 0) return;
+    const ids = currentTableData.map(r => r.id).join(',');
+    const url = `invoice.html?ids=${ids}&mode=bulk`;
+    
+    window.open(url, '_blank', 'width=900,height=800');
+}
+
+
+function collectFee(id) {
+    localStorage.setItem('collectFeeId', id);
+    localStorage.setItem('feeMode', 'collect');
+    window.api.changePage('components/fee/feecollection.html');
+}
+
+async function deleteFee(id) {
+    if(confirm('Are you sure you want to delete this record?')) {
+        await window.api.deleteFee(id); 
+        await loadFeeData();
+    }
+}
+
+// //whatsapp message
+// Update your button's onclick to pass all the new variables
+// onclick="sendWhatsAppReminder('${row.student_name}', '${row.total_fee}', '${row.arrears}', '${row.whatsapp}', '${row.adm_fee}', '${row.exam_fee}', '${row.lab_fee}', '${row.misc_fee}', '${row.collection}')"
+
+function sendWhatsAppReminder(name, total_fee, arrears, phone, monthly_fee, adm_fee = 0, exam_fee = 0, lab_fee = 0, misc_fee = 0, collection = 0) {
+    if (!phone || phone === 'null' || phone == "") {
+        alert("Phone number not found for this student!");
+        return;
+    }
+
+    // Calculate final balance: (Total + Arrears) - Collection
+    const finalBalance = (parseFloat(total_fee || 0) + parseFloat(arrears || 0)) - parseFloat(collection || 0);
+
+    // Build the fee breakdown string dynamically
+    let feeBreakdown = "";
+    if (parseFloat(monthly_fee) > 0) feeBreakdown += `\nMonthly Tuition Fee: *Rs. ${monthly_fee}*`;
+    if (parseFloat(adm_fee) > 0) feeBreakdown += `\nAdmission Fee: *Rs. ${adm_fee}*`;
+    if (parseFloat(exam_fee) > 0) feeBreakdown += `\nExam Fee: *Rs. ${exam_fee}*`;
+    if (parseFloat(lab_fee) > 0) feeBreakdown += `\nLab Fee: *Rs. ${lab_fee}*`;
+    if (parseFloat(misc_fee) > 0) feeBreakdown += `\nMisc Fee: *Rs. ${misc_fee}*`;
+    if (parseFloat(arrears) > 0) feeBreakdown += `\nPrevious Arrears: *Rs. ${arrears}*`;
+
+    // Format phone number
+    let cleanPhone = phone.replace(/[^0-9]/g, "");
+    if (cleanPhone.startsWith("0")) {
+        cleanPhone = "92" + cleanPhone.substring(1);
+    }
+
+    const message = `Assalam-o-Alaikum!
+This is a reminder regarding the pending fee for your ward *${name}*.
+${feeBreakdown}
+-----------------------
+*Total Payable: Rs. ${finalBalance}*
+
+Please clear the dues at your earliest convenience. Thank you!`;
+
+    const url = "https://web.whatsapp.com/send?phone=" + cleanPhone + "&text=" + encodeURIComponent(message); 
+
+    // Send to Electron Main Process
+    window.authAPI.send('open-external-link', url);
+}
+
+
+
+</script>
+
+</body>
+</html>
+    

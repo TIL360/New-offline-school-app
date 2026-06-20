@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Date Sheet</title>
+    <style>
+        :root { --primary: #4361ee; --accent: #fdf0d5; --danger: #e71d36; --success: #2ec4b6; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: rgb(109, 60, 4); padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-row { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px; }
+        .form-group { flex: 1; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-add { background: var(--primary); }
+        .btn-update { background: #ff9f1c; }
+        .btn-view { background: var(--success); width: 100%; margin-top: 10px; font-size: 16px; }
+        .refresh-btn { background: white; border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
+        
+        /* Management Table */
+        .list-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .list-table th, .list-table td { border-bottom: 1px solid #eee; padding: 12px; text-align: left; }
+        .list-table th { color: #666; font-size: 0.9em; text-transform: uppercase; }
+        .action-btn { padding: 5px 10px; border-radius: 4px; font-size: 12px; margin-right: 5px; border: none; cursor: pointer; color: white; }
+        .edit-btn { background: #ff9f1c; }
+        .delete-btn { background: var(--danger); }
+
+        /* Print Modal */
+        #printModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; }
+        .modal-content { background: white; margin: 2% auto; padding: 40px; width: 95%; max-width: 1100px; border-radius: 10px; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 1px; border-bottom: 2px solid #eee; padding-bottom: 2px; }
+        .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        .print-table th, .print-table td { border: 1px solid #333; padding: 10px; text-align: center; }
+        .print-table th { background-color: #f2f2f2; }
+
+        @media print {
+    @page {
+        size: landscape;
+        margin: 0.5in; /* Standard margins help keep borders visible */
+    }
+
+    /* Reset width to ensure it fits the paper */
+    #printArea {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    table {
+        width: 100% !important;
+        table-layout: auto; /* Allows columns to shrink to fit */
+        border-collapse: collapse !important;
+        border: 1px solid black !important; /* Forces outer border */
+    }
+
+    th, td {
+        border: 1px solid black !important; /* Forces inner borders */
+    }
+     .no-print { 
+        display: none !important; 
+    }
+    h2{
+        margin-bottom: 0px;
+        
+    }
+}
+
+    </style>
+</head>
+<body>
+
+<div class="container no-print"> 
+    <button class="refresh-btn" onclick="window.location.href='result_entry.html'">← Dashboard</button>
+    <h2>📅 Date Sheet </h2>
+    
+    <form id="dateSheetForm">
+        <input type="hidden" id="editId">
+        <div class="form-row">
+            <div class="form-group"><label>Exam</label><select id="examId" required onchange="loadRecords()"></select></div>
+            <div class="form-group"><label>Class</label><select id="classId" required onchange="loadRecords()"></select></div>
+            <div class="form-group"><label>Subject</label><select id="subject" required></select></div>
+            <div class="form-group"><label>Date</label><input type="date" id="examDate" required></div>
+            <button type="submit" id="submitBtn" class="btn btn-add">Add Paper</button>
+        </div>
+    </form>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+    
+    <h3>List of Entered Papers</h3>
+    <table class="list-table">
+        <thead>
+            <tr><th>Date</th><th>Class</th><th>Subject</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="recordListBody"></tbody>
+    </table>
+
+    <button onclick="showPrintModal()" class="btn btn-view">👁️ View & Print Full Consolidated Datesheet</button>
+</div>
+
+<div id="printModal">
+    <div class="modal-content">
+        <div class="modal-header no-print">
+            <h3>Preview Datesheet (All Classes)</h3>
+            <div>
+                <button onclick="window.print()" class="btn btn-add">Print Now</button>
+                <button onclick="closeModal()" class="btn" style="background:var(--danger)">Close</button>
+            </div>
+        </div>
+        <div id="printArea">
+            <div style="text-align: center;">
+                <h2>YOUR INSTITUTE NAME</h2>
+                <p>Address || 0300-xxxxxxx || E-mail: abc@gmail.com</p>
+                <h3 id="printExamTitle">EXAMINATION DATESHEET</h3>
+            </div>
+            <table class="print-table">
+                <thead><tr id="tableHeader"><th>Date</th></tr></thead>
+                <tbody id="modalTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+let availableClasses = [];
+let editingMode = false;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const response = await window.api.getDropdownData();
+    if (response.success) {
+        availableClasses = response.classes;
+        document.getElementById('examId').innerHTML = '<option value="">Select Exam</option>' + 
+            response.exams.map(e => `<option value="${e.exam_id}">${e.exam_name}</option>`).join('');
+        document.getElementById('classId').innerHTML = '<option value="">Select Class</option>' + 
+            response.classes.map(c => `<option value="${c.id}">${c.class_name}</option>`).join('');
+    }
+    const subjects = ["Urdu", "English", "Math", "SST", "Islamiat", "Science", "Physics", "Chemistry", "Biology", "Computer", "Arts", "G.Sci"];
+    document.getElementById('subject').innerHTML = '<option value="">Select Subject</option>' + 
+        subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+});
+
+// LOAD RECORDS: Strictly filters by both Exam AND Class
+async function loadRecords() {
+    const examId = document.getElementById('examId').value;
+    const classId = document.getElementById('classId').value;
+    if(!examId || !classId) return;
+
+    const filters = { 
+        exam_id: examId, 
+        class_id: classId,
+        year: new Date().getFullYear().toString() 
+    };
+    
+    const records = await window.api.getDateSheet(filters);
+    
+    const tbody = document.getElementById('recordListBody');
+    tbody.innerHTML = records.map(r => `
+        <tr>
+            <td>${r.exam_date}</td>
+            <td>${r.class_name}</td>
+            <td>${r.subject}</td>
+            <td>
+                <button class="action-btn edit-btn" onclick='editRecord(${JSON.stringify(r)})'>Edit</button>
+                <button class="action-btn delete-btn" onclick="deleteRecord(${r.id})">Delete</button>
+            </td>
+        </tr>`).join('');
+}
+
+document.getElementById('dateSheetForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const data = {
+        exam_id: document.getElementById('examId').value,
+        class_id: document.getElementById('classId').value,
+        subject: document.getElementById('subject').value,
+        exam_date: document.getElementById('examDate').value,
+        exam_year: new Date(document.getElementById('examDate').value).getFullYear().toString()
+    };
+
+    let res = editingMode ? await window.api.updateDateSheet({...data, id: document.getElementById('editId').value}) : await window.api.addDateSheet(data);
+    if(res.success) { resetForm(); loadRecords(); }
+};
+
+function editRecord(record) {
+    editingMode = true;
+    document.getElementById('editId').value = record.id;
+    document.getElementById('subject').value = record.subject;
+    document.getElementById('examDate').value = record.exam_date;
+    document.getElementById('submitBtn').innerText = "Update Paper";
+    document.getElementById('submitBtn').className = "btn btn-update";
+}
+
+async function deleteRecord(id) {
+    if(confirm("Delete this paper?")) {
+        const res = await window.api.deleteDateSheet(id);
+        if(res.success) loadRecords();
+    }
+}
+
+function resetForm() {
+    editingMode = false;
+    document.getElementById('editId').value = "";
+    document.getElementById('subject').value = "";
+    document.getElementById('examDate').value = "";
+    document.getElementById('submitBtn').innerText = "Add Paper";
+    document.getElementById('submitBtn').className = "btn btn-add";
+}
+
+// PRINT MODAL: Consolidates all classes for the selected Exam
+async function showPrintModal() {
+    const examId = document.getElementById('examId').value;
+    if(!examId) return alert("Please select an Exam first!");
+
+    // Fetch records for ALL classes by omitting class_id
+    const filters = { 
+        exam_id: examId,
+        year: new Date().getFullYear().toString() 
+    };
+    const records = await window.api.getDateSheet(filters);
+
+document.getElementById('printExamTitle').innerText = document.getElementById('examId').options[document.getElementById('examId').selectedIndex].text + " (Date Sheet)";
+
+    // Filter headers to only show classes that have data
+    const activeClassIds = [...new Set(records.map(r => r.class_id))];
+    const filteredClasses = availableClasses.filter(c => activeClassIds.includes(c.id));
+
+    const headerRow = document.getElementById('tableHeader');
+    headerRow.innerHTML = '<th>Date</th>' + filteredClasses.map(c => `<th>${c.class_name}</th>`).join('');
+
+    const groupedByDate = {};
+    records.forEach(r => {
+        if (!groupedByDate[r.exam_date]) groupedByDate[r.exam_date] = {};
+        groupedByDate[r.exam_date][r.class_id] = r.subject;
+    });
+
+    const tbody = document.getElementById('modalTableBody');
+    tbody.innerHTML = Object.keys(groupedByDate).sort().map(date => {
+        let row = `<tr><td>${date}</td>`;
+        filteredClasses.forEach(c => { row += `<td>${groupedByDate[date][c.id] || "---"}</td>`; });
+        return row + '</tr>';
+    }).join('');
+
+    document.getElementById('printModal').style.display = 'block';
+}
+
+function closeModal() { document.getElementById('printModal').style.display = 'none'; }
+</script>
+</body>
+</html>

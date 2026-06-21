@@ -46,13 +46,13 @@
       color: #1e293b;
     }
 
-    /* Dashboard Main Container Box */
+    /* Dashboard Main Container Box (Expanded slightly for 3 cards) */
     .dashboard-container {
       background: white; 
       padding: 30px; 
       border-radius: 10px; 
       box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
-      max-width: 800px;
+      max-width: 850px;
       margin: 0 auto;
       border: 1px solid #e2e8f0;
       text-align: center;
@@ -100,6 +100,9 @@
     .menu-card.build-p {
       border-top: 4px solid #bd081c;
     }
+    .menu-card.view-p {
+      border-top: 4px solid #198754; /* Green accent color */
+    }
 
     .menu-card:hover {
       transform: translateY(-3px);
@@ -124,7 +127,7 @@
   <!-- Header Section -->
   <div class="header-bar">
     <h2>Exam Question Bank & Paper Builder</h2>
-    <a href="dashboard.html" class="nav-btn">⬅️ Back to Main Dashboard</a>
+    <a href="../dashboard.html" class="nav-btn">⬅️ Back to Main Dashboard</a>
   </div>
 
   <!-- Dashboard Container Box -->
@@ -144,6 +147,13 @@
         <span class="icon">📜</span>
         <span>Build Exam Paper</span>
         <span class="description">Filter by class or lesson and create complete printable exam layouts.</span>
+      </a>
+
+      <!-- Button Option 3: Open View Paper Page -->
+      <a href="viewpaper.html" class="menu-card view-p">
+        <span class="icon">🔍</span>
+        <span>View Paper</span>
+        <span class="description">Preview, filter, and print completed exam question sheets.</span>
       </a>
     </div>
   </div>

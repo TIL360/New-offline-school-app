@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print Exam Paper</title>
+<style>
+body { 
+font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; 
+background-color: #f4f6f9; 
+padding: 25px; 
+color: #000; 
+margin: 0;
+}
+.header-bar {
+background: white;
+padding: 15px 20px;
+border-radius: 8px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+margin-bottom: 25px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.filter-row { display: flex; gap: 10px; align-items: center; }
+.nav-btn {
+background-color: #f8fafc; color: #475569; border: 1px solid #cbd5e1;
+padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;
+text-decoration: none; font-size: 13px; display: inline-flex; align-items: center;
+}
+.btn-load { background: #bd081c; color: white; border: none; }
+.btn-print { background: #003049; color: white; border: none; }
+
+/* Word Document Simulator Styling */
+.paper-sheet {
+background: white;
+padding: 60px 70px;
+max-width: 850px;
+margin: 0 auto;
+min-height: 1100px;
+box-sizing: border-box;
+box-shadow: 0 4px 12px rgba(0,00,0,0.05);
+}
+.school-name-header {
+text-align: center;
+margin-bottom: 30px;
+}
+.school-name-header h1 {
+font-size: 28px;
+margin: 0;
+text-decoration: underline;
+font-weight: bold;
+text-transform: capitalize;
+}
+/* Metadata Box - Split Columns */
+.meta-container {
+display: flex;
+justify-content: space-between;
+font-size: 14px;
+line-height: 1.6;
+margin-bottom: 30px;
+}
+.meta-column { width: 45%; }
+/* Section Separators */
+.section-header {
+text-align: center;
+font-size: 20px;
+font-weight: bold;
+text-decoration: underline;
+margin: 35px 0 20px 0;
+text-transform: capitalize;
+}
+/* Question Structures */
+.main-q-title {
+font-weight: bold;
+font-size: 15px;
+margin-top: 15px;
+margin-bottom: 8px;
+}
+.sub-item-list {
+padding-left: 40px;
+margin: 5px 0 15px 0;
+}
+.sub-item {
+margin-bottom: 6px;
+font-size: 15px;
+list-style-type: upper-roman;
+}
+.subjective-row {
+margin-bottom: 12px;
+font-size: 15px;
+}
+/* Styling for the Configurations Modal Box */
+.config-modal {
+display: none; 
+position: fixed; 
+z-index: 9999; 
+left: 0; top: 0; 
+width: 100%; height: 100%; 
+background-color: rgba(0,0,0,0.4); 
+align-items: center; 
+justify-content: center;
+}
+.config-modal-content {
+background-color: white;
+padding: 20px;
+border-radius: 8px;
+width: 90%;
+max-width: 450px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+position: relative;
+box-sizing: border-box;
+}
+.close-modal-btn {
+position: absolute;
+right: 15px;
+top: 10px;
+color: #aaa;
+font-size: 24px;
+font-weight: bold;
+cursor: pointer;
+}
+.close-modal-btn:hover { color: #000; }
+
+.paper-question-row { position: relative; margin-bottom: 12px; }
+.action-controls { float: right; display: inline-flex; align-items: center; gap: 10px; }
+.btn-delete-q {
+background: white; color: red; border: none; padding: 2px 6px;
+border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;
+}
+.btn-delete-q:hover { background: #bd081c; }
+
+@media print {
+.config-modal { display: none !important; }
+.btn-delete-q { display: none !important; }
+body { background-color: white; padding: 0; }
+.header-bar { display: none !important; }
+.paper-sheet { box-shadow: none !important; padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+<div class="filter-row">
+<select id="examType" style="padding: 5px;"></select>
+<select id="filterClass" style="padding: 5px;"></select>
+<select id="filterSubject" style="padding: 5px;">
+<option value="English">English</option>
+<option value="Maths">Maths</option>
+<option value="Urdu">Urdu</option>
+</select>
+<button onclick="loadPaper()" class="nav-btn btn-load">🔍 Load Paper</button>
+<button onclick="openConfigModal()" class="nav-btn" style="background: #475569; color: white; border: none; margin-left: 5px;">⚙️ Configure Layout</button>
+</div>
+<div>
+<a href="qbnkdashboard.html" class="nav-btn" style="margin-right:8px;">⚙️ Dashboard</a>
+<button onclick="window.print()" class="nav-btn btn-print">🖨 Print Layout</button>
+</div>
+</div>
+
+<div class="paper-sheet">
+<div class="school-name-header">
+<h1 id="lblSchool">Happy School</h1>
+</div>
+<div class="meta-container">
+<div class="meta-column">
+<div><strong>Date:</strong> <span id="lblDate">20 Jun 2026</span></div>
+<div><strong>Paper:</strong> <span id="lblSubject">English</span></div>
+<div><strong>Total Marks:</strong> <span id="lblTotalMarks">100</span></div>
+</div>
+<div class="meta-column" style="text-align: right;">
+<div><strong>Exam:</strong> <span id="lblExam">First Term 2026</span></div>
+<div><strong>Passing Marks:</strong> <span id="lblPassingMarks">50</span></div>
+</div>
+</div>
+<div id="paperContent"></div>
+</div>
+
+<!-- Modal Window for Updating Layout Configuration -->
+<div id="layoutConfigModal" class="config-modal">
+<div class="config-modal-content">
+<span class="close-modal-btn" onclick="closeConfigModal()">&times;</span>
+<h3 style="margin-top: 0; color: #1e293b; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Configure Layout</h3>
+<div style="margin-bottom: 12px;">
+<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Total Marks</label>
+<input type="number" id="modalTotalMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+</div>
+<div style="margin-bottom: 12px;">
+<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Passing Marks</label>
+<input type="number" id="modalPassingMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+</div>
+<div style="margin-bottom: 12px;">
+<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Objective Portion Marks</label>
+<input type="number" id="modalObjectiveMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+</div>
+<div style="margin-bottom: 12px;">
+<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Subjective Portion Marks</label>
+<input type="number" id="modalSubjectiveMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+</div>
+<div style="margin-bottom: 12px;">
+<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Note for Objective Portion</label>
+<textarea id="modalNoteObjective" rows="2" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-family:inherit;"></textarea>
+</div>
+<div style="margin-bottom: 16px;">
+<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Note for Subjective Portion</label>
+<textarea id="modalNoteSubjective" rows="2" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-family:inherit;"></textarea>
+</div>
+<div style="text-align: right;">
+<button onclick="closeConfigModal()" class="nav-btn" style="margin-right:8px;">Cancel</button>
+<button onclick="saveConfigModal()" class="nav-btn" style="background:#bd081c; color:white; border:none;">💾 Save Settings</button>
+</div>
+</div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+try {
+const classes = await window.api.getClasses();
+const clsDropdown = document.getElementById('filterClass');
+clsDropdown.innerHTML = ''; 
+if (classes && classes.length > 0) {
+classes.forEach(c => {
+let opt = document.createElement('option');
+opt.value = c.id;
+opt.textContent = c.class_name || c.class || c.name || `Class ${c.id}`;
+clsDropdown.appendChild(opt);
+});
+} else {
+clsDropdown.innerHTML = '<option value="">No Classes Found</option>';
+}
+} catch (err) { console.error("Failed to load classes:", err); }
+
+try {
+const examResponse = await window.api.getDropdownData();
+const exDropdown = document.getElementById('examType');
+exDropdown.innerHTML = ''; 
+let examList = Array.isArray(examResponse) ? examResponse : (examResponse?.exams || []);
+if (examList.length > 0) {
+examList.forEach(e => {
+let opt = document.createElement('option');
+opt.value = e.exam_name || e.exam || e.exam_id; 
+opt.textContent = e.exam_name || e.exam || `Exam ${e.exam_id}`;
+exDropdown.appendChild(opt);
+});
+} else {
+exDropdown.innerHTML = '<option value="">No Exams Found</option>';
+}
+} catch (err) { console.error("Failed to load exams:", err); }
+});
+
+async function loadPaper() {
+const exam = document.getElementById('examType').value;
+const classId = document.getElementById('filterClass').value;
+const subject = document.getElementById('filterSubject').value;
+
+document.getElementById('lblExam').innerText = exam;
+document.getElementById('lblSubject').innerText = subject;
+document.getElementById('lblDate').innerText = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+
+let noteObjectiveText = '';
+let noteSubjectiveText = 'Attempt the following detailed questions precisely.';
+let displayObjectiveMarks = '0';
+let displaySubjectiveMarks = '0';
+
+try {
+const settingsResult = await window.api.getPaperSettings({ examType: exam, paperName: subject, classId: parseInt(classId) });
+if (settingsResult && settingsResult.success && settingsResult.settings) {
+document.getElementById('lblTotalMarks').innerText = settingsResult.settings.total_marks || '0';
+document.getElementById('lblPassingMarks').innerText = settingsResult.settings.passing_marks || '0';
+// ✅ NEW CORRECT CODE:
+displayObjectiveMarks = settingsResult.settings.obj_marks || '0';
+displaySubjectiveMarks = settingsResult.settings.subj_marks || '0';
+
+
+if (settingsResult.settings.note_objective) noteObjectiveText = settingsResult.settings.note_objective.trim();
+if (settingsResult.settings.note_subjective) noteSubjectiveText = settingsResult.settings.note_subjective.trim();
+}
+} catch (err) { console.error("Failed to fetch paper settings:", err); }
+
+try {
+const questions = await window.api.getPaperQuestions(exam, classId, subject);
+const content = document.getElementById('paperContent');
+content.innerHTML = '';
+
+if (!questions || questions.length === 0) {
+content.innerHTML = '<p style="text-align:center; color:#666; padding:40px;">(No questions found for this exam paper layout setup.)</p>';
+return;
+}
+
+const mcqs = questions.filter(q => q.question_type === 'MCQ');
+const blanks = questions.filter(q => q.question_type === 'FillBlank');
+const shorts = questions.filter(q => q.question_type === 'Short');
+const truefalses = questions.filter(q => q.question_type === 'TrueFalse');
+const longs = questions.filter(q => q.question_type === 'Long');
+
+let mainQuestionCounter = 1;
+
+// --- OBJECTIVE PORTION LAYOUT RENDER ---
+if (mcqs.length > 0 || blanks.length > 0 || shorts.length > 0 || truefalses.length > 0) {
+let objHeader = document.createElement('div');
+objHeader.className = 'section-header';
+objHeader.innerHTML = `OBJECTIVE <span style="float: right; font-weight: normal; font-size: 14px;">(Total Marks: ${displayObjectiveMarks})</span>`;
+content.appendChild(objHeader);
+
+if (noteObjectiveText !== '') {
+let objNoteDiv = document.createElement('div');
+objNoteDiv.style.margin = '5px 0 15px 0';
+objNoteDiv.style.fontSize = '14px';
+objNoteDiv.innerHTML = `<strong>Note:</strong> ${noteObjectiveText}`;
+content.appendChild(objNoteDiv);
+}
+
+if (mcqs.length > 0) {
+let title = document.createElement('div');
+title.className = 'main-q-title';
+title.innerText = `Q.${mainQuestionCounter++}. MCQs`;
+content.appendChild(title);
+let ol = document.createElement('ol');
+ol.className = 'sub-item-list';
+mcqs.forEach(q => {
+let li = document.createElement('li');
+li.className = 'sub-item paper-question-row';
+li.innerHTML = `<div class="action-controls"> <span style="font-size: 13px; font-weight: bold; color: #475569;">(${q.marks_assigned || 1} Mark)</span> <button class="btn-delete-q" onclick="deleteQuestion(${q.paper_question_id})">Del</button> </div> <div>${q.question_text}</div> <div style="word-spacing: 15px; font-size:13px; color:#444; margin-top: 4px;">A) ${q.opt1 || ''} &nbsp;&nbsp; B) ${q.opt2 || ''} &nbsp;&nbsp; C) ${q.opt3 || ''} &nbsp;&nbsp; D) ${q.opt4 || ''}</div>`;
+ol.appendChild(li);
+});
+content.appendChild(ol);
+}
+
+if (truefalses.length > 0) {
+let title = document.createElement('div');
+title.className = 'main-q-title';
+title.innerText = `Q.${mainQuestionCounter++}. True or False`;
+content.appendChild(title);
+let ol = document.createElement('ol');
+ol.className = 'sub-item-list';
+truefalses.forEach(q => {
+let li = document.createElement('li');
+li.className = 'sub-item paper-question-row';
+li.innerHTML = `<div class="action-controls"> <span style="font-size: 13px; font-weight: bold; color: #475569;">(${q.marks_assigned || 1} Mark)</span> <button class="btn-delete-q" onclick="deleteQuestion(${q.paper_question_id})">❌ Del</button> </div> <div>${q.question_text} <span style="font-weight: 500; margin-left: 10px; color: #475569;">( True / False )</span></div>`;
+ol.appendChild(li);
+});
+content.appendChild(ol);
+}
+
+if (blanks.length > 0) {
+let title = document.createElement('div');
+title.className = 'main-q-title';
+title.innerText = `Q.${mainQuestionCounter++}. Fill in the blanks`;
+content.appendChild(title);
+let ol = document.createElement('ol');
+ol.className = 'sub-item-list';
+blanks.forEach(q => {
+let li = document.createElement('li');
+li.className = 'sub-item paper-question-row';
+li.innerHTML = `<div class="action-controls"> <span style="font-size: 13px; font-weight: bold; color: #475569;">(${q.marks_assigned || 1} Mark)</span> <button class="btn-delete-q" onclick="deleteQuestion(${q.paper_question_id})">❌ Del</button> </div> <div>${q.question_text}</div>`;
+ol.appendChild(li);
+});
+content.appendChild(ol);
+}
+
+if (shorts.length > 0) {
+let title = document.createElement('div');
+title.className = 'main-q-title';
+title.innerText = `Q.${mainQuestionCounter++}. Short Questions`;
+content.appendChild(title);
+let ol = document.createElement('ol');
+ol.className = 'sub-item-list';
+shorts.forEach(q => {
+let li = document.createElement('li');
+li.className = 'sub-item paper-question-row';
+li.innerHTML = `<div class="action-controls"> <span style="font-size: 13px; font-weight: bold; color: #475569;">(${q.marks_assigned || 2} Marks)</span> <button class="btn-delete-q" onclick="deleteQuestion(${q.paper_question_id})">❌ Del</button> </div> <div>${q.question_text}</div>`;
+ol.appendChild(li);
+});
+content.appendChild(ol);
+}
+}
+
+// --- SUBJECTIVE PORTION LAYOUT RENDER ---
+if (longs.length > 0) {
+let subHeader = document.createElement('div');
+subHeader.className = 'section-header';
+subHeader.innerHTML = `SUBJECTIVE <span style="float: right; font-weight: normal; font-size: 14px;">(Total Marks: ${displaySubjectiveMarks})</span>`;
+content.appendChild(subHeader);
+
+let subNoteDiv = document.createElement('div');
+subNoteDiv.style.margin = '10px 0 20px 0';
+subNoteDiv.style.fontSize = '14px';
+subNoteDiv.innerHTML = `<strong>Note:</strong> ${noteSubjectiveText}`;
+content.appendChild(subNoteDiv);
+
+longs.forEach(q => {
+let row = document.createElement('div');
+row.className = 'subjective-row paper-question-row';
+row.style.overflow = 'hidden';
+row.innerHTML = `<div class="action-controls"> <span style="font-size: 13px; font-weight: bold; color: #000;">(${q.marks_assigned || 10} Marks)</span> <button class="btn-delete-q" onclick="deleteQuestion(${q.paper_question_id})">❌ Del</button> </div> <div><strong>Q. ${mainQuestionCounter++}.</strong> ${q.question_text}</div>`;
+content.appendChild(row);
+});
+}
+} catch (renderError) { 
+console.error("UI Rendering crashed inside loadPaper:", renderError); 
+}
+}
+
+async function openConfigModal() {
+  const examType = document.getElementById('examType').value;
+  const classId = document.getElementById('filterClass').value;
+  const paperName = document.getElementById('filterSubject').value;
+
+  if (!examType || !classId || !paperName) {
+    alert("Please select an Exam, Class, and Subject first!");
+    return;
+  }
+
+  try {
+    // Send both naming conventions to be completely safe
+    const result = await window.api.getPaperSettings({ 
+      examType: examType, exam_type: examType,
+      paperName: paperName, paper_name: paperName,
+      classId: parseInt(classId), class_id: parseInt(classId)
+    });
+    
+    const settings = result?.settings || result;
+
+    if (settings) {
+      document.getElementById('modalTotalMarks').value = settings.total_marks ?? '';
+      document.getElementById('modalPassingMarks').value = settings.passing_marks ?? '';
+      document.getElementById('modalObjectiveMarks').value = settings.obj_marks ?? '';
+      document.getElementById('modalSubjectiveMarks').value = settings.subj_marks ?? '';
+      document.getElementById('modalNoteObjective').value = settings.note_objective ?? '';
+      document.getElementById('modalNoteSubjective').value = settings.note_subjective ?? '';
+    } else {
+      document.getElementById('modalTotalMarks').value = '';
+      document.getElementById('modalPassingMarks').value = '';
+      document.getElementById('modalObjectiveMarks').value = '';
+      document.getElementById('modalSubjectiveMarks').value = '';
+      document.getElementById('modalNoteObjective').value = '';
+      document.getElementById('modalNoteSubjective').value = '';
+    }
+    document.getElementById('layoutConfigModal').style.display = 'flex';
+  } catch (err) {
+    console.error("Error loading config:", err);
+  }
+}
+
+async function saveConfigModal() {
+  const examType = document.getElementById('examType').value;
+  const classId = document.getElementById('filterClass').value;
+  const paperName = document.getElementById('filterSubject').value;
+  
+  const totalMarks = parseFloat(document.getElementById('modalTotalMarks').value) || 0;
+  const passingMarks = parseFloat(document.getElementById('modalPassingMarks').value) || 0;
+  const objectiveMarks = parseFloat(document.getElementById('modalObjectiveMarks').value) || 0;
+  const subjectiveMarks = parseFloat(document.getElementById('modalSubjectiveMarks').value) || 0;
+  const noteObjective = document.getElementById('modalNoteObjective').value.trim();
+  const noteSubjective = document.getElementById('modalNoteSubjective').value.trim();
+
+  try {
+    // Collect server response
+    const response = await window.api.savePaperSettingsOnly({
+      examType,
+      paperName,
+      classId,
+      totalMarks,
+      passingMarks,
+      objectiveMarks,
+      subjectiveMarks,
+      noteObjective,
+      noteSubjective
+    });
+
+    // ✅ Enforce strict check on server return value state
+    if (response && response.success) {
+      alert("Layout configuration saved successfully!");
+      closeConfigModal();
+      loadPaper(); // Trigger UI recalculations automatically
+    } else {
+      alert("🚨 Database Error: " + (response.error || "The changes were rejected by SQLite rules. Check your terminal."));
+    }
+  } catch (err) {
+    console.error("IPC save breakdown link:", err);
+    alert("Failed to connect to the backend system: " + err.message);
+  }
+}
+
+
+function closeConfigModal() {
+document.getElementById('layoutConfigModal').style.display = 'none';
+}
+
+
+
+
+async function deleteQuestion(id) {
+if (!id || id === "undefined") {
+alert("Error: The question row ID is missing or invalid.");
+return;
+}
+if (!confirm("Are you sure you want to remove this question from the paper layout?")) {
+return;
+}
+try {
+const result = await window.api.removeQuestionFromPaper(id);
+if (result && result.success) {
+alert("Question removed successfully!");
+loadPaper();
+} else {
+alert("Could not remove question.");
+}
+} catch (err) { 
+console.error("Failed to delete question:", err); 
+}
+}
+</script>
+</body>
+</html>

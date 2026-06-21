@@ -15,7 +15,7 @@
     "build": "electron-builder",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
-   "build": {
+  "build": {
     "appId": "com.raja.pos",
     "asar": true,
     "asarUnpack": [
@@ -30,7 +30,8 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "electron": "^40.8.0",

@@ -166,9 +166,74 @@
             <option value="FillBlank">Fill in the Blank</option>
             <option value="Short">Short Question</option>
             <option value="Long">Long Question</option>
+            <option value="TrueFalse">True False</option>
           </select>
         </div>
       </div>
+
+    <div class="form-group" style="margin-top: 20px; padding: 15px; border: 1px dashed #cbd5e1; background: #fff; border-radius: 8px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <label style="color: #003049; font-weight: bold; margin: 0;">🚀 Bulk Upload Questions from Excel</label>
+    <!-- Toggle Instructions Button -->
+    <button type="button" id="btnToggleGuide" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 600;">
+      ℹ️ Show Excel Formatting Rules
+    </button>
+  </div>
+
+  <!-- Hidden Guidelines Card Panel -->
+  <!-- Visual Excel Style Guidelines Card Panel -->
+<div id="uploadGuidelinesPanel" style="display: none; background: #fff; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-family: 'Segoe UI', Arial, sans-serif; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+  <p style="margin-top: 0; font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 10px;">📋 Excel Template Example Row Layout:</p>
+  
+  <div style="overflow-x: auto; border: 1px solid #bbb; border-radius: 4px;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; text-align: left;">
+      <!-- Row Number Indicator Column + Header Row Columns -->
+      <thead>
+        <tr style="background-color: #e6e6e6; border-bottom: 1px solid #bbb; font-weight: normal; color: #333;">
+          <th style="width: 30px; background-color: #d9d9d9; border-right: 1px solid #bbb; padding: 6px; text-align: center;"></th>
+          <th style="border-right: 1px solid #bbb; padding: 6px 10px; font-weight: 600;">A: question_text</th>
+          <th style="border-right: 1px solid #bbb; padding: 6px 10px; font-weight: 600;">B: question_type</th>
+          <th style="border-right: 1px solid #bbb; padding: 6px 10px; font-weight: 600;">C: opt1</th>
+          <th style="border-right: 1px solid #bbb; padding: 6px 10px; font-weight: 600;">D: opt2</th>
+          <th style="border-right: 1px solid #bbb; padding: 6px 10px; font-weight: 600;">E: opt3</th>
+          <th style="border-right: 1px solid #bbb; padding: 6px 10px; font-weight: 600;">F: opt4</th>
+          <th style="padding: 6px 10px; font-weight: 600;">G: correct_answer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Row 1: The real column variable headings -->
+        <tr style="background-color: #f3f3f3; border-bottom: 1px solid #ddd; color: #000; font-weight: bold; font-family: Consolas, monospace;">
+          <td style="background-color: #e6e6e6; border-right: 1px solid #bbb; padding: 6px; text-align: center; color: #666; font-family: sans-serif; font-weight: normal;">1</td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; background: #e2f0d9;">question_text</td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; background: #e2f0d9;">question_type</td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; background: #fff2cc;">opt1</td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; background: #fff2cc;">opt2</td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; background: #fff2cc;">opt3</td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; background: #fff2cc;">opt4</td>
+          <td style="padding: 8px 10px; background: #fce4d6;">correct_answer</td>
+        </tr>
+        <!-- Row 2: Description & rules notes for each item -->
+        <tr style="color: #475569; line-height: 1.4; vertical-align: top;">
+          <td style="background-color: #e6e6e6; border-right: 1px solid #bbb; padding: 6px; text-align: center; color: #666;">2</td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; font-size: 11px;">The written text body content of your question items.</td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; font-size: 11px;">Must be exact:<br>• <strong>MCQ</strong><br>• <strong>Short</strong><br>• <strong>Long</strong><br>• <strong>FillBlank</strong></td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; font-size: 11px; color: #64748b;">Choice Option 1.<br><i>(Leave blank if not an MCQ row)</i></td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; font-size: 11px; color: #64748b;">Choice Option 2.<br><i>(Leave blank if not an MCQ row)</i></td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; font-size: 11px; color: #64748b;">Choice Option 3.<br><i>(Leave blank if not an MCQ row)</i></td>
+          <td style="border-right: 1px solid #ddd; padding: 8px 10px; font-size: 11px; color: #64748b;">Choice Option 4.<br><i>(Leave blank if not an MCQ row)</i></td>
+          <td style="padding: 8px 10px; font-size: 11px;">Exact correct option text string matching answer values.<br><i>(Leave blank for Short or Long)</i></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin: 8px 0 0 0; font-size: 11px; color: #b91c1c; font-weight: 600;">⚠️ Notice: Row 1 headers must match the spelling text exactly using all lowercase characters.</p>
+</div>
+
+
+  <input type="file" id="excelFileInput" accept=".xlsx" style="padding: 5px;">
+  <button type="button" id="btnUploadExcel" class="btn-save" style="background-color: #217346; margin-top: 8px;">📊 Parse & Upload Sheet</button>
+</div>
+
 
       <!-- Bottom Side-by-Side Split Workspace Layout -->
       <div class="split-row">
@@ -273,6 +338,65 @@
       document.getElementById('opt4').value = '';
       document.getElementById('correctAnswer').value = '';
     });
+
+    //upload questions
+
+    document.getElementById('btnUploadExcel').addEventListener('click', async () => {
+  const fileInput = document.getElementById('excelFileInput');
+  
+  if (fileInput.files.length === 0) {
+    alert('Please select an Excel .xlsx file first!');
+    return;
+  }
+
+  // Fetch the configurations already selected in your boxes
+  const classId = parseInt(document.getElementById('classId').value);
+  const subject = document.getElementById('subject').value;
+  const lessonNo = parseInt(document.getElementById('lessonNo').value);
+
+  if (!classId || !subject || !lessonNo) {
+    alert('Please pick a Class, Subject, and Lesson Number in the boxes first!');
+    return;
+  }
+
+  const selectedFile = fileInput.files[0];
+  
+  // Use Electron's native tool utility function to safely grab the real system path
+  const fullFilePath = window.api.getFilePath(selectedFile);
+
+  // Send request to main backend process
+  const response = await window.api.uploadExcelQuestions({
+    classId,
+    subject,
+    lessonNo,
+    filePath: fullFilePath
+  });
+
+  if (response.success) {
+    alert(`Success! Loaded ${response.count} questions into the database.`);
+    fileInput.value = ''; // Clean field box
+  } else {
+    alert(`Failed to upload: ${response.error}`);
+  }
+});
+//instrucitons
+// Show and Hide instructions panel engine toggle
+document.getElementById('btnToggleGuide').addEventListener('click', function() {
+  const panel = document.getElementById('uploadGuidelinesPanel');
+  
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    this.innerText = '❌ Hide Formatting Rules';
+    this.style.background = '#fee2e2';
+    this.style.color = '#991b1b';
+  } else {
+    panel.style.display = 'none';
+    this.innerText = 'ℹ️ Show Excel Formatting Rules';
+    this.style.background = '#f1f5f9';
+    this.style.color = '#475569';
+  }
+});
+
   </script>
 </body>
 </html>

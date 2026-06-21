@@ -4,7 +4,7 @@ const { app, BrowserWindow, globalShortcut, ipcMain, dialog, protocol, shell, Me
 const path = require('path');
 const fs = require('fs');
 const dbLogic = require('./database.js');
-
+const XLSX = require('xlsx');
 // 1. PATH SETUP
 const userDataPath = app.getPath('userData');
 const imagesDir = path.join(userDataPath, 'images');
@@ -27,13 +27,13 @@ const EXPIRY_DATE = new Date(2026, 6, 30); // May 31, 2026
 // 5. DATABASE IMPORTS
 const { 
     db, 
-    checkUser, changeUserPassword,
-    addUser, saveStudentAttendance,
+    checkUser, changeUserPassword,uploadBulkQuestions,
+    addUser, saveStudentAttendance,getPaperSettings,
     getStudentAttendanceByClass,getStudentGridReport,
     getStaffGridReport,addQuestion,getQuestions,
     saveStaffAttendance,addQuestionToPaper,getPaperQuestions,
-    getStaffAttendanceByDate,
-    deleteStudent,
+    getStaffAttendanceByDate,savePaperSettingsOnly,
+    deleteStudent,removeQuestionFromPaper,
     deleteFeeRecordsByStudent, 
     deleteResultsByStudent, getStudentByReg
 } = require('./database.js');
@@ -988,25 +988,144 @@ ipcMain.on('open-external-link', (event, url) => {
 
 
 //q bank
-// Question Bank Handlers
+// --- QUESTION BANK & EXAM PAPER BUILDER HANDLERS ---
+
+// 1. Save a new question to the pool
 ipcMain.handle('add-question', async (event, questionData) => {
-  return addQuestion(questionData);
+    try {
+        // Calls the imported database function
+        const result = await addQuestion(questionData);
+        return { success: true, result };
+    } catch (err) {
+        console.error("Database Error saving question:", err);
+        return { success: false, error: err.message };
+    }
 });
 
-ipcMain.handle('get-questions', async (event, { classId, subject, lessonNo }) => {
-  return getQuestions(classId, subject, lessonNo);
+// 2. Fetch filtered questions for the pool layout
+ipcMain.handle('get-questions', async (event, classId, subject, lessonNo) => {
+    try {
+        // Calls the imported database function with parameters
+        return await getQuestions(classId, subject, lessonNo);
+    } catch (err) {
+        console.error("Database Error fetching questions:", err);
+        return [];
+    }
+});
+
+// Add this handler inside main.js
+ipcMain.handle('add-question-to-paper', async (event, data) => {
+  try {
+    return addQuestionToPaper(data);
+  } catch (err) {
+    console.error("Database Error (add-question-to-paper):", err);
+    return { success: false, error: err.message };
+  }
 });
 
 
 
-// Paper Generation Handlers
-ipcMain.handle('add-question-to-paper', async (event, { examType, paperName, classId, questionId, marks }) => {
-  return dbLogic.addQuestionToPaper(examType, paperName, classId, questionId, marks);
+
+// Fetch all saved questions belonging to a specific exam paper
+ipcMain.handle('get-paper-questions', async (event, examType, classId, paperName) => {
+  try {
+    return getPaperQuestions(examType, classId, paperName); // Added return here!
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
 });
 
-ipcMain.handle('get-paper-questions', async (event, { examType, paperName, classId }) => {
-  return dbLogic.getPaperQuestions(examType, paperName, classId);
+
+// Add this handler inside Main.js
+ipcMain.handle('upload-excel-questions', async (event, { classId, subject, lessonNo, filePath }) => {
+  try {
+    const workbook = XLSX.readFile(filePath);
+    const sheetName = workbook.SheetNames[0]; // Read the very first sheet
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // 1. Get raw rows from Excel
+    const rawData = XLSX.utils.sheet_to_json(worksheet);
+    
+    // 2. Process and filter rows to make sure they aren't empty
+    const sanitizedQuestions = [];
+    
+    for (let row of rawData) {
+      // Create a clean object with lowercase, trimmed header keys
+      const cleanRow = {};
+      Object.keys(row).forEach(key => {
+        const cleanKey = key.trim().toLowerCase();
+        cleanRow[cleanKey] = row[key];
+      });
+
+      // Skip row completely if it doesn't have a question body text
+      if (!cleanRow.question_text || String(cleanRow.question_text).trim() === "") {
+        continue; 
+      }
+
+      // Add to our safe list
+      sanitizedQuestions.push({
+        question_text: String(cleanRow.question_text).trim(),
+        question_type: cleanRow.question_type ? String(cleanRow.question_type).trim() : 'MCQ',
+        opt1: cleanRow.opt1 ? String(cleanRow.opt1).trim() : null,
+        opt2: cleanRow.opt2 ? String(cleanRow.opt2).trim() : null,
+        opt3: cleanRow.opt3 ? String(cleanRow.opt3).trim() : null,
+        opt4: cleanRow.opt4 ? String(cleanRow.opt4).trim() : null,
+        correct_answer: cleanRow.correct_answer ? String(cleanRow.correct_answer).trim() : null
+      });
+    }
+
+    // 3. If no valid rows found, throw a clear alert error
+    if (sanitizedQuestions.length === 0) {
+      throw new Error("No data found! Check if your first row has correct headers like 'question_text'.");
+    }
+    
+    // 4. Import clean rows utilizing database engine transaction
+    const { uploadBulkQuestions } = require('./database.js');
+    const totalInserted = uploadBulkQuestions(classId, subject, lessonNo, sanitizedQuestions);
+    
+    return { success: true, count: totalInserted };
+  } catch (error) {
+    console.error("Excel Upload Error:", error);
+    return { success: false, error: error.message };
+  }
 });
+// Add these inside your IPC HANDLERS section in main.js
+ipcMain.handle('get-paper-settings', async (event, data) => {
+  try {
+    const { getPaperSettings } = require('./database.js');
+    return getPaperSettings(data); // Pass the raw object to database.js
+  } catch (err) {
+    console.error("IPC Error (get-paper-settings):", err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('save-paper-settings-only', async (event, data) => {
+  try {
+    const dbModule = require('./database.js');
+    // Force it to use the exact function name we just updated
+    return dbModule.savePaperSettingsOnly(data); 
+  } catch (err) {
+    console.error("IPC Error in save-paper-settings-only:", err);
+    return { success: false, error: err.message };
+  }
+});
+
+
+// IPC Handler to listen for question deletion requests from the frontend window
+ipcMain.handle('remove-question-from-paper', async (event, id) => {
+  try {
+    console.log(id);
+    return removeQuestionFromPaper(id);
+    
+  } catch (err) {
+    console.error("IPC Main Error (remove-question-from-paper):", err);
+    return { success: false, error: err.message };
+  }
+});
+
+
 
 //q bank ends
 

@@ -2,14 +2,15 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const { app } = require('electron');
 const fs = require('fs');
+const { error } = require('console');
 
 
 const userDataPath = app.getPath('userData');
 //this line would create db insie appdata
-const dbPath = path.join(userDataPath, 'school.db');
+// const dbPath = path.join(userDataPath, 'school.db');
 
 // this would create db file inside the root area of the app
-// const dbPath = path.join(__dirname, 'school.db');
+const dbPath = path.join(__dirname, 'school.db');
 
 if (!fs.existsSync(userDataPath)) {
     fs.mkdirSync(userDataPath, { recursive: true });
@@ -83,6 +84,22 @@ db.exec(`CREATE TABLE IF NOT EXISTS staff_attendance (
     FOREIGN KEY (staff_id) REFERENCES staff_tbl(id) ON DELETE CASCADE,
     UNIQUE(staff_id, date)
 )`);
+// 1. Run this at the top of database.js setup to ensure the table exists
+// Ensure the new exam configuration settings table exists
+db.exec(`
+  CREATE TABLE IF NOT EXISTS exam_papers (
+    exam_type TEXT,
+    paper_name TEXT,
+    class_id INTEGER,
+    total_marks REAL,
+    passing_marks REAL,
+    note_objective TEXT,
+    note_subjective TEXT,
+    obj_marks REAL,
+    subj_marks REAL,
+    PRIMARY KEY (exam_type, paper_name, class_id)
+  );
+`);
 
 //q bank
 db.exec(`CREATE TABLE IF NOT EXISTS question_bank (
@@ -90,7 +107,7 @@ id INTEGER PRIMARY KEY AUTOINCREMENT,
 class_id INTEGER,
 subject TEXT,
 lesson_no INTEGER, -- New column added here
-question_type TEXT CHECK(question_type IN ('MCQ', 'Short', 'Long', 'FillBlank')),
+question_type TEXT CHECK(question_type IN ('MCQ', 'Short', 'Long', 'FillBlank', 'TrueFalse')),
 question_text TEXT,
 opt1 TEXT, 
 opt2 TEXT, 
@@ -983,22 +1000,55 @@ const getStaffGridReport = (yearMonth) => {
 
     return { staff, attendance };
 };
-// Add a question directly to a paper
-const addQuestionToPaper = (examType, paperName, classId, questionId, marks) => {
-  return db.prepare(`
-    INSERT INTO paper_questions (exam_type, paper_name, class_id, question_id, marks_assigned)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(examType, paperName, classId, questionId, marks);
-};
+function getPaperQuestions(examType, classId, paperName) {
+  try {
+    const sql = `
+      SELECT 
+        pq.id AS paper_question_id,
+        pq.marks_assigned,
+        qb.id AS question_id,
+        qb.question_type,
+        qb.question_text,
+        qb.lesson_no,
+        qb.opt1, qb.opt2, qb.opt3, qb.opt4,
+        qb.correct_answer
+      FROM paper_questions pq
+      JOIN question_bank qb ON pq.question_id = qb.id
+      WHERE pq.exam_type = ? 
+        AND pq.class_id = ? 
+        AND pq.paper_name = ?
+    `;
 
-const getPaperQuestions = (examType, paperName, classId) => {
-  return db.prepare(`
-    SELECT pq.marks_assigned, q.question_type, q.question_text, q.opt1, q.opt2, q.opt3, q.opt4, q.correct_answer
-    FROM paper_questions pq
-    JOIN question_bank q ON pq.question_id = q.id
-    WHERE pq.exam_type = ? AND pq.paper_name = ? AND pq.class_id = ?
-  `).all(examType, paperName, classId);
-};
+    // Execute query and fetch all matching rows
+    const records = db.prepare(sql).all(examType, classId, paperName);
+    console.log(`[Database] Retrieved ${records.length} questions for ${examType} (${paperName})`);
+    return records;
+
+  } catch (error) {
+    console.error("Database Error in getPaperQuestions:", error);
+    return [];
+  }
+}
+
+// FIX B: Changed table target to 'paper_questions' and aligned parameters
+function removeQuestionFromPaper(id) {
+  try {
+    // FIXED: Using paper_name to match your schema schema columns exactly!
+    const sql = `DELETE FROM paper_questions WHERE id = ? `;
+    const stmt = db.prepare(sql);
+    const result = stmt.run(id);
+    
+        
+    console.log(`[DB Debug] Tried deleting ID ${id}. Rows affected: ${result.changes}`);
+    return {success: result.changes > 0} ;
+  } catch (err) {
+    console.error("Database error in removeQuestionFromPaper:", err);
+    throw err;
+  }
+}
+
+
+
 
 // Add a new question to the pool
 function addQuestion(q) {
@@ -1017,6 +1067,161 @@ function getQuestions(classId, subject, lessonNo) {
   }
 }
 
+// Add this helper inside Database.js
+const uploadBulkQuestions = (classId, subject, lessonNo, questionsArray) => {
+  // Use a transaction for fast processing
+  const insertStmt = db.prepare(`
+    INSERT INTO question_bank (class_id, subject, lesson_no, question_type, question_text, opt1, opt2, opt3, opt4, correct_answer)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const transaction = db.transaction((questions) => {
+    let count = 0;
+    for (const q of questions) {
+      insertStmt.run(
+        classId,
+        subject,
+        lessonNo,
+        q.question_type || 'MCQ',
+        q.question_text,
+        q.opt1 || null,
+        q.opt2 || null,
+        q.opt3 || null,
+        q.opt4 || null,
+        q.correct_answer || null
+      );
+      count++;
+    }
+    return count;
+  });
+
+  return transaction(questionsArray);
+};
+
+function addQuestionToPaper(data) {
+  const { examType, classId, paperName, questionId, marks } = data;
+
+  try {
+    // 1. Check if this question is already added to the paper
+    const checkSql = `
+      SELECT id FROM paper_questions 
+      WHERE exam_type = ? 
+        AND class_id = ? 
+        AND paper_name = ? 
+        AND question_id = ?
+    `;
+    const existingRecord = db.prepare(checkSql).get(examType, classId, paperName, questionId);
+
+    if (existingRecord) {
+      // 2. Update the existing record using marks_assigned
+      const updateSql = `
+        UPDATE paper_questions 
+        SET marks_assigned = ? 
+        WHERE id = ?
+      `;
+      db.prepare(updateSql).run(marks, existingRecord.id);
+      return { success: true, message: "Question marks updated successfully!" };
+    } else {
+      // 3. Insert a new record using marks_assigned
+      const insertSql = `
+        INSERT INTO paper_questions (exam_type, class_id, paper_name, question_id, marks_assigned)
+        VALUES (?, ?, ?, ?, ?)
+      `;
+      db.prepare(insertSql).run(examType, classId, paperName, questionId, marks);
+      return { success: true, message: "Question added to exam paper successfully!" };
+    }
+
+  } catch (error) {
+    console.error("Database Engine Failure in addQuestionToPaper:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+
+
+function getPaperSettings(data) {
+  if (!data) return { success: false, error: "No criteria received" };
+  
+  const examType = data.examType || data.exam_type;
+  const paperName = data.paperName || data.paper_name;
+  // Force classId to be a clean, strict integer
+  const classId = parseInt(data.classId || data.class_id, 10);
+
+  try {
+    // Using CAST ensures SQLite matches the column data type perfectly
+    const sql = `
+      SELECT total_marks, passing_marks, obj_marks, subj_marks, note_objective, note_subjective 
+      FROM exam_papers 
+      WHERE exam_type = ? AND paper_name = ? AND CAST(class_id AS INTEGER) = ?
+    `;
+    const settings = db.prepare(sql).get(examType, paperName, classId);
+    return { success: true, settings: settings || null };
+  } catch (error) {
+    console.error("Database error in getPaperSettings:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Ensure this exact name is used on the function definition line
+function savePaperSettingsOnly(data) {
+  if (!data) return { success: false, error: "No content data received" };
+
+  const examType = data.examType || data.exam_type;
+  const paperName = data.paperName || data.paper_name;
+  
+  // Clean integer format conversion (fixes 1.0 down to a clean 1)
+  const classId = parseInt(data.classId || data.class_id, 10); 
+  
+  const totalMarks = data.totalMarks || data.total_marks || 0;
+  const passingMarks = data.passingMarks || data.passing_marks || 0;
+  const objectiveMarks = data.objectiveMarks || data.obj_marks || 0;
+  const subjectiveMarks = data.subjectiveMarks || data.subj_marks || 0;
+  const noteObjective = data.noteObjective || data.note_objective || '';
+  const noteSubjective = data.noteSubjective || data.note_subjective || '';
+
+  try {
+    // 1. Check if the row already exists using identifying columns
+    const checkSql = `
+      SELECT exam_type FROM exam_papers 
+      WHERE exam_type = ? AND paper_name = ? AND CAST(class_id AS INTEGER) = ?
+    `;
+    const existing = db.prepare(checkSql).get(examType, paperName, classId);
+
+    if (existing) {
+      // 2. If it exists, UPDATE using those same columns in the WHERE clause
+      const updateSql = `
+        UPDATE exam_papers 
+        SET total_marks = ?, passing_marks = ?, obj_marks = ?, subj_marks = ?, note_objective = ?, note_subjective = ?
+        WHERE exam_type = ? AND paper_name = ? AND CAST(class_id AS INTEGER) = ?
+      `;
+      db.prepare(updateSql).run(
+        totalMarks, passingMarks, objectiveMarks, subjectiveMarks, noteObjective, noteSubjective,
+        examType, paperName, classId
+      );
+      console.log(`[Database] Settings updated successfully.`);
+    } else {
+      // 3. Otherwise, perform a clean INSERT
+      const insertSql = `
+        INSERT INTO exam_papers (exam_type, paper_name, class_id, total_marks, passing_marks, obj_marks, subj_marks, note_objective, note_subjective)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      db.prepare(insertSql).run(examType, paperName, classId, totalMarks, passingMarks, objectiveMarks, subjectiveMarks, noteObjective, noteSubjective);
+      console.log(`[Database] Settings inserted successfully.`);
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("SQL Write Failure inside savePaperSettingsOnly:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+
+
+
+
+// Function to remove a specific question link from an exam paper layout template
+
 
 module.exports = {
     db, checkUser, addUser, getAllUsers, addClass, getClasses, deleteClass, updateClass, getStudentGridReport,
@@ -1030,7 +1235,7 @@ module.exports = {
     getFeeReportByStatus, getDateWiseReport, deleteFeeRecordsByStudent, deleteResultsByStudent,
     addDateSheetPaper, getDateSheetRecords, updateDateSheetPaper, deleteDateSheetPaper, changeUserPassword,
     getStudentByReg,  saveStudentAttendance,
-    getStudentAttendanceByClass,
-    saveStaffAttendance,
-    getStaffAttendanceByDate
+    getStudentAttendanceByClass,getPaperSettings,
+    saveStaffAttendance,uploadBulkQuestions, savePaperSettingsOnly,
+    getStaffAttendanceByDate, removeQuestionFromPaper
 };

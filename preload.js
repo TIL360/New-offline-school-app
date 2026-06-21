@@ -31,12 +31,16 @@ contextBridge.exposeInMainWorld('api', {
         
 },
 
-// Question Bank and Paper Management APIs
-// Add these to the end of the object block in preload.js
-addQuestion: (questionData) => ipcRenderer.invoke('add-question', questionData),
-getQuestions: (classId, subject, lessonNo) => ipcRenderer.invoke('get-questions', { classId, subject, lessonNo }),
-addQuestionToPaper: (paperData) => ipcRenderer.invoke('add-question-to-paper', paperData),
-getPaperQuestions: (paperName, classId) => ipcRenderer.invoke('get-paper-questions', { paperName, classId }),
+addQuestion: (data) => ipcRenderer.invoke('add-question', data),
+    getQuestions: (classId, subject, lessonNo) => ipcRenderer.invoke('get-questions', classId, subject, lessonNo),
+    addQuestionToPaper: (data) => ipcRenderer.invoke('add-question-to-paper', data),
+    getPaperQuestions: (examType, classId, subject) => ipcRenderer.invoke('get-paper-questions', examType, classId, subject),
+uploadExcelQuestions: (data) => ipcRenderer.invoke('upload-excel-questions', data),
+getPaperSettings: (data) => ipcRenderer.invoke('get-paper-settings', data),
+savePaperSettingsOnly: (data) => ipcRenderer.invoke('save-paper-settings-only', data),
+// Inside contextBridge.exposeInMainWorld('api', { ... }) block:
+removeQuestionFromPaper: (id) => ipcRenderer.invoke('remove-question-from-paper', id),
+
 
 
     // Student Attendance

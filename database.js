@@ -7,10 +7,10 @@ const { error } = require('console');
 
 const userDataPath = app.getPath('userData');
 //this line would create db insie appdata
-// const dbPath = path.join(userDataPath, 'school.db');
+const dbPath = path.join(userDataPath, 'school.db');
 
 // this would create db file inside the root area of the app
-const dbPath = path.join(__dirname, 'school.db');
+// const dbPath = path.join(__dirname, 'school.db');
 
 if (!fs.existsSync(userDataPath)) {
     fs.mkdirSync(userDataPath, { recursive: true });

@@ -24,9 +24,17 @@
     "extraResources": [
       "school.db"
     ],
-    "win": {
-      "target": "dir"
-    }
+       "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ]
+       }
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",

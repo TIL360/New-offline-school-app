@@ -39,7 +39,7 @@ const {
 } = require('./database.js');
 
 let win;
-// Menu.setApplicationMenu(null); 
+Menu.setApplicationMenu(null); 
 
 function createWindow() {
     // --- OFFLINE PROTECTION & EXPIRY LOGIC (OPTION 2) ---

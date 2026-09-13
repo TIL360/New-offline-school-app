@@ -16,7 +16,17 @@
         .btn-update { background: #ff9f1c; }
         .btn-view { background: var(--success); width: 100%; margin-top: 10px; font-size: 16px; }
         .refresh-btn { background: white; border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
-        
+        /* New style rule to position the date sheet print footer */
+.datesheet-copyright {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #444;
+  border-top: 1.5px solid #333;
+  padding-top: 6px;
+  margin-top: 25px;
+}
+
         /* Management Table */
         .list-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .list-table th, .list-table td { border-bottom: 1px solid #eee; padding: 12px; text-align: left; }
@@ -109,15 +119,22 @@
         </div>
         <div id="printArea">
             <div style="text-align: center;">
-                <h2>YOUR INSTITUTE NAME</h2>
-                <p>Address || 0300-xxxxxxx || E-mail: abc@gmail.com</p>
+                <h2 id="institute-name">Loading</h2>
+                <p><span id="address">Loading</span> || EmaiL: <span id="email-address">Loading</span> || Contact: <span id="contact-number">Loading</span></p>
                 <h3 id="printExamTitle">EXAMINATION DATESHEET</h3>
             </div>
-            <table class="print-table">
-                <thead><tr id="tableHeader"><th>Date</th></tr></thead>
-                <tbody id="modalTableBody"></tbody>
-            </table>
-        </div>
+              <table class="print-table">
+    <thead><tr id="tableHeader"><th>Date</th></tr></thead>
+    <tbody id="modalTableBody"></tbody>
+  </table>
+  
+  <!-- 🌟 New two-sided signature/copyright line added cleanly right inside the print container -->
+  <div class="datesheet-copyright">
+    <span>© Techinfolab. All Rights Reserved.</span>
+    <span>Designed by: Raja Bilal || Contact: 0311-5101738</span>
+  </div>
+</div>
+
     </div>
 </div>
 
@@ -126,6 +143,23 @@ let availableClasses = [];
 let editingMode = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
+ try {
+      // 1. Invoke the IPC handler exposed in preload.js
+      const details = await window.api.getAppDetails();
+      
+      // 2. Safely populate the text values into your HTML layout elements
+      if (details) {
+        document.getElementById('institute-name').innerText = details.instituteName;
+        document.getElementById('contact-number').innerText = details.contactNumber;
+        document.getElementById('email-address').innerText  = details.email;
+        document.getElementById('address').innerText  = details.address;
+        document.getElementById('footer-text').innerText     = details.footerText;
+      }
+    } catch (error) {
+      console.error("Failed to load application metadata details:", error);
+    }
+
+
     const response = await window.api.getDropdownData();
     if (response.success) {
         availableClasses = response.classes;
@@ -134,9 +168,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('classId').innerHTML = '<option value="">Select Class</option>' + 
             response.classes.map(c => `<option value="${c.id}">${c.class_name}</option>`).join('');
     }
-    const subjects = ["Urdu", "English", "Math", "SST", "Islamiat", "Science", "Physics", "Chemistry", "Biology", "Computer", "Arts", "G.Sci"];
-    document.getElementById('subject').innerHTML = '<option value="">Select Subject</option>' + 
-        subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        const subjects = [
+            "Urdu", "English", "Math", "SST", "Islamiat", "Science", 
+            "Physics", "Chemistry", "Biology", "Computer", "Drawing", "Geography",
+            "Pak Studies", "Islamic Studies", "Tarjama Tul Quran", "General Knowledge",
+            "Functional Maths", "Islamiyat Compulsory", "Social Study", 
+            "Essential of Home Economics", "Civics", "General Science"
+        ];
+        document.getElementById('subject').innerHTML = '<option value="">Select Subject</option>' +
+            subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+
 });
 
 // LOAD RECORDS: Strictly filters by both Exam AND Class

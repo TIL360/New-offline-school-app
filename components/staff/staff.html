@@ -75,7 +75,7 @@
                     <label>Status</label>
                     <select id="staffStatus">
                         <option value="Active">Active</option>
-                        <option value="Inactive">On Leave</option>
+                        <option value="Inactive">Inactive</option>
                     </select>
                 </div>
             </div>
@@ -93,6 +93,14 @@
                     <input type="number" id="staffAllowance" placeholder="0">
                 </div>
             </div>
+            <!-- Inside your 'Add New Staff' Form Layout -->
+<div class="row">
+    <div class="col-12">
+        <label for="staffDocumentsHeld">DOCUMENTS Deposited </label>
+        <textarea id="staffDocumentsHeld" class="form-control" placeholder="e.g., Original Matric Degree, B.Ed Certificate, Contract Agreement" rows="2"></textarea>
+    </div>
+</div>
+
             <button class="btn-save" onclick="saveStaff()">Add Staff Member</button>
         </div>
 
@@ -145,25 +153,30 @@
     let editMode = false;
     let currentEditId = null;
 
-    // Load list on page start
+    // Run automatically when the window loads
     document.addEventListener('DOMContentLoaded', loadStaff);
 
+    // --- READ: Fetch staff array from backend and draw table rows ---
     async function loadStaff() {
         try {
+            // Invokes the IPC handler connected to getStaff() in database.js
             const staff = await window.api.getStaff();
             const tableBody = document.getElementById('staffTableBody');
             tableBody.innerHTML = '';
             
             staff.forEach(s => {
-                // We stringify the object so startEdit can receive the full data
+                // Safely convert the object to a string attribute so it handles spaces/quotes cleanly
                 const staffData = JSON.stringify(s).replace(/"/g, '&quot;');
                 
                 tableBody.innerHTML += `
                     <tr>
-                        <td><strong>${s.name}</strong><br><small>${s.designation}</small></td>
+                        <td><strong>${s.name}</strong><br><small class="text-muted">${s.designation}</small></td>
                         <td>${s.cnic}</td>
                         <td>${s.contact}</td>
-                        <td>Bas: ${s.salary}<br>All: ${s.allowance}</td>
+                        <td>
+                            <small>Bas: ${s.salary}</small><br>
+                            <small>All: ${s.allowance}</small>
+                        </td>
                         <td><span class="status-pill ${s.status.toLowerCase()}">${s.status}</span></td>
                         <td>
                             <button class="btn-action edit" onclick="startEdit('${staffData}')">✎ Edit</button>
@@ -171,112 +184,160 @@
                         </td>
                     </tr>`;
             });
-            document.getElementById('countText').innerText = staff.length;
+            
+            // Updates the counter label at the top right of the dashboard view
+            const countLabel = document.getElementById('countText');
+            if (countLabel) countLabel.innerText = staff.length;
+            
         } catch (error) {
-            console.error("Failed to load staff:", error);
+            console.error("Critical error rendering staff view data grid:", error);
         }
     }
 
-    // --- EDIT: Fill the form with existing data ---
+    // --- EDIT: Populates all form input elements when clicking "Edit" ---
     function startEdit(staffJson) {
         const staff = JSON.parse(staffJson);
         editMode = true;
         currentEditId = staff.id;
 
-        // Fill the inputs
-        document.getElementById('staffName').value = staff.name;
-        document.getElementById('staffCnic').value = staff.cnic;
-        document.getElementById('staffContact').value = staff.contact;
-        document.getElementById('staffRole').value = staff.designation;
-        document.getElementById('staffDoj').value = staff.doj;
-        document.getElementById('staffSalary').value = staff.salary;
-        document.getElementById('staffAllowance').value = staff.allowance;
-        document.getElementById('staffStatus').value = staff.status;
-
-        // Update UI Button
-        const btn = document.querySelector('.btn-save');
-        btn.innerText = "Update Staff Member";
-        btn.style.background = "#3498db"; // Change color to Blue for edit
+        // Populate standard input elements matching Page 1 layout names
+        document.getElementById('staffName').value = staff.name || '';
+        document.getElementById('staffCnic').value = staff.cnic || '';
+        document.getElementById('staffContact').value = staff.contact || '';
+        document.getElementById('staffRole').value = staff.designation || '';
+        document.getElementById('staffDoj').value = staff.doj || '';
+        document.getElementById('staffSalary').value = staff.salary || 0;
+        document.getElementById('staffAllowance').value = staff.allowance || 0;
+        document.getElementById('staffStatus').value = staff.status || 'Active';
         
-        // Scroll to form
+        // 🌟 Fix: Safely load documents held, checking for null values
+        const docField = document.getElementById('staffDocumentsHeld');
+        if (docField) {
+            docField.value = staff.documents_held || '';
+        }
+
+        // Alter form submission button appearance to signal update tracking
+        const btn = document.querySelector('.btn-save');
+        if (btn) {
+            btn.innerText = "Update Staff Member";
+            btn.style.backgroundColor = "#0288d1"; // Swaps to visual context action blue
+        }
+        
+        // Smooth scroll back to form layout for immediate viewing
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // --- SAVE: Handle both Insert and Update ---
+    // --- SAVE: Decides whether to send an update query or fresh record insert ---
     async function saveStaff() {
+        const docField = document.getElementById('staffDocumentsHeld');
+        
         const data = {
-            name: document.getElementById('staffName').value,
-            cnic: document.getElementById('staffCnic').value,
-            contact: document.getElementById('staffContact').value,
-            designation: document.getElementById('staffRole').value,
+            name: document.getElementById('staffName').value.trim(),
+            cnic: document.getElementById('staffCnic').value.trim(),
+            contact: document.getElementById('staffContact').value.trim(),
+            designation: document.getElementById('staffRole').value.trim(),
             doj: document.getElementById('staffDoj').value,
             salary: parseFloat(document.getElementById('staffSalary').value) || 0,
             allowance: parseFloat(document.getElementById('staffAllowance').value) || 0,
-            status: document.getElementById('staffStatus').value
+            status: document.getElementById('staffStatus').value,
+            documents_held: docField ? docField.value.trim() : ''
         };
 
+        // Basic verification sanity validation block
         if (!data.name || !data.cnic) {
-            alert("Please enter at least Name and CNIC.");
+            alert("Validation Error: Please fill in the Full Name and CNIC code parameters.");
             return;
         }
 
-        if (editMode) {
-            await window.api.updateStaff(currentEditId, data);
-            alert("Staff updated successfully!");
-        } else {
-            await window.api.addStaff(data);
-            alert("Staff added successfully!");
+        try {
+            // Inside your saveStaff() function in staff.html
+if (editMode) {
+    // Modifies existing table entry rows
+    await window.api.updateStaff(currentEditId, data);
+    alert("Staff record updated successfully!");
+} else {
+    // 🌟 CHANGE THIS ROW TO MATCH YOUR PRELOAD BRIDGING NAME
+    await window.api.addStaff(data); 
+    alert("New staff member registered successfully!");
+}
+
+            
+            clearForm();
+            await loadStaff(); // Re-render target data changes rows synchronously
+        } catch (err) {
+            console.error("Database tracking transmission crash:", err);
+            alert("Operation failed: " + err.message);
         }
-        clearForm();
-        loadStaff();
-        location.reload();
     }
 
-    // --- DELETE: Remove record ---
+    // --- DELETE: Cascading database row destruction command ---
     async function removeStaff(id) {
-        if (confirm("Are you sure you want to delete this staff record?")) {
-            await window.api.deleteStaff(id);
-            loadStaff();
+        if (confirm("Warning: Are you completely sure you want to remove this staff profile permanently?")) {
+            try {
+                await window.api.deleteStaff(id);
+                await loadStaff();
+            } catch (err) {
+                console.error("Error deleting entry:", err);
+            }
         }
     }
 
-    // --- HELPER: Clear Form and Reset Mode ---
+    // --- RESET: Clears form states completely ---
     function clearForm() {
         editMode = false;
         currentEditId = null;
         
-        // Clear all inputs
-        document.querySelectorAll('.card input').forEach(i => i.value = '');
+        // Explicitly clear each input element by ID so everything clears perfectly
+        document.getElementById('staffName').value = '';
+        document.getElementById('staffCnic').value = '';
+        document.getElementById('staffContact').value = '';
+        document.getElementById('staffRole').value = '';
+        document.getElementById('staffDoj').value = '';
+        document.getElementById('staffSalary').value = '';
+        document.getElementById('staffAllowance').value = '';
         document.getElementById('staffStatus').value = 'Active';
         
-        // Reset Button
+        // 🌟 Fix: Explicitly reset textarea element tracking values
+        const docField = document.getElementById('staffDocumentsHeld');
+        if (docField) {
+            docField.value = '';
+        }
+        
+        // Return save panel submission button state style configuration to normal green
         const btn = document.querySelector('.btn-save');
-        btn.innerText = "Add Staff Member";
-        btn.style.background = "var(--success)";
+        if (btn) {
+            btn.innerText = "Add Staff Member";
+            btn.style.backgroundColor = ""; // Clear explicit element override colors
+        }
     }
-function openSalaryModal() {
-    document.getElementById('salaryModal').style.display = 'flex';
-}
 
-function closeSalaryModal() {
-    document.getElementById('salaryModal').style.display = 'none';
-}
-
-async function processSalary() {
-    const month = document.getElementById('salMonth').value;
-    const year = document.getElementById('salYear').value;
-
-    const result = await window.api.initiateSalary(month, year);
-    
-    if (result.success) {
-        alert(`Successfully initiated salary for ${month} ${year}. ${result.count} records added.`);
-    } else {
-        alert(result.message); // This will show if record already exists
+    // --- MODAL UTILITIES: Handles your monthly salary triggers ---
+    function openSalaryModal() {
+        document.getElementById('salaryModal').style.display = 'flex';
     }
-    closeSalaryModal();
-}
-    
+
+    function closeSalaryModal() {
+        document.getElementById('salaryModal').style.display = 'none';
+    }
+
+    async function processSalary() {
+        const month = document.getElementById('salMonth').value;
+        const year = document.getElementById('salYear').value;
+
+        try {
+            const result = await window.api.initiateSalary(month, year);
+            if (result.success) {
+                alert(`Success: ${result.count} active staff monthly data slots mapped.`);
+                closeSalaryModal();
+            } else {
+                alert(result.message);
+            }
+        } catch (err) {
+            alert("Execution Error: " + err.message);
+        }
+    }
 </script>
+
 
 </body>
 </html>

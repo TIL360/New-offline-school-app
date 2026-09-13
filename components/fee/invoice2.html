@@ -3,25 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoices </title>
+    <title>Invoices 2 in 1 </title>
     <style>
         /* Base Styling */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f0f0; color: #333; }
         
         /* Landscape Page Wrapper: One wrapper per student */
-        .page-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr; /* 3 Copies side-by-side */
-            gap: 12px;
-            width: 297mm; 
-            min-height: 200mm;
-            margin: 15px auto;
-            background: white;
-            padding: 10px;
-            box-sizing: border-box;
-            page-break-after: always;
-            border: 1px solid #ccc;
-        }
+        /* Landscape Page Wrapper: One wrapper per student */
+.page-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 🌟 Changed to 2 Copies side-by-side */
+    gap: 12px;
+    width: 297mm; 
+    min-height: 200mm;
+    margin: 15px auto;
+    background: white;
+    padding: 10px;
+    box-sizing: border-box;
+    page-break-after: always;
+    border: 1px solid #ccc;
+}
+
 
         .copy-section {
             border: 1.5px dashed #555;
@@ -174,12 +176,13 @@ async function init() {
 }
 
 function renderStudentPage(data, container) {
-    const copies = ['Bank Copy', 'Office Copy', 'Student Copy'];
+    const copies = ['Office Copy', 'Student Copy'];
     const page = document.createElement('div');
     page.className = 'page-wrapper';
+    
 
     // Calculations & Data Extraction
-    const monthly = Number(data.monthly_fee) || 0;
+const monthly = Number(data.monthly_fee) || 0;
     const admission = Number(data.adm_fee) || 0;
     const exam = Number(data.exam_fee) || 0;
     const lab = Number(data.lab_fee) || 0;

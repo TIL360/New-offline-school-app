@@ -56,12 +56,17 @@ tr:hover { background: #fcfcfc; }
 <body>
 
 <div class="header">
-    <h2>Fee Records</h2>
+    <div>
+        <h2 style="margin: 0;">Fee Records</h2>
+        <!-- 🌟 Dynamic institute text line added here -->
+        <p id="displayInstituteName" style="margin: 5px 0 0 0; color: var(--primary); font-weight: bold; opacity: 0.8; font-size: 14px;">Loading...</p>
+    </div>
     <div class="btn-group">
         <button class="refresh-btn" onclick="loadFeeData()">Refresh List</button>
         <button class="refresh-btn" onclick="window.location.href='../dashboard.html'">Dashboard</button>
     </div>
 </div>
+
 
 <div class="filter-container">
     <div class="filter-group">
@@ -145,15 +150,58 @@ tr:hover { background: #fcfcfc; }
         </div>
     </div>
 </div>
+<!-- Custom Selection Modal for Print Layout Options -->
+<!-- Locate your printChoiceModal and update the buttons inside it -->
+<div id="printChoiceModal" class="modal-overlay">
+    <div class="modal-content" style="width: 320px; text-align: center;">
+        <h3 style="margin-top: 0; font-size: 16px; color: var(--primary);">Select Print Layout</h3>
+        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Choose the number of invoice prints to display per layout page:</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Option for 2 Invoices per page -->
+            <button class="btn" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 10px; justify-content: center; font-weight: bold;" 
+                    onclick="handlePrintSelection('invoice2.html')">
+                ✌️ Invoices 2 in 1
+            </button>
+            
+            <!-- Option for 3 Invoices per page -->
+            <button class="btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; padding: 10px; justify-content: center; font-weight: bold;" 
+                    onclick="handlePrintSelection('invoice.html')">
+                🤟 Normal 3 in 1
+            </button>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <button class="btn" style="background: #eee; color: #333;" onclick="closePrintChoiceModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
 
 <script>
+    let appDetails = { instituteName: "IMS Administration" };
+    async function loadApplicationDetails() {
+    try {
+        const details = await window.api.getAppDetails();
+        if (details) {
+            appDetails = details;
+            document.getElementById('displayInstituteName').innerText = details.instituteName;
+        }
+    } catch (error) {
+        console.error("Failed to load application metadata details:", error);
+    }
+}
+let printTargetIds = ''; // Stores temporary IDs currently selected for the print modal
 let currentTableData = []; 
 let currentPage = 1;
 const recordsPerPage = 30;
 // Track which field we are currently editing
 let currentEditingField = ''; 
 
-document.addEventListener('DOMContentLoaded', async () => { await populateFilters(); });
+document.addEventListener('DOMContentLoaded', async () => { 
+    await loadApplicationDetails();
+    await populateFilters(); 
+});
 
 async function populateFilters() {
     const data = await window.api.getFilterData();
@@ -222,7 +270,7 @@ function renderPage(page) {
                     <button class="btn btn-pay"  title="Collect Student Fee" onclick="collectFee(${row.id})">💰 </button>
 
 <button class="btn" style="background:#25D366; color:white;" 
-    onclick="sendWhatsAppReminder('${row.student_name}', '${row.total_fee}', '${row.arrears}', '${row.whatsapp}','${row.invoice_month}', '${row.monthly_fee}', '${row.adm_fee}', '${row.exam_fee}', '${row.misc_fee}', '${row.lab_fee}')">
+    title="Send fee notification to parents of this student on whatsapp." onclick="sendWhatsAppReminder('${row.student_name}', '${row.total_fee}', '${row.arrears}', '${row.whatsapp}','${row.invoice_month}', '${row.monthly_fee}', '${row.adm_fee}', '${row.exam_fee}', '${row.misc_fee}', '${row.lab_fee}')">
     📱
 </button>
 
@@ -317,21 +365,15 @@ function filterFeeTable() {
 }
 
 function viewInvoice(id) {
-    // Determine the correct path relative to your project root
-    const url = `invoice.html?id=${id}&mode=single`; 
-    
-    // Open in child window
-    window.open(url, '_blank', 'width=900,height=800,scrollbars=yes');
+    printTargetIds = String(id); // Store single ID string
+    document.getElementById('printChoiceModal').style.display = 'flex';
 }
-
+// Opens the choice dialog layout instead of instantly redirecting
 function viewBulkInvoices() {
     if (currentTableData.length === 0) return;
-    const ids = currentTableData.map(r => r.id).join(',');
-    const url = `invoice.html?ids=${ids}&mode=bulk`;
-    
-    window.open(url, '_blank', 'width=900,height=800');
+    printTargetIds = currentTableData.map(r => r.id).join(','); // Store batch IDs string
+    document.getElementById('printChoiceModal').style.display = 'flex';
 }
-
 
 function collectFee(id) {
     localStorage.setItem('collectFeeId', id);
@@ -374,13 +416,16 @@ function sendWhatsAppReminder(name, total_fee, arrears, phone, monthly_fee, adm_
         cleanPhone = "92" + cleanPhone.substring(1);
     }
 
-    const message = `Assalam-o-Alaikum!
-This is a reminder regarding the pending fee for your ward *${name}*.
+    // 🌟 Locate this inside your existing sendWhatsAppReminder function:
+const message = `Assalam-o-Alaikum!
+This is a reminder regarding the pending fee of *${name}*.
 ${feeBreakdown}
 -----------------------
 *Total Payable: Rs. ${finalBalance}*
+Please clear the dues at your earliest convenience. Thank you!
+Regards
+${appDetails.instituteName}`; // 🌟 Update this line to use the dynamic variable
 
-Please clear the dues at your earliest convenience. Thank you!`;
 
     const url = "https://web.whatsapp.com/send?phone=" + cleanPhone + "&text=" + encodeURIComponent(message); 
 
@@ -388,8 +433,35 @@ Please clear the dues at your earliest convenience. Thank you!`;
     window.authAPI.send('open-external-link', url);
 }
 
-
-
+function closePrintChoiceModal() {
+    document.getElementById('printChoiceModal').style.display = 'none';
+    printTargetIds = ''; // Wipe tracker cache
+}
+function executeBulkPrint(targetPageTemplate) {
+    if (currentTableData.length === 0) return;
+    
+    const ids = currentTableData.map(r => r.id).join(',');
+    const url = `${targetPageTemplate}?ids=${ids}&mode=bulk`;
+    
+    // Launch standard clean window viewport framework
+    window.open(url, '_blank', 'width=900,height=800,scrollbars=yes');
+    
+    // Automatically close the dialog overlay layout view
+    closePrintChoiceModal();
+}
+function handlePrintSelection(targetPageTemplate) {
+    if (!printTargetIds) return;
+    
+    // Determine mode based on whether single ID or multiple comma IDs exist
+    const mode = printTargetIds.includes(',') ? 'bulk' : 'single';
+    const url = `${targetPageTemplate}?ids=${printTargetIds}&mode=${mode}`;
+    
+    // Open the system print layout window container frame structure
+    window.open(url, '_blank', 'width=900,height=800,scrollbars=yes');
+    
+    // Auto collapse modal view
+    closePrintChoiceModal();
+}
 </script>
 
 </body>

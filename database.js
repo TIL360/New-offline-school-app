@@ -86,6 +86,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS staff_attendance (
 )`);
 // 1. Run this at the top of database.js setup to ensure the table exists
 // Ensure the new exam configuration settings table exists
+// Find this block in Database.js and update it:
 db.exec(`
   CREATE TABLE IF NOT EXISTS exam_papers (
     exam_type TEXT,
@@ -93,6 +94,7 @@ db.exec(`
     class_id INTEGER,
     total_marks REAL,
     passing_marks REAL,
+    exam_date TEXT DEFAULT '', /* 🌟 NEW COLUMN ADDED HERE */
     note_objective TEXT,
     note_subjective TEXT,
     obj_marks REAL,
@@ -101,20 +103,19 @@ db.exec(`
   );
 `);
 
+
 //q bank
 db.exec(`CREATE TABLE IF NOT EXISTS question_bank (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-class_id INTEGER,
-subject TEXT,
-lesson_no INTEGER, -- New column added here
-question_type TEXT CHECK(question_type IN ('MCQ', 'Short', 'Long', 'FillBlank', 'TrueFalse')),
-question_text TEXT,
-opt1 TEXT, 
-opt2 TEXT, 
-opt3 TEXT, 
-opt4 TEXT, 
-correct_answer TEXT,
-FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  class_id INTEGER,
+  subject TEXT,
+  lesson_no INTEGER,
+  question_type TEXT,
+  question_text TEXT,
+  diagram_path TEXT, -- 🆕 NEW COLUMN ADDED HERE FOR DIAGRAMS
+  opt1 TEXT, opt2 TEXT, opt3 TEXT, opt4 TEXT,
+  correct_answer TEXT,
+  FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
 )`);
 
 // Single Table for All Exam Papers
@@ -177,60 +178,57 @@ db.exec(`CREATE TABLE IF NOT EXISTS datesheet (
     exam_year TEXT,
     exam_id INTEGER,
     class_id INTEGER,
+    sec TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
     FOREIGN KEY (exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE
 )`);
 
 
-db.exec(`CREATE TABLE IF NOT EXISTS result (
+// FIND your table creation string for the "result" table and update it to include the new columns:
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS result (
     result_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    exam_id INTEGER NOT NULL,
-    student_id INTEGER NOT NULL,
+    exam_id INTEGER,
+    student_id INTEGER,
     class TEXT,
-    sec TEXT,
-    remarks TEXT,
     
-    -- Obtained Marks (12 Subjects)
-    urdu_obt REAL DEFAULT 0,
-    eng_obt REAL DEFAULT 0,
-    math_obt REAL DEFAULT 0,
-    sst_obt REAL DEFAULT 0,
-    islamiat_obt REAL DEFAULT 0,
-    science_obt REAL DEFAULT 0,
-    physics_obt REAL DEFAULT 0,
-    chemistry_obt REAL DEFAULT 0,
-    biology_obt REAL DEFAULT 0,
-    computer_obt REAL DEFAULT 0,
-    drawing_obt REAL DEFAULT 0,
-    geography_obt REAL DEFAULT 0,
+    -- Existing Subjects --
+    urdu_setmarks INTEGER DEFAULT 100, urdu_obt REAL DEFAULT 0,
+    eng_setmarks INTEGER DEFAULT 100, eng_obt REAL DEFAULT 0,
+    math_setmarks INTEGER DEFAULT 100, math_obt REAL DEFAULT 0,
+    sst_setmarks INTEGER DEFAULT 100, sst_obt REAL DEFAULT 0,
+    islamiat_setmarks INTEGER DEFAULT 100, islamiat_obt REAL DEFAULT 0,
+    science_setmarks INTEGER DEFAULT 100, science_obt REAL DEFAULT 0,
+    physics_setmarks INTEGER DEFAULT 100, physics_obt REAL DEFAULT 0,
+    chemistry_setmarks INTEGER DEFAULT 100, chemistry_obt REAL DEFAULT 0,
+    biology_setmarks INTEGER DEFAULT 100, biology_obt REAL DEFAULT 0,
+    computer_setmarks INTEGER DEFAULT 100, computer_obt REAL DEFAULT 0,
+    drawing_setmarks INTEGER DEFAULT 100, drawing_obt REAL DEFAULT 0,
+    geography_setmarks INTEGER DEFAULT 100, geography_obt REAL DEFAULT 0,
+
+    -- ADD THESE NEW SUBJECT COLUMNS HERE --
+    pak_studies_setmarks INTEGER DEFAULT 100, pak_studies_obt REAL DEFAULT 0,
+    islamic_studies_setmarks INTEGER DEFAULT 100, islamic_studies_obt REAL DEFAULT 0,
+    tarjama_quran_setmarks INTEGER DEFAULT 100, tarjama_quran_obt REAL DEFAULT 0,
+    gk_setmarks INTEGER DEFAULT 100, gk_obt REAL DEFAULT 0,
+    functional_math_setmarks INTEGER DEFAULT 100, functional_math_obt REAL DEFAULT 0,
+    islamiat_compulsory_setmarks INTEGER DEFAULT 100, islamiat_compulsory_obt REAL DEFAULT 0,
+    social_studies_setmarks INTEGER DEFAULT 100, social_studies_obt REAL DEFAULT 0,
+    home_economics_setmarks INTEGER DEFAULT 100, home_economics_obt REAL DEFAULT 0,
+    civics_setmarks INTEGER DEFAULT 100, civics_obt REAL DEFAULT 0,
+    general_science_setmarks INTEGER DEFAULT 100, general_science_obt REAL DEFAULT 0,
+
+    total_setmarks INTEGER DEFAULT 2200,
     total_obt REAL DEFAULT 0,
-
-    -- Set Marks (Total Marks per subject)
-    urdu_setmarks REAL DEFAULT 100,
-    eng_setmarks REAL DEFAULT 100,
-    math_setmarks REAL DEFAULT 100,
-    sst_setmarks REAL DEFAULT 100,
-    islamiat_setmarks REAL DEFAULT 100,
-    science_setmarks REAL DEFAULT 100,
-    physics_setmarks REAL DEFAULT 100,
-    chemistry_setmarks REAL DEFAULT 100,
-    biology_setmarks REAL DEFAULT 100,
-    computer_setmarks REAL DEFAULT 100,
-    drawing_setmarks REAL DEFAULT 100,
-    geography_setmarks REAL DEFAULT 100,
-    total_setmarks REAL DEFAULT 1200,
-
-    -- Summary Fields
-    percentage REAL,
+    percentage REAL DEFAULT 0,
     grade TEXT,
-    position TEXT,
-    result_status TEXT, -- Pass/Fail
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    position INTEGER,
+    result_status TEXT,
+    remarks TEXT
+  )
+`).run();
 
-    FOREIGN KEY (exam_id) REFERENCES exams(exam_id),
-    FOREIGN KEY (student_id) REFERENCES students(id)
-)`);
         // Views
         db.exec(`CREATE VIEW IF NOT EXISTS student_arrears AS SELECT registration_no, SUM(balance) AS total_arrears FROM fee_tbl GROUP BY registration_no`);
         db.exec(`CREATE VIEW IF NOT EXISTS fee_report AS SELECT f.*, (SELECT SUM(balance) FROM fee_tbl WHERE registration_no = f.registration_no AND id < f.id) AS previous_arrears, (f.balance + COALESCE((SELECT SUM(balance) FROM fee_tbl WHERE registration_no = f.registration_no AND id < f.id), 0)) AS net_payable FROM fee_tbl f`);
@@ -238,33 +236,67 @@ db.exec(`CREATE TABLE IF NOT EXISTS result (
         // Staff & Salary
         // 1. Staff Table: Added auth_leaves to store the allowed limit per staff member
 db.exec(`CREATE TABLE IF NOT EXISTS staff_tbl (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, 
-    name TEXT, 
-    cnic TEXT, 
-    contact TEXT, 
-    designation TEXT, 
-    doj TEXT, 
-    salary REAL, 
-    auth_leaves REAL DEFAULT 0, 
-    allowance REAL, 
-    status TEXT DEFAULT 'Active'
+  id INTEGER PRIMARY KEY AUTOINCREMENT, 
+  name TEXT, 
+  cnic TEXT, 
+  contact TEXT, 
+  designation TEXT, 
+  doj TEXT, 
+  salary REAL, 
+  auth_leaves REAL DEFAULT 0, 
+  allowance REAL, 
+  status TEXT DEFAULT 'Active',
+  documents_held TEXT
 )`);
 
 // 2. Salary Table: Added auth_leaves (the limit) and availed_leaves (actual taken)
 // Note: 'leaves' column is renamed/replaced by these for clarity
 db.exec(`CREATE TABLE IF NOT EXISTS salary_tbl (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, 
-    staff_id INTEGER, 
-    name TEXT, 
-    salary REAL, 
-    allowance REAL, 
-    auth_leaves REAL DEFAULT 0, 
-    availed_leaves REAL DEFAULT 0, 
-    salary_month TEXT, 
-    salary_year TEXT, 
-    status TEXT DEFAULT 'Unpaid', 
-    UNIQUE(staff_id, salary_month, salary_year)
+  id INTEGER PRIMARY KEY AUTOINCREMENT, 
+  staff_id INTEGER, 
+  name TEXT, 
+  salary REAL, 
+  allowance REAL, 
+  auth_leaves REAL DEFAULT 0, 
+  availed_leaves REAL DEFAULT 0, 
+  salary_deduction REAL DEFAULT 0,
+  deduction_remarks TEXT,
+  award REAL DEFAULT 0,
+  award_remarks TEXT,
+  fund_cutting REAL DEFAULT 0,
+  security_cutting REAL DEFAULT 0,
+  salary_month TEXT, 
+  salary_year TEXT, 
+  status TEXT DEFAULT 'Unpaid', 
+  UNIQUE(staff_id, salary_month, salary_year)
 )`);
+
+// Execute this block inside your database configuration initialization
+db.exec(`
+    CREATE TABLE IF NOT EXISTS worksheet_questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_id INTEGER NOT NULL,
+        subject TEXT NOT NULL,
+        activity_type TEXT NOT NULL,
+        question_text TEXT NOT NULL,
+        answer_text TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+    );
+
+   
+`);
+// 1. Initialize the selection table
+db.exec(`
+    CREATE TABLE IF NOT EXISTS worksheet_selected_paper (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        question_id INTEGER NOT NULL,
+        exam_name TEXT NOT NULL,
+        class_id INTEGER NOT NULL,
+        subject TEXT NOT NULL,
+        FOREIGN KEY (question_id) REFERENCES worksheet_questions(id) ON DELETE CASCADE
+    );
+`);
 
         // Default Admin
         const userCount = db.prepare('SELECT count(*) as count FROM users').get();
@@ -483,8 +515,19 @@ function getUniqueInvoiceYears() { return db.prepare('SELECT DISTINCT invoice_ye
 function getClassesFee() { return db.prepare('SELECT class_name FROM classes ORDER BY class_name ASC').all(); }
 
 const getStaff = () => db.prepare("SELECT * FROM staff_tbl ORDER BY id DESC").all();
-const insertStaff = (data) => db.prepare(`INSERT INTO staff_tbl (name, cnic, contact, designation, doj, salary, allowance, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(data.name, data.cnic, data.contact, data.designation, data.doj, data.salary, data.allowance, data.status);
-const updateStaff = (id, data) => db.prepare(`UPDATE staff_tbl SET name=?, cnic=?, contact=?, designation=?, doj=?, salary=?, allowance=?, status=? WHERE id=?`).run(data.name, data.cnic, data.contact, data.designation, data.doj, data.salary, data.allowance, data.status, id);
+const insertStaff = (data) => 
+  db.prepare(`
+    INSERT INTO staff_tbl (name, cnic, contact, designation, doj, salary, allowance, status, documents_held) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(data.name, data.cnic, data.contact, data.designation, data.doj, data.salary, data.allowance, data.status, data.documents_held);
+
+const updateStaff = (id, data) => 
+  db.prepare(`
+    UPDATE staff_tbl 
+    SET name=?, cnic=?, contact=?, designation=?, doj=?, salary=?, allowance=?, status=?, documents_held=? 
+    WHERE id=?
+  `).run(data.name, data.cnic, data.contact, data.designation, data.doj, data.salary, data.allowance, data.status, data.documents_held, id);
+
 const deleteStaff = (id) => db.prepare("DELETE FROM staff_tbl WHERE id = ?").run(id);
 
 /**
@@ -513,19 +556,14 @@ const initiateSalary = (month, year) => {
         }
 
         // 3. Prepare the insert statement with the new auth_leaves column
-        const insertStmt = db.prepare(`
-            INSERT INTO salary_tbl (
-                staff_id, 
-                name, 
-                salary, 
-                allowance, 
-                auth_leaves, 
-                availed_leaves, 
-                salary_month, 
-                salary_year, 
-                status
-            ) VALUES (?, ?, ?, ?, ?, 0, ?, ?, 'Unpaid')
-        `);
+       const insertStmt = db.prepare(`
+  INSERT INTO salary_tbl (
+    staff_id, name, salary, allowance, auth_leaves, availed_leaves, 
+    salary_deduction, deduction_remarks, award, award_remarks, fund_cutting, security_cutting,
+    salary_month, salary_year, status
+  ) VALUES (?, ?, ?, ?, ?, 0, 0, '', 0, '', 0, 0, ?, ?, 'Unpaid')
+`);
+
 
         // 4. Run as a transaction for safety (all or nothing)
         const transaction = db.transaction((staffList) => {
@@ -568,59 +606,131 @@ const updateAvailedLeaves = (id, count) => {
 };
 // database.js
 // database.js - Updated to include original staff salary
+// database.js - Updated to include documents_held from staff table
 const getSalaries = (month, year) => {
+    return db.prepare(`
+        SELECT 
+            s.*, 
+            st.designation,
+            st.salary as original_base,
+            st.documents_held 
+        FROM salary_tbl s
+        JOIN staff_tbl st ON s.staff_id = st.id
+        WHERE s.salary_month = ? AND s.salary_year = ?
+    `).all(month, year);
+};
+
+
+const updateSalaryStatus = (id, status, data) => {
+  let paidSalary = data.salary; 
+  
+  // Calculate final Net Pay dynamically when moving state triggers to Paid status
+  if (status === 'Paid') {
+    const base = parseFloat(data.salary || 0);
+    const allowance = parseFloat(data.allowance || 0);
+    const award = parseFloat(data.award || 0);
+    const deduction = parseFloat(data.salary_deduction || 0);
+    const fund = parseFloat(data.fund_cutting || 0);
+    const security = parseFloat(data.security_cutting || 0);
+    
+    paidSalary = (base + allowance + award) - (deduction + fund + security);
+  } else {
+    // If we're just updating variables inline while unpaid, fetch the active basic setting
+    paidSalary = data.salary || 0;
+  }
+
   return db.prepare(`
-    SELECT 
-      s.*, 
-      st.designation,
-      st.salary as original_base 
-    FROM salary_tbl s
-    JOIN staff_tbl st ON s.staff_id = st.id
-    WHERE s.salary_month = ? AND s.salary_year = ?
-  `).all(month, year);
+    UPDATE salary_tbl 
+    SET status = ?, 
+        salary = ?,
+        salary_deduction = ?, 
+        deduction_remarks = ?, 
+        award = ?, 
+        award_remarks = ?, 
+        fund_cutting = ?, 
+        security_cutting = ?
+    WHERE id = ?
+  `).run(
+    status, 
+    paidSalary,
+    data.salary_deduction || 0,
+    data.deduction_remarks || '',
+    data.award || 0,
+    data.award_remarks || '',
+    data.fund_cutting || 0,
+    data.security_cutting || 0,
+    id
+  );
 };
 
 
-const updateSalaryStatus = (id, status, paidSalary) => {
-    // Added 'salary = ?' to the query
-    return db.prepare("UPDATE salary_tbl SET status = ?, salary = ? WHERE id = ?")
-             .run(status, paidSalary, id);
-};
 
 const getDashboardStats = () => {
-    const now = new Date();
-    const month = now.toLocaleString('default', { month: 'long' });
-    const year = now.getFullYear().toString();
+  const now = new Date();
+  const month = now.toLocaleString('default', { month: 'long' });
+  const year = now.getFullYear().toString();
 
-    // 1. Receivables: Total Fee + Arrears
-    const receivablesResult = db.prepare(`
-        SELECT SUM(total_fee + arrears) as total 
-        FROM fee_tbl 
-        WHERE invoice_month = ? AND invoice_year = ?
-    `).get(month, year);
-    const receivables = receivablesResult.total || 0;
+  // 1. Receivables: Total Fee + Arrears
+  const receivablesResult = db.prepare(`
+    SELECT SUM(total_fee + arrears) as total 
+    FROM fee_tbl 
+    WHERE invoice_month = ? AND invoice_year = ?
+  `).get(month, year);
+  const receivables = receivablesResult.total || 0;
 
-    // 2. Fee Received (Remains the same)
-    const feeReceived = db.prepare(`
-        SELECT SUM(collection) as total 
-        FROM fee_tbl 
-        WHERE invoice_month = ? AND invoice_year = ?
-    `).get(month, year).total || 0;
+  // 2. Fee Received
+  const feeReceived = db.prepare(`
+    SELECT SUM(collection) as total 
+    FROM fee_tbl 
+    WHERE invoice_month = ? AND invoice_year = ?
+  `).get(month, year).total || 0;
 
-    // 3. Balance: (Total Fee + Arrears) - Collection
-    const balanceResult = db.prepare(`
-        SELECT SUM((total_fee + arrears) - collection) as total 
-        FROM fee_tbl 
-        WHERE invoice_month = ? AND invoice_year = ?
-    `).get(month, year);
-    const balance = balanceResult.total || 0;
+  // 3. Balance: (Total Fee + Arrears) - Collection
+  const balanceResult = db.prepare(`
+    SELECT SUM((total_fee + arrears) - collection) as total 
+    FROM fee_tbl 
+    WHERE invoice_month = ? AND invoice_year = ?
+  `).get(month, year);
+  const balance = balanceResult.total || 0;
 
-    const activeStudents = db.prepare("SELECT count(*) as count FROM students WHERE LOWER(status) = 'active'").get().count;
-    const salaries = db.prepare("SELECT SUM(salary) as total FROM salary_tbl WHERE salary_month = ? AND salary_year = ?").get(month, year).total || 0;
-    const expenses = db.prepare("SELECT SUM(exp_amount) as total FROM exp_tbl WHERE exp_month = ? AND exp_year = ?").get(month, year).total || 0;
+  // 4. Active Students
+  const activeStudents = db.prepare(`
+    SELECT count(*) as count FROM students WHERE LOWER(status) = 'active'
+  `).get().count;
 
-    return { activeStudents, receivables, balance, salaries, feeReceived, expenses };
+  // 5. Total Active Staff (NEW STAT)
+  const activeStaff = db.prepare(`
+    SELECT count(*) as count FROM staff_tbl WHERE status = 'Active'
+  `).get().count;
+
+  // 6. Salaries paid / generated for the current month
+  const salaries = db.prepare(`
+    SELECT SUM(salary) as total FROM salary_tbl WHERE salary_month = ? AND salary_year = ?
+  `).get(month, year).total || 0;
+
+  // 7. Expenses for the current month
+  const expenses = db.prepare(`
+    SELECT SUM(exp_amount) as total FROM exp_tbl WHERE exp_month = ? AND exp_year = ?
+  `).get(month, year).total || 0;
+
+  // 8. Profit / Loss Calculation (NEW STAT)
+  const totalOutflow = expenses + salaries;
+  const financialAmount = feeReceived - totalOutflow; 
+  const financialStatus = feeReceived > totalOutflow ? 'Profit' : 'Loss';
+
+  return { 
+    activeStudents, 
+    activeStaff,       // Added
+    receivables, 
+    balance, 
+    salaries, 
+    feeReceived, 
+    expenses,
+    financialAmount,   // Added (Numeric profit/loss value)
+    financialStatus    // Added ('Profit' or 'Loss' string label)
+  };
 };
+
 
  
 // Add these to Database.js
@@ -630,30 +740,54 @@ const getActiveClasses = () => {
 };
 
 const initiateExamForClasses = (examId, selectedClasses) => {
-    // 1. Create placeholders (?, ?, ?) based on number of selected classes
-    const placeholders = selectedClasses.map(() => '?').join(',');
-    
-    const insertStmt = db.prepare(`
-        INSERT INTO result (student_id, exam_id, class, sec)
-        SELECT id, ?, current_class, section 
-        FROM students 
-        WHERE current_class IN (${placeholders}) 
-        AND status = 'active'
-        AND id NOT IN (
-            SELECT student_id FROM result WHERE exam_id = ?
-        )
-    `);
+    try {
+        // 1. Ensure selectedClasses is a valid array and not empty
+        if (!Array.isArray(selectedClasses) || selectedClasses.length === 0) {
+            return { success: true, newlyAdded: 0, message: "No classes selected." };
+        }
 
-    // Execute: [exam_id, ...classNames, exam_id_for_check]
-    const result = insertStmt.run(examId, ...selectedClasses, examId);
-    return { success: true, newlyAdded: result.changes };
+        // 2. Generate dynamic placeholders (?, ?, ?) based on selection length
+        const placeholders = selectedClasses.map(() => '?').join(',');
+
+        // 3. Prepare insertion query with a case-insensitive LIKE check for status
+                const insertStmt = db.prepare(`
+            INSERT INTO result (student_id, exam_id, class, total_setmarks)
+            SELECT id, ?, current_class, 2200
+            FROM students 
+            WHERE current_class IN (${placeholders}) 
+            AND status LIKE 'active'
+            AND id NOT IN (
+                SELECT student_id FROM result WHERE exam_id = ?
+            )
+        `);
+
+
+        // 4. Safely execute inside a high-performance database transaction
+        let totalChanges = 0;
+        const transaction = db.transaction(() => {
+            // Arguments layout mapping: [exam_id, ...classNames, exam_id_for_duplicate_check]
+            const queryArgs = [examId, ...selectedClasses, examId];
+            const info = insertStmt.run(...queryArgs);
+            totalChanges = info.changes;
+        });
+
+        transaction();
+        
+        return { success: true, newlyAdded: totalChanges };
+
+    } catch (error) {
+        console.error("Database Engine Error in initiateExamForClasses:", error);
+        return { success: false, error: error.message };
+    }
 };
+
+
 // Add this inside database.js
 // In database.js
 const getStudentFeeHistory = (studentId) => {
-    const student = db.prepare('SELECT student_name, registration_no FROM students WHERE id = ?').get(studentId);
+    // UPDATED: Added current_class to the SELECT query parameters
+    const student = db.prepare('SELECT student_name, father_name, current_class, registration_no, picture_path FROM students WHERE id = ?').get(studentId);
     
-    // Updated query to include a running total (Sub-total) of balance
     const history = db.prepare(`
         SELECT *, 
         SUM(balance + arrears) OVER (ORDER BY invoice_year DESC, invoice_month DESC) as running_balance
@@ -664,6 +798,9 @@ const getStudentFeeHistory = (studentId) => {
     
     return { student, history };
 };
+
+
+
 
 
 // Add to database.js
@@ -1053,10 +1190,22 @@ function removeQuestionFromPaper(id) {
 // Add a new question to the pool
 function addQuestion(q) {
   const sql = `INSERT INTO question_bank 
-  (class_id, subject, lesson_no, question_type, question_text, opt1, opt2, opt3, opt4, correct_answer) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-  return db.prepare(sql).run(q.classId, q.subject, q.lessonNo, q.type, q.text, q.opt1, q.opt2, q.opt3, q.opt4, q.answer);
+  (class_id, subject, lesson_no, question_type, question_text, diagram_path, opt1, opt2, opt3, opt4, correct_answer) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  
+  const classId = q.classId !== undefined ? q.classId : q.class_id;
+  const lessonNo = q.lessonNo !== undefined ? q.lessonNo : q.lesson_no;
+  const questionType = q.type || q.questionType || q.question_type || null;
+  const questionText = q.text || q.questionText || q.question_text || null;
+  const diagramPath = q.diagramPath || q.diagram_path || null; // 🆕 Extract diagram path safely
+  const correctAnswer = q.answer || q.correctAnswer || q.correct_answer || null;
+
+  return db.prepare(sql).run(
+    classId, q.subject, lessonNo, questionType, questionText, diagramPath,
+    q.opt1, q.opt2, q.opt3, q.opt4, correctAnswer
+  );
 }
+
 
 function getQuestions(classId, subject, lessonNo) {
   // If a lesson number is provided, filter by it. Otherwise, load all lessons for that subject.
@@ -1141,16 +1290,13 @@ function addQuestionToPaper(data) {
 
 function getPaperSettings(data) {
   if (!data) return { success: false, error: "No criteria received" };
-  
   const examType = data.examType || data.exam_type;
   const paperName = data.paperName || data.paper_name;
-  // Force classId to be a clean, strict integer
   const classId = parseInt(data.classId || data.class_id, 10);
 
   try {
-    // Using CAST ensures SQLite matches the column data type perfectly
     const sql = `
-      SELECT total_marks, passing_marks, obj_marks, subj_marks, note_objective, note_subjective 
+      SELECT total_marks, passing_marks, exam_date, obj_marks, subj_marks, note_objective, note_subjective 
       FROM exam_papers 
       WHERE exam_type = ? AND paper_name = ? AND CAST(class_id AS INTEGER) = ?
     `;
@@ -1162,25 +1308,25 @@ function getPaperSettings(data) {
   }
 }
 
+
 // Ensure this exact name is used on the function definition line
 function savePaperSettingsOnly(data) {
   if (!data) return { success: false, error: "No content data received" };
-
   const examType = data.examType || data.exam_type;
   const paperName = data.paperName || data.paper_name;
-  
-  // Clean integer format conversion (fixes 1.0 down to a clean 1)
   const classId = parseInt(data.classId || data.class_id, 10); 
-  
   const totalMarks = data.totalMarks || data.total_marks || 0;
   const passingMarks = data.passingMarks || data.passing_marks || 0;
+  
+  // 🌟 NEW: Extract the sent date object value safely
+  const examDate = data.examDate || data.exam_date || ''; 
+  
   const objectiveMarks = data.objectiveMarks || data.obj_marks || 0;
   const subjectiveMarks = data.subjectiveMarks || data.subj_marks || 0;
   const noteObjective = data.noteObjective || data.note_objective || '';
   const noteSubjective = data.noteSubjective || data.note_subjective || '';
 
   try {
-    // 1. Check if the row already exists using identifying columns
     const checkSql = `
       SELECT exam_type FROM exam_papers 
       WHERE exam_type = ? AND paper_name = ? AND CAST(class_id AS INTEGER) = ?
@@ -1188,27 +1334,28 @@ function savePaperSettingsOnly(data) {
     const existing = db.prepare(checkSql).get(examType, paperName, classId);
 
     if (existing) {
-      // 2. If it exists, UPDATE using those same columns in the WHERE clause
+      // 🌟 UPDATE includes exam_date column parameter modification mapping
       const updateSql = `
         UPDATE exam_papers 
-        SET total_marks = ?, passing_marks = ?, obj_marks = ?, subj_marks = ?, note_objective = ?, note_subjective = ?
+        SET total_marks = ?, passing_marks = ?, exam_date = ?, obj_marks = ?, subj_marks = ?, note_objective = ?, note_subjective = ?
         WHERE exam_type = ? AND paper_name = ? AND CAST(class_id AS INTEGER) = ?
       `;
       db.prepare(updateSql).run(
-        totalMarks, passingMarks, objectiveMarks, subjectiveMarks, noteObjective, noteSubjective,
+        totalMarks, passingMarks, examDate, objectiveMarks, subjectiveMarks, noteObjective, noteSubjective,
         examType, paperName, classId
       );
       console.log(`[Database] Settings updated successfully.`);
     } else {
-      // 3. Otherwise, perform a clean INSERT
+      // 🌟 INSERT includes exam_date column parameter modification mapping
       const insertSql = `
-        INSERT INTO exam_papers (exam_type, paper_name, class_id, total_marks, passing_marks, obj_marks, subj_marks, note_objective, note_subjective)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO exam_papers (exam_type, paper_name, class_id, total_marks, passing_marks, exam_date, obj_marks, subj_marks, note_objective, note_subjective)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
-      db.prepare(insertSql).run(examType, paperName, classId, totalMarks, passingMarks, objectiveMarks, subjectiveMarks, noteObjective, noteSubjective);
+      db.prepare(insertSql).run(
+        examType, paperName, classId, totalMarks, passingMarks, examDate, objectiveMarks, subjectiveMarks, noteObjective, noteSubjective
+      );
       console.log(`[Database] Settings inserted successfully.`);
     }
-    
     return { success: true };
   } catch (error) {
     console.error("SQL Write Failure inside savePaperSettingsOnly:", error);
@@ -1216,8 +1363,121 @@ function savePaperSettingsOnly(data) {
   }
 }
 
+// Add this function inside your database.js file
+// Add or replace this function inside database.js
+function updateQuestionText(data) {
+    try {
+        const { id, text, opt1, opt2, opt3, opt4, answer, lessonNo, type } = data;
+        
+        const sql = `
+            UPDATE question_bank 
+            SET question_text = ?, 
+                opt1 = ?, 
+                opt2 = ?, 
+                opt3 = ?, 
+                opt4 = ?, 
+                correct_answer = ?,
+                lesson_no = ?,
+                question_type = ?
+            WHERE id = ?
+        `;
+        
+        // better-sqlite3 uses prepare().run() syntax
+        const info = db.prepare(sql).run(text, opt1, opt2, opt3, opt4, answer, lessonNo, type, id);
+        
+        return { success: true, changes: info.changes };
+    } catch (err) {
+        console.error("Database update failure:", err);
+        return { success: false, error: err.message };
+    }
+}
 
 
+function deleteEntirePaper(data) {
+    try {
+        const { examType, classId, paperName } = data;
+        
+        // Target your actual verified table: paper_questions
+        const sql = `
+            DELETE FROM paper_questions 
+            WHERE exam_type = ? 
+              AND class_id = ? 
+              AND paper_name = ?
+        `;
+        
+        const info = db.prepare(sql).run(examType, classId, paperName);
+        
+        return { success: true, changes: info.changes };
+    } catch (err) {
+        console.error("Critical failure executing paper layout clear sweep:", err);
+        return { success: false, error: err.message };
+    }
+}
+
+
+
+
+
+// Add this helper function inside your database.js file
+function getQuestionById(id) {
+    try {
+        const stmt = db.prepare('SELECT * FROM question_bank WHERE id = ?');
+        return stmt.get(id); // Returns a single question object matching the ID
+    } catch (err) {
+        console.error("Database error inside getQuestionById:", err);
+        return null;
+    }
+}
+
+function deleteQuestionsBySelection({ classId, subject, lessonNo }) {
+    try {
+        const stmt = db.prepare('DELETE FROM question_bank WHERE class_id = ? AND subject = ? AND lesson_no = ?');
+        const info = stmt.run(classId, subject, lessonNo);
+        return { success: true, count: info.changes };
+    } catch (err) {
+        console.error("Database deletion error:", err);
+        return { success: false, error: err.message };
+    }
+}
+// Add 'deleteQuestionsBySelection' to your module.exports = { ... } block at the bottom
+function deleteSingleQuestion(id) {
+    try {
+        const stmt = db.prepare('DELETE FROM question_bank WHERE id = ?');
+        const info = stmt.run(id);
+        return { success: info.changes > 0 };
+    } catch (err) {
+        console.error("Database compilation error inside deleteSingleQuestion handler:", err);
+        return { success: false, error: err.message };
+    }
+}
+// Remember to append 'deleteSingleQuestion' explicitly inside your module.exports array declaration!
+
+function deleteExamCascade(data) {
+    try {
+        const { examId, examName } = data;
+
+        // Wrap inside an atomic execution transaction loop to prevent mismatched dangling data states
+        const executePurge = db.transaction(() => {
+            // 1. Wipe out any recorded rows across the primary results table
+            db.prepare(`DELETE FROM result WHERE exam_id = ?`).run(examId);
+
+            // 2. Wipe out any question layouts built for this exam inside paper_questions
+            db.prepare(`DELETE FROM paper_questions WHERE exam_type = ?`).run(examName);
+
+            // 3. Clear out matching registry date sheets if applicable
+            // db.prepare(`DELETE FROM datesheet WHERE exam_id = ?`).run(examId); 
+
+            // 4. Finally, remove the parent metadata identification row from the exams table
+            db.prepare(`DELETE FROM exams WHERE exam_id = ?`).run(examId);
+        });
+
+        executePurge(); // Runs database scripts synchronously
+        return { success: true };
+    } catch (err) {
+        console.error("Critical execution abort deleting cascading exam configurations:", err);
+        return { success: false, error: err.message };
+    }
+}
 
 
 // Function to remove a specific question link from an exam paper layout template
@@ -1228,14 +1488,14 @@ module.exports = {
     getStaffGridReport,addQuestionToPaper,getPaperQuestions,addQuestion,getQuestions,
     addStudent, getStudents, getStudentById, updateStudent, deleteStudent, getStudentMonthlyReport,getStaffMonthlyReport,
     generateFee, generateBulkFees, getFeeRecords, updateCollection, updateFeeRecord, 
-    deleteFee, getFeeRecordById, getFeeRecordsFilters, getStaff, insertStaff, 
+    deleteFee, getFeeRecordById, getFeeRecordsFilters, getStaff, insertStaff, deleteQuestionsBySelection,
     updateStaff, deleteStaff, initiateSalary, getSalaries, updateSalaryStatus, 
     getDashboardStats, getUniqueInvoiceMonths, getUniqueInvoiceYears, getClassesFee,
     getActiveClasses, initiateExamForClasses, getStudentFeeHistory, updateAvailedLeaves,
     getFeeReportByStatus, getDateWiseReport, deleteFeeRecordsByStudent, deleteResultsByStudent,
     addDateSheetPaper, getDateSheetRecords, updateDateSheetPaper, deleteDateSheetPaper, changeUserPassword,
-    getStudentByReg,  saveStudentAttendance,
-    getStudentAttendanceByClass,getPaperSettings,
+    getStudentByReg,  saveStudentAttendance,deleteSingleQuestion,
+    getStudentAttendanceByClass,getPaperSettings,deleteEntirePaper,
     saveStaffAttendance,uploadBulkQuestions, savePaperSettingsOnly,
-    getStaffAttendanceByDate, removeQuestionFromPaper
+    getStaffAttendanceByDate, removeQuestionFromPaper, updateQuestionText, getQuestionById,deleteExamCascade
 };

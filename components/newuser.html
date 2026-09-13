@@ -232,22 +232,31 @@ margin: 1px;
             </div>
  
 <!-- POS / EDUPULSE COMPATIBLE PERMISSIONS CHECKBOXES -->
+<!-- Replace the permissions-box block inside your form (around Page 8) with this: -->
 <div class="permissions-box" id="permissionsGroup">
-    <label>Feature Level Accessibility Allowed</label>
-    <div class="permissions-grid">
-        <label class="perm-label"><input type="checkbox" value="navclasses" /> 🏫 Classes Management</label>
-        <label class="perm-label"><input type="checkbox" value="navstudents" /> 👨‍🎓 Students Ledger</label>
-        <label class="perm-label"><input type="checkbox" value="navfee" /> 💰 Fee Collections </label>
-        <label class="perm-label"><input type="checkbox" value="navexams" /> 📝 Exam / Marksheet </label>
-        <label class="perm-label"><input type="checkbox" value="navstaff" /> 👔 Staff Directories</label>
-        <label class="perm-label"><input type="checkbox" value="navexpenses" /> 💸 Expense Registries</label>
-        <label class="perm-label"><input type="checkbox" value="navroles" /> ⚙️ User Role Management</label>
-        <label class="perm-label"><input type="checkbox" value="btndb" /> 📁 Core DB Location</label>
-        <label class="perm-label" style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 4px;">
-            <input type="checkbox" value="dashstatscards" /> 📊 Show Dashboard Metric Stats Cards
-        </label>
-    </div>
+  <label>Feature Level Accessibility Allowed</label>
+  <div class="permissions-grid">
+    <label class="perm-label"><input type="checkbox" value="navclasses" /> 🏫 Classes Management</label>
+    <label class="perm-label"><input type="checkbox" value="navstudents" /> 👨‍🎓 Students Ledger</label>
+    <label class="perm-label"><input type="checkbox" value="navfee" /> 💰 Fee Collections</label>
+    <label class="perm-label"><input type="checkbox" value="navexams" /> 📝 Exam / Marksheet</label>
+    <label class="perm-label"><input type="checkbox" value="navstaff" /> 👔 Staff Directories</label>
+    <label class="perm-label"><input type="checkbox" value="navexpenses" /> 💸 Expense Registries</label>
+    <label class="perm-label"><input type="checkbox" value="navroles" /> ⚙️ User Role Management</label>
+    <label class="perm-label"><input type="checkbox" value="btndb" /> 📁 Core DB Location</label>
+    
+    <!-- DASHBOARD-ONLY QUICK ACTIONS -->
+    <label class="perm-label"><input type="checkbox" value="dashattendance" /> ⏱️ Dashboard: Attendance</label>
+    <label class="perm-label"><input type="checkbox" value="dashqbank" /> 📄 Dashboard: Question Papers</label>
+    <label class="perm-label" style="grid-column: span 2;"><input type="checkbox" value="dashledger" /> 🏢 Dashboard: School Ledger</label>
+    
+    <!-- GLOBAL STATS CARD TOGGLE -->
+    <label class="perm-label" style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 4px;">
+      <input type="checkbox" value="dashstatscards" /> 📊 Show Dashboard Metric Stats Cards
+    </label>
+  </div>
 </div>
+
 
 
             <button type="submit" id="submitBtn" class="save-btn">Save User Account</button>

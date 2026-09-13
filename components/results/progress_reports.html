@@ -68,6 +68,16 @@ th { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
 
 .remarks-box { border: 2px dashed #333; padding: 10px; margin-top: 15px; min-height: 80px; position: relative; }
 .footer-sigs { position: absolute; bottom: 20mm; left: 15mm; right: 15mm; display: flex; justify-content: space-between; font-weight: bold; }
+.footer-end { 
+  position: absolute; 
+  bottom: 10mm; 
+  left: 15mm; 
+  right: 15mm; 
+  display: flex; 
+  justify-content: space-between; /* Pushes content to left and right sides */
+  font-size: 9px; 
+  color: #555;
+}
 .sig-line { border-top: 1px solid #000; width: 170px; text-align: center; padding-top: 5px; font-size: 13px; }
 
 @media print { 
@@ -91,6 +101,37 @@ th { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
 <div id="reportsContainer"></div>
 
 <script>
+    // Global function to update institute details everywhere on the page at once
+async function applyCentralAppDetails() {
+  try {
+    if (window.api && window.api.getAppDetails) {
+      const details = await window.api.getAppDetails();
+      
+      // Update every single student progress sheet generated in the batch loop
+      document.querySelectorAll('.dynamic-institute-title').forEach(el => {
+        // Preserves your logo image while updating the text node alongside it
+        el.innerHTML = `<img src="../../images/logo.png" class="small-logo">${details.instituteName}`;
+      });
+      
+      document.querySelectorAll('.dynamic-institute-details').forEach(el => {
+        el.innerText = `Address: Islamabad || Contact: ${details.contactNumber}`;
+      });
+      
+      document.querySelectorAll('.dynamic-institute-email').forEach(el => {
+        el.innerText = `E-mail: ${details.email}`;
+      });
+    }
+  } catch (err) {
+    console.error("Failed to inject centralized details:", err);
+  }
+}
+
+// Clean up your DOMContentLoaded block to only handle the trigger action execution
+document.addEventListener('DOMContentLoaded', () => {
+  // Keep this empty or use it to initialize standard page metrics
+});
+
+
 async function startExport() { await window.api.saveToPdf(); }
 
 function getGrade(score, max) {
@@ -127,11 +168,28 @@ async function loadReports() {
         }
 
         const subjects = [
-            { id: 'Urdu', set: 'urdu_setmarks', obt: 'urdu_obt' }, { id: 'Eng', set: 'eng_setmarks', obt: 'eng_obt' },
-            { id: 'Math', set: 'math_setmarks', obt: 'math_obt' }, { id: 'SST', set: 'sst_setmarks', obt: 'sst_obt' },
-            { id: 'Isl', set: 'islamiat_setmarks', obt: 'islamiat_obt' }, { id: 'Sci', set: 'science_setmarks', obt: 'science_obt' },
-            { id: 'Phy', set: 'physics_setmarks', obt: 'physics_obt' }, { id: 'Chem', set: 'chemistry_setmarks', obt: 'chemistry_obt' },
-            { id: 'Bio', set: 'biology_setmarks', obt: 'biology_obt' }, { id: 'Comp', set: 'computer_setmarks', obt: 'computer_obt' }
+            { id: 'Urdu', set: 'urdu_setmarks', obt: 'urdu_obt' },
+            { id: 'English', set: 'eng_setmarks', obt: 'eng_obt' },
+            { id: 'Math', set: 'math_setmarks', obt: 'math_obt' },
+            { id: 'SST', set: 'sst_setmarks', obt: 'sst_obt' },
+            { id: 'Islamiat', set: 'islamiat_setmarks', obt: 'islamiat_obt' },
+            { id: 'Science', set: 'science_setmarks', obt: 'science_obt' },
+            { id: 'Physics', set: 'physics_setmarks', obt: 'physics_obt' },
+            { id: 'Chemistry', set: 'chemistry_setmarks', obt: 'chemistry_obt' },
+            { id: 'Biology', set: 'biology_setmarks', obt: 'biology_obt' },
+            { id: 'Computer', set: 'computer_setmarks', obt: 'computer_obt' },
+            { id: 'Drawing', set: 'drawing_setmarks', obt: 'drawing_obt' },
+            { id: 'Geography', set: 'geography_setmarks', obt: 'geography_obt' },
+            { id: 'Pak Studies', set: 'pak_studies_setmarks', obt: 'pak_studies_obt' },
+            { id: 'Islamic Studies', set: 'islamic_studies_setmarks', obt: 'islamic_studies_obt' },
+            { id: 'Tarjama Tul Quran', set: 'tarjama_quran_setmarks', obt: 'tarjama_quran_obt' },
+            { id: 'General Knowledge', set: 'gk_setmarks', obt: 'gk_obt' },
+            { id: 'Functional Maths', set: 'functional_math_setmarks', obt: 'functional_math_obt' },
+            { id: 'Islamiyat Comp.', set: 'islamiat_compulsory_setmarks', obt: 'islamiat_compulsory_obt' },
+            { id: 'Social Study', set: 'social_studies_setmarks', obt: 'social_studies_obt' },
+            { id: 'Home Economics', set: 'home_economics_setmarks', obt: 'home_economics_obt' },
+            { id: 'Civics', set: 'civics_setmarks', obt: 'civics_obt' },
+            { id: 'General Science', set: 'general_science_setmarks', obt: 'general_science_obt' }
         ];
 
         let index = 0;
@@ -161,11 +219,14 @@ async function loadReports() {
                 sheet.className = 'report-sheet';
                 sheet.innerHTML = `
                     <div class="school-header">
-                        <h1><img src="../../images/logo.png" class="small-logo">Your Institute Name</h1>
-                        <p>Address || 0300-xxxxx</p>
-                        
-                <p style="margin:2px; font-size:11px;">E-mail: abc@gmail.com</p>
-                    </div>
+  <!-- COMBINED INTO ONE SINGLE ELEMENT WITH A TARGET CLASS SELECTOR -->
+  <h1 class="dynamic-institute-title">
+    <img src="../../images/logo.png" class="small-logo">YOUR INSTITUTE NAME
+  </h1>
+  <p style="margin:2px; font-size:11px;" class="dynamic-institute-details">Address: Islamabad || Contact: 0300-1234567</p>
+  <p style="margin:2px; font-size:11px;" class="dynamic-institute-email">E-mail: abc@gmail.com</p>
+</div>
+
                     <div class="student-id-section">
                         <div class="info-col">
                             <div class="info-row">
@@ -204,12 +265,28 @@ async function loadReports() {
                         <div class="sig-line">Result Date</div>
                         <div class="sig-line">Exam Incharge</div>
                         <div class="sig-line">Principal Signature</div>
-                    </div>`;
+                        </div>
+<div class="footer-end">
+  <span>© Techinfolab. All Rights Reserved.</span>
+  <span>Designed by: Raja Bilal || Contact: 0311-5101738</span>
+</div>
+
+                        `
+                    ;
                 container.appendChild(sheet);
             }
-            progText.innerText = `Loaded: ${Math.round((index/data.length)*100)}%`;
-            if (index < data.length) setTimeout(renderBatch, 5);
-            else { printBtn.disabled = false; progText.innerText = "Ready!"; }
+            // Find this section near the end of your script tags on Page 8:
+progText.innerText = `Loaded: ${Math.round((index/data.length)*100)}%`;
+if (index < data.length) {
+  setTimeout(renderBatch, 5);
+} else { 
+  printBtn.disabled = false; 
+  progText.innerText = "Ready!"; 
+  
+  // ADD THIS LINE HERE: Fires immediately once all student sheets are appended to the screen
+  applyCentralAppDetails(); 
+}
+
         }
         renderBatch();
     } catch (err) { container.innerHTML = "Error loading reports."; }

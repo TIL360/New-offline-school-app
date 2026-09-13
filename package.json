@@ -1,5 +1,5 @@
 {
-  "name": "school-management-system",
+  "name": "islamia_model-school-sohan",
   "version": "1.0.0",
   "description": "School Management System (Offline) build in Electron",
   "keywords": [
@@ -24,7 +24,7 @@
     "extraResources": [
       "school.db"
     ],
-       "win": {
+    "win": {
       "target": [
         {
           "target": "nsis",
@@ -34,14 +34,22 @@
           ]
         }
       ]
-       }
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": true
+    }
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",
     "nodemon": "^3.1.14",
+    "qrcode": "^1.5.4",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
     "electron": "^40.8.0",
     "electron-builder": "^26.8.1",
     "electron-rebuild": "^3.2.9"

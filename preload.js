@@ -24,12 +24,41 @@ contextBridge.exposeInMainWorld('api', {
     getFilePath: (file) => {
         return webUtils.getPathForFile(file);
     },
-         getLicenseStatus: () => ipcRenderer.invoke('get-license-status'),
+          getAppDetails: () => ipcRenderer.invoke('get-app-details'),
+    // Add this inside the contextBridge api block
+openExternalUrl: (url) => ipcRenderer.send('open-external-url', url),
 
-      getImageUrl: async (picturePath) => {
+    getLicenseStatus: () => ipcRenderer.invoke('get-license-status'),
+
+getImageUrl: async (picturePath) => {
     return await ipcRenderer.invoke('get-image-url', picturePath);
-        
+
+
+
 },
+// Add this inside your contextBridge.exposeInMainWorld('api', { ... }) block:
+generateQR: async (text) => {
+    const QRCode = require('qrcode');
+    // Generates a clean base64 image string offline
+    return await QRCode.toDataURL(text, { margin: 1, width: 120 });
+},
+
+// Add this inside the student management section of your api block
+bulkPromoteStudents: (data) => ipcRenderer.invoke('bulk-promote-students', data),
+
+// This already exists in your file and handles both components perfectly!
+loadSalaryData: () => ipcRenderer.invoke('load-salary-data'),
+
+// Add these items inside contextBridge.exposeInMainWorld('api', { ... })
+downloadStudentTemplate: () => ipcRenderer.send('download-student-template'),
+uploadExcelStudents: (filePath) => ipcRenderer.invoke('upload-excel-students', filePath),
+addWorksheetQuestion: (data) => ipcRenderer.invoke('add-worksheet-question', data),
+getWorksheetQuestions: (filters) => ipcRenderer.invoke('get-worksheet-questions', filters),
+deleteWorksheetQuestion: (id) => ipcRenderer.invoke('delete-worksheet-question', id),
+addQuestionToWorksheet: (data) => ipcRenderer.invoke('add-question-to-worksheet', data),
+getSelectedWorksheetQuestions: (filters) => ipcRenderer.invoke('get-selected-worksheet-questions', filters),
+
+
 
 addQuestion: (data) => ipcRenderer.invoke('add-question', data),
     getQuestions: (classId, subject, lessonNo) => ipcRenderer.invoke('get-questions', classId, subject, lessonNo),
@@ -39,7 +68,22 @@ uploadExcelQuestions: (data) => ipcRenderer.invoke('upload-excel-questions', dat
 getPaperSettings: (data) => ipcRenderer.invoke('get-paper-settings', data),
 savePaperSettingsOnly: (data) => ipcRenderer.invoke('save-paper-settings-only', data),
 // Inside contextBridge.exposeInMainWorld('api', { ... }) block:
+// Inside contextBridge.exposeInMainWorld('api', { ... }) block:
 removeQuestionFromPaper: (id) => ipcRenderer.invoke('remove-question-from-paper', id),
+
+// ➕ ADD THIS NEW EDIT FUNCTION HERE
+// Change this line in preload.js:
+updateQuestionText: (data) => ipcRenderer.invoke('update-question-text', data),
+// Add this helper row inside the exposeInMainWorld block in preload.js
+deleteEntirePaper: (data) => ipcRenderer.invoke('delete-entire-paper', data),
+
+
+// Add this wrapper inside contextBridge.exposeInMainWorld('api', { ... }) in preload.js
+getQuestionById: (id) => ipcRenderer.invoke('get-question-by-id', id),
+deleteQuestionsBySelection: (criteria) => ipcRenderer.invoke('delete-questions-by-selection', criteria),
+deleteSingleQuestion: (id) => ipcRenderer.invoke('delete-single-question', id),
+// Paste this entry inside contextBridge.exposeInMainWorld('api', { ... }) on Page 15:
+deleteExamCascade: (data) => ipcRenderer.invoke('delete-exam-cascade', data),
 
 
 
@@ -108,7 +152,9 @@ getDateWiseReport: (date) => ipcRenderer.invoke('get-date-wise-report', date),
     deleteStaff: (id) => ipcRenderer.invoke('delete-staff', id),
     initiateSalary: (month, year) => ipcRenderer.invoke('initiate-salary', month, year),
  getSalaries: (month, year) => ipcRenderer.invoke('get-salaries', { month, year }),
-    updateSalaryStatus: (id, status, salary) => ipcRenderer.invoke('update-salary-status', { id, status, salary }),
+    // Replace the old updateSalaryStatus line with this:
+updateSalaryStatus: (payload) => ipcRenderer.invoke('update-salary-status', payload),
+
 
      getDashboardStats: () => ipcRenderer.invoke('get-dashboard-stats'),
        getStudentFeeHistory: (id) => ipcRenderer.invoke('get-student-fee-history', id),

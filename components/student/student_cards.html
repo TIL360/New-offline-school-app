@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student ID Cards Generator</title>
+  <link rel="stylesheet" href="../../assets/css/all.min.css" />
+<!-- Load the offline browser bundle directly from your npm installation -->
+<script src="../../node_modules/qrcode/build/qrcode.min.js"></script>
+
+
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --bg-gray: #f8fafc;
+      --border: #e2e8f0;
+      --dark: #1e293b;
+      --gray: #64748b;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-gray);
+      margin: 0;
+      padding: 20px;
+      color: var(--dark);
+    }
+    .page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 15px 25px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .top-nav h2 { margin: 0; font-size: 20px; }
+    .btn {
+      height: 42px;
+      padding: 0 20px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-portal { background: #64748b; color: white; text-decoration: none; }
+    .btn-print { background: var(--primary); color: white; }
+    
+    .filter-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--gray);
+      text-transform: uppercase;
+    }
+    .form-select {
+      height: 40px;
+      width: 250px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      outline: none;
+      font-size: 14px;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 25px;
+      margin-top: 10px;
+    }
+    .id-card {
+      background: white;
+      border: 2px solid #1e3a8a;
+      border-radius: 12px;
+      width: 400px;
+      height: 230px;
+      position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      box-sizing: border-box;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-header {
+      background: #1e3a8a;
+      color: white;
+      padding: 10px;
+      text-align: center;
+    }
+    .card-header h3 { margin: 0; font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; }
+    .card-header p { margin: 2px 0 0 0; font-size: 10px; color: #93c5fd; letter-spacing: 1px; }
+    .card-body {
+      display: flex;
+      padding: 15px;
+      gap: 15px;
+      flex: 1;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .photo-area {
+      width: 90px;
+      height: 115px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .photo-area img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .photo-placeholder {
+      font-size: 32px;
+      color: #94a3b8;
+    }
+    .info-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+    .student-name-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .info-row {
+      font-size: 12px;
+      color: #334155;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .info-label {
+      font-weight: bold;
+      color: var(--gray);
+      display: inline-block;
+      width: 55px;
+    }
+    .qrcode-area {
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 4px;
+      background: white;
+      flex-shrink: 0;
+    }
+    .qrcode-area svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .card-footer {
+      background: #1e293b;
+      color: white;
+      font-size: 10px;
+      text-align: center;
+      padding: 6px;
+      font-weight: 500;
+      margin-top: auto;
+    }
+    .no-data {
+      grid-column: 1 / -1;
+      background: white;
+      padding: 40px;
+      text-align: center;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      color: var(--gray);
+      font-weight: 500;
+    }
+    @media print {
+      body { background: white; padding: 0; margin: 0; }
+      .top-nav, .filter-card, .btn-portal { display: none !important; }
+      .page-container { max-width: 100%; padding: 0; margin: 0; }
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding: 15px;
+      }
+      .id-card {
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-container">
+    <div class="top-nav">
+      <h2><i class="fas fa-id-card" style="color: var(--primary);"></i> Student ID Cards Generator</h2>
+      <div>
+        <button class="btn btn-portal" onclick="window.api.changePage('components/student/student_list.html')">
+          <i class="fas fa-th-large"></i> Student Portal
+        </button>
+        <button class="btn btn-print" onclick="window.print()">
+          <i class="fas fa-print"></i> Print ID Cards
+        </button>
+      </div>
+    </div>
+
+<div class="filter-card">
+    <div class="form-group">
+        <label><i class="fas fa-filter"></i> Select Class</label>
+        <select id="classSelect" class="form-select" onchange="renderClassCards()">
+            <option value="">-- Choose Class --</option>
+        </select>
+    </div>
+    
+    <!-- New Search Bar Group -->
+    <div class="form-group" style="flex: 1; margin-left: 10px;">
+        <label><i class="fas fa-search"></i> Search Student</label>
+        <input type="text" id="studentSearchInput" class="form-select" style="width: 100%;" 
+               placeholder="Type Registration Number or Student Name..." onkeyup="filterStudentCards()">
+    </div>
+</div>
+
+
+    <div id="cardsContainer" class="cards-grid">
+      <div class="no-data">Please choose a class from the menu configuration above to display cards allocations.</div>
+    </div>
+  </div>
+  <script>
+    let rawStudentsMasterCache = [];
+    let applicationMeta = {};
+
+    window.onload = async () => {
+      await loadFiltersAndMetadata();
+    };
+
+    async function loadFiltersAndMetadata() {
+      try {
+        applicationMeta = await window.api.getAppDetails() || {};
+        const classSelect = document.getElementById('classSelect');
+        classSelect.innerHTML = '<option value="">-- Choose Class --</option>';
+
+        // Directly fetch classes array bypassing general filters to guarantee stability
+        const classesArray = await window.api.getClasses() || [];
+        if (classesArray && classesArray.length > 0) {
+          classesArray.forEach(c => {
+            const name = (typeof c === 'object' && c !== null) ? (c.class_name || c.name || c.className) : c;
+            if (name) {
+              classSelect.innerHTML += `<option value="${name}">${name}</option>`;
+            }
+          });
+        }
+        rawStudentsMasterCache = await window.api.getStudents() || [];
+      } catch (error) {
+        console.error("Data loading failure logs:", error);
+      }
+    }
+
+async function renderClassCards() {
+    const selectedClass = document.getElementById('classSelect').value;
+    const container = document.getElementById('cardsContainer');
+    container.innerHTML = "";
+    
+    if (!selectedClass) {
+        container.innerHTML = '<div class="no-data">Please choose a class from the menu configuration above to display cards allocations.</div>';
+        return;
+    }
+    
+    const targetMatches = rawStudentsMasterCache.filter(s =>
+        s.current_class && s.current_class.trim().toLowerCase() === selectedClass.trim().toLowerCase() &&
+        s.status && s.status.toLowerCase() === 'active'
+    );
+    
+    if (targetMatches.length === 0) {
+        container.innerHTML = `<div class="no-data" style="color: #ef4444;">No active enrollment student profiles located inside Class "${selectedClass}".</div>`;
+        return;
+    }
+    
+    // Core loop processing and rendering student card configurations sequentially
+    for (const student of targetMatches) {
+        const cardNodeId = `qr-target-${student.id}`;
+        let imageProperty = student.picture_path || student.pic || "";
+        let finalImageSource = "";
+        
+        if (imageProperty) {
+            finalImageSource = await window.api.getImageUrl(imageProperty);
+        }
+        
+        const imageDOMElementHtml = finalImageSource 
+            ? `<img src="${finalImageSource}" alt="Student Photo">`
+            : `<i class="fas fa-user photo-placeholder"></i>`;
+            
+        const cardMarkupLayout = `
+        <div class="id-card">
+            <div class="card-header">
+                <h3>${applicationMeta.instituteName || 'ISLAMIA MODEL SCHOOL'}</h3>
+                <p>STUDENT IDENTIFICATION CARD</p>
+            </div>
+            <div class="card-body">
+                <div class="photo-area">
+                    ${imageDOMElementHtml}
+                </div>
+                <div class="info-area">
+                    <div class="student-name-title">${student.student_name}</div>
+                    <div class="info-row"><span class="info-label">Reg No:</span><strong>${student.registration_no}</strong></div>
+                    <div class="info-row"><span class="info-label">Father:</span>${student.father_name}</div>
+                    <div class="info-row"><span class="info-label">Class:</span>${student.current_class}</div>
+                    <div class="info-row"><span class="info-label">Mobile:</span>${student.mobile || '-'}</div>
+                </div>
+                <div id="${cardNodeId}" class="qrcode-area"></div>
+            </div>
+            <div class="card-footer">
+                Contact: ${applicationMeta.contactNumber || '0300-9813940'}
+            </div>
+        </div>
+        `;
+        
+        // Append the layout block directly to the grid framework inside the viewport
+        container.insertAdjacentHTML('beforeend', cardMarkupLayout);
+        
+        // Execute library canvas draw mechanics immediately after node insertion
+        generatePureQRCodeHTML(cardNodeId, String(student.registration_no));
+    }
+}
+
+// Secure local package generator matrix binding target fields offline
+function generatePureQRCodeHTML(targetElementId, numericString) {
+    try {
+        var box = document.getElementById(targetElementId);
+        if (!box) return;
+        
+        if (typeof QRCode === 'undefined') {
+            console.error("The native offline bundle library failed to register under global windows window contexts.");
+            box.innerHTML = "<span style='color:red; font-size:10px;'>Library Missing</span>";
+            return;
+        }
+        
+        box.innerHTML = "";
+        
+        // Build compliance streams targeting native inner elements layout block frameworks
+        QRCode.toCanvas(box, String(numericString).trim(), {
+            width: 80,
+            margin: 1,
+            errorCorrectionLevel: 'M'
+        }, function (error) {
+            if (error) console.error("QR Code matrix element failed processing:", error);
+        });
+    } catch (err) {
+        console.error("Offline QR Generation Error Exception:", err);
+    }
+}
+
+      // A clean, crash-proof inline barcode matrix calculation utility for Electron environments
+async function generatePureQRCodeHTML(targetElementId, numericString) {
+    try {
+        var box = document.getElementById(targetElementId);
+        if (!box) return;
+        box.innerHTML = "";
+
+        // Call the secure main process to generate the QR data URL safely
+        const qrDataUrl = await window.api.generateQR(String(numericString).trim());
+
+        // Create an image element to display it
+        var imgNode = document.createElement("img");
+        imgNode.src = qrDataUrl;
+        imgNode.style.width = "100%";
+        imgNode.style.height = "100%";
+        box.appendChild(imgNode);
+    } catch (err) {
+        console.error("Secure Bridge QR Generation Failed:", err);
+    }
+}
+function filterStudentCards() {
+    const query = document.getElementById('studentSearchInput').value.toLowerCase().trim();
+    const container = document.getElementById('cardsContainer');
+    const cards = container.getElementsByClassName('id-card');
+    let visibleCount = 0;
+
+    // Loop through all currently rendered cards on screen
+    for (let card of cards) {
+        // Extract the name and registration number from the card text content
+        const nameText = card.querySelector('.student-name-title').textContent.toLowerCase();
+        const regText = card.querySelector('.info-row strong').textContent.toLowerCase();
+
+        // If the query matches either fields, show the card, otherwise hide it
+        if (nameText.includes(query) || regText.includes(query)) {
+            card.style.display = ""; 
+            visibleCount++;
+        } else {
+            card.style.display = "none";
+        }
+    }
+
+    // Handle "No matching items found" states gracefully
+    const existingNoData = container.querySelector('.search-no-data');
+    if (visibleCount === 0 && cards.length > 0) {
+        if (!existingNoData) {
+            container.insertAdjacentHTML('beforeend', 
+                `<div class="no-data search-no-data" style="color: #ef4444; grid-column: 1/-1;">No student matches your search query.</div>`
+            );
+        }
+    } else if (existingNoData) {
+        existingNoData.remove();
+    }
+}
+
+  </script>
+</body>
+</html>

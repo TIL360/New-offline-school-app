@@ -31,20 +31,76 @@ text-decoration: none; font-size: 13px; display: inline-flex; align-items: cente
 .btn-load { background: #bd081c; color: white; border: none; }
 .btn-print { background: #003049; color: white; border: none; }
 
+/* New style rule to position the exam paper simulator print footer */
+.exampaper-copyright {
+  position: absolute;
+  bottom: 40px; /* Anchors it precisely at the bottom edge of the sheet */
+  left: 70px;   /* Aligns perfectly with the left padding of the document */
+  right: 70px;  /* Aligns perfectly with the right padding of the document */
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #444;
+  border-top: 1.5px solid #000;
+  padding-top: 5px;
+  z-index: 10;  /* Keeps it visible on top of the watermark layer */
+}
+
+
 /* Word Document Simulator Styling */
 .paper-sheet {
-background: white;
-padding: 60px 70px;
-max-width: 850px;
-margin: 0 auto;
-min-height: 1100px;
-box-sizing: border-box;
-box-shadow: 0 4px 12px rgba(0,00,0,0.05);
+    background: white;
+    /* Change padding: 60px 70px; to this: */
+padding: 60px 70px 80px 70px; /* Added 80px bottom breathing room */
+
+    max-width: 850px;
+    margin: 0 auto;
+    min-height: 1100px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    
+    /* CRITICAL FIXES FOR WATERMARK */
+    position: relative; 
+    overflow: hidden;
+    -webkit-print-color-adjust: exact; 
+    print-color-adjust: exact;
 }
+/* Watermark Layout Layer */
+.paper-sheet::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 450px;
+    height: 450px;
+    background-image: url('../../images/logo.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.1; /* High transparency for clear text readability */
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Ensure foreground text prints clearly above the watermark background */
+.school-name-header, .meta-container, #paperContent {
+    position: relative;
+    z-index: 1;
+}
+.small-logo { 
+    height: 50px; 
+    margin-right: 12px; 
+    vertical-align: middle;
+}
+
 .school-name-header {
-text-align: center;
-margin-bottom: 30px;
+  text-align: center;
+  border-bottom: 1.5px solid #000; /* 🌟 Creates the line under the address line */
+  padding-bottom: 12px;           /* Adds clean spacing above the line */
+  margin-bottom: 20px;            /* Adds spacing below the line */
 }
+
 .school-name-header h1 {
 font-size: 28px;
 margin: 0;
@@ -54,11 +110,13 @@ text-transform: capitalize;
 }
 /* Metadata Box - Split Columns */
 .meta-container {
-display: flex;
-justify-content: space-between;
-font-size: 14px;
-line-height: 1.6;
-margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 1.6;
+  border-bottom: 1.5px solid #000; /* 🌟 Creates the line under the marks section */
+  padding-bottom: 15px;           /* Adds clean spacing above the line */
+  margin-bottom: 25px;            /* Adds spacing below the line */
 }
 .meta-column { width: 45%; }
 /* Section Separators */
@@ -146,12 +204,36 @@ body { background-color: white; padding: 0; }
 <select id="examType" style="padding: 5px;"></select>
 <select id="filterClass" style="padding: 5px;"></select>
 <select id="filterSubject" style="padding: 5px;">
-<option value="English">English</option>
-<option value="Maths">Maths</option>
-<option value="Urdu">Urdu</option>
+    <!-- Core Subjects -->
+    <option value="Urdu">Urdu</option>
+    <option value="English">English</option>
+    <option value="Maths">Maths</option>
+    <option value="SST">SST</option>
+    <option value="Islamiat">Islamiat</option>
+    <option value="Science">Science</option>
+    <option value="Physics">Physics</option>
+    <option value="Chemistry">Chemistry</option>
+    <option value="Biology">Biology</option>
+    <option value="Computer">Computer</option>
+    <option value="Drawing">Drawing</option>
+    <option value="Geography">Geography</option>
+    
+    <!-- Extension Subjects -->
+    <option value="Pak Studies">Pak Studies</option>
+    <option value="Islamic Studies">Islamic Studies</option>
+    <option value="Tarjama Tul Quran">Tarjama Tul Quran</option>
+    <option value="General Knowledge">General Knowledge</option>
+    <option value="Functional Maths">Functional Maths</option>
+    <option value="Islamiyat Compulsory">Islamiyat Compulsory</option>
+    <option value="Social Study">Social Study</option>
+    <option value="Essential of Home Economics">Essential of Home Economics</option>
+    <option value="Civics">Civics</option>
+    <option value="General Science">General Science</option>
 </select>
+
 <button onclick="loadPaper()" class="nav-btn btn-load">🔍 Load Paper</button>
 <button onclick="openConfigModal()" class="nav-btn" style="background: #475569; color: white; border: none; margin-left: 5px;">⚙️ Configure Layout</button>
+<button onclick="deleteEntirePaper()" class="nav-btn" style="background: #dc3545; color: white; border: none; margin-left: 5px;">🗑️ Delete Paper</button>
 </div>
 <div>
 <a href="qbnkdashboard.html" class="nav-btn" style="margin-right:8px;">⚙️ Dashboard</a>
@@ -161,7 +243,10 @@ body { background-color: white; padding: 0; }
 
 <div class="paper-sheet">
 <div class="school-name-header">
-<h1 id="lblSchool">Happy School</h1>
+<h1 id="lblSchool"><img src="../../images/logo.png" class="small-logo"><span id="institute-name">Loading</span></h1>
+
+
+<p> <span id="address">Loading</span>  <br/>E-mail: <span id="email-address">Loading</span>> || Contact: <span id="contact-number">Loadiing</span></p>
 </div>
 <div class="meta-container">
 <div class="meta-column">
@@ -175,46 +260,76 @@ body { background-color: white; padding: 0; }
 </div>
 </div>
 <div id="paperContent"></div>
+ <div class="exampaper-copyright">
+    <span>© Techinfo. All Rights Reserved.</span>
+    <span>Designed by: Raja Bilal || Contact: 0311-5101738</span>
+  </div>
+
 </div>
 
 <!-- Modal Window for Updating Layout Configuration -->
-<div id="layoutConfigModal" class="config-modal">
-<div class="config-modal-content">
-<span class="close-modal-btn" onclick="closeConfigModal()">&times;</span>
-<h3 style="margin-top: 0; color: #1e293b; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Configure Layout</h3>
-<div style="margin-bottom: 12px;">
-<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Total Marks</label>
-<input type="number" id="modalTotalMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-</div>
-<div style="margin-bottom: 12px;">
-<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Passing Marks</label>
-<input type="number" id="modalPassingMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-</div>
-<div style="margin-bottom: 12px;">
-<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Objective Portion Marks</label>
-<input type="number" id="modalObjectiveMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-</div>
-<div style="margin-bottom: 12px;">
-<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Subjective Portion Marks</label>
-<input type="number" id="modalSubjectiveMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-</div>
-<div style="margin-bottom: 12px;">
-<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Note for Objective Portion</label>
-<textarea id="modalNoteObjective" rows="2" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-family:inherit;"></textarea>
-</div>
-<div style="margin-bottom: 16px;">
-<label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Note for Subjective Portion</label>
-<textarea id="modalNoteSubjective" rows="2" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-family:inherit;"></textarea>
-</div>
-<div style="text-align: right;">
-<button onclick="closeConfigModal()" class="nav-btn" style="margin-right:8px;">Cancel</button>
-<button onclick="saveConfigModal()" class="nav-btn" style="background:#bd081c; color:white; border:none;">💾 Save Settings</button>
-</div>
-</div>
+<!-- Modal Window for Updating Layout Configuration (With Focus & Typing Fix) -->
+<div id="layoutConfigModal" class="config-modal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); align-items: center; justify-content: center; -webkit-app-region: no-drag;">
+  <div class="config-modal-content" style="background-color: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 450px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: relative; box-sizing: border-box; -webkit-app-region: no-drag; user-select: text; -webkit-user-select: text;">
+    <span class="close-modal-btn" onclick="closeConfigModal()">&times;</span>
+    <h3 style="margin-top: 0; color: #1e293b; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Configure Layout</h3>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Total Marks</label>
+      <input type="number" id="modalTotalMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; user-select: text; -webkit-user-select: text;">
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Passing Marks</label>
+      <input type="number" id="modalPassingMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; user-select: text; -webkit-user-select: text;">
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Objective Portion Marks</label>
+      <input type="number" id="modalObjectiveMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; user-select: text; -webkit-user-select: text;">
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Subjective Portion Marks</label>
+      <input type="number" id="modalSubjectiveMarks" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; user-select: text; -webkit-user-select: text;">
+    </div>
+    
+    <div style="margin-bottom: 12px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Note for Objective Portion</label>
+      <textarea id="modalNoteObjective" rows="2" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-family:inherit; user-select: text; -webkit-user-select: text;"></textarea>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:4px; color:#475569;">Note for Subjective Portion</label>
+      <textarea id="modalNoteSubjective" rows="2" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box; font-family:inherit; user-select: text; -webkit-user-select: text;"></textarea>
+    </div>
+    
+    <div style="text-align: right;">
+      <button onclick="closeConfigModal()" class="nav-btn" style="margin-right:8px;">Cancel</button>
+      <button onclick="saveConfigModal()" class="nav-btn" style="background:#bd081c; color:white; border:none;">💾 Save Settings</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
+
+    try {
+      // 1. Invoke the IPC handler exposed in preload.js
+      const details = await window.api.getAppDetails();
+      
+      // 2. Safely populate the text values into your HTML layout elements
+      if (details) {
+        document.getElementById('institute-name').innerText = details.instituteName;
+        document.getElementById('contact-number').innerText = details.contactNumber;
+        document.getElementById('email-address').innerText  = details.email;
+        document.getElementById('address').innerText  = details.address;
+        document.getElementById('footer-text').innerText     = details.footerText;
+      }
+    } catch (error) {
+      console.error("Failed to load application metadata details:", error);
+    }
 try {
 const classes = await window.api.getClasses();
 const clsDropdown = document.getElementById('filterClass');
@@ -271,7 +386,6 @@ document.getElementById('lblPassingMarks').innerText = settingsResult.settings.p
 // ✅ NEW CORRECT CODE:
 displayObjectiveMarks = settingsResult.settings.obj_marks || '0';
 displaySubjectiveMarks = settingsResult.settings.subj_marks || '0';
-
 
 if (settingsResult.settings.note_objective) noteObjectiveText = settingsResult.settings.note_objective.trim();
 if (settingsResult.settings.note_subjective) noteSubjectiveText = settingsResult.settings.note_subjective.trim();
@@ -441,6 +555,14 @@ async function openConfigModal() {
   } catch (err) {
     console.error("Error loading config:", err);
   }
+// Add this line directly to the very bottom inside your openConfigModal() function:
+setTimeout(() => {
+  const primaryInput = document.getElementById('modalTotalMarks');
+  if (primaryInput) {
+    primaryInput.focus();
+  }
+}, 50);
+
 }
 
 async function saveConfigModal() {
@@ -483,11 +605,9 @@ async function saveConfigModal() {
   }
 }
 
-
 function closeConfigModal() {
 document.getElementById('layoutConfigModal').style.display = 'none';
 }
-
 
 
 
@@ -511,6 +631,40 @@ alert("Could not remove question.");
 console.error("Failed to delete question:", err); 
 }
 }
+async function deleteEntirePaper() {
+    const examType = document.getElementById('examType').value;
+    const classId = document.getElementById('filterClass').value;
+    const paperName = document.getElementById('filterSubject').value;
+
+    if (!examType || !classId || !paperName) {
+        alert("Please select an Exam, Class, and Subject first!");
+        return;
+    }
+
+    const confirmClear = confirm(`⚠️ Are you sure you want to permanently delete the entire exam paper layout for:\n\nExam: ${examType}\nClass ID: ${classId}\nSubject: ${paperName}?\n\nThis action removes all mapped questions from this specific layout context!`);
+    if (!confirmClear) return;
+
+    try {
+        const result = await window.api.deleteEntirePaper({
+            examType,
+            classId: parseInt(classId),
+            paperName
+        });
+
+        if (result && result.success) {
+            alert(`Success! Successfully cleared ${result.changes} questions from the paper setup.`);
+            loadPaper(); // Reloads layout container dynamically to view updates instantly
+        } else {
+            alert("Database Error: " + (result.error || "Could not clear records."));
+        }
+    } catch (err) {
+        console.error("Transaction failed inside frontend deleteEntirePaper wrapper:", err);
+        alert("Execution exception: " + err.message);
+    }
+}
+
 </script>
 </body>
 </html>
+
+

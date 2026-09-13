@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print Worksheet Canvas</title>
+<style>
+body { 
+font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; 
+background-color: #f4f6f9; 
+padding: 25px; 
+color: #000; 
+margin: 0;
+display: flex;
+flex-direction: column;
+align-items: center;
+}
+/* Clean, professional Single-Row Header Bar layout */
+.header-bar {
+background: white;
+padding: 12px 20px;
+border-radius: 8px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+margin-bottom: 25px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+width: 100%;
+max-width: 850px;
+box-sizing: border-box;
+}
+.filter-row { 
+display: flex; 
+gap: 10px; 
+align-items: center; 
+}
+.nav-btn {
+background-color: #f8fafc; 
+color: #475569; 
+border: 1px solid #cbd5e1;
+padding: 6px 14px; 
+border-radius: 6px; 
+cursor: pointer; 
+font-weight: 600;
+text-decoration: none; 
+font-size: 13px; 
+display: inline-flex; 
+align-items: center;
+height: 50px;
+box-sizing: border-box;
+}
+select { 
+padding: 6px 10px; 
+border-radius: 6px; 
+border: 1px solid #cbd5e1; 
+font-size: 13px; 
+background: white;
+height: 34px;
+box-sizing: border-box;
+min-width: 120px;
+}
+.btn-load { background: #bd081c; color: white; border: none; }
+.btn-load:hover { background: #a00616; }
+.btn-print { background: #003049; color: white; border: none; }
+.btn-print:hover { background: #002133; }
+
+/* Word Document Simulator Layout Paper Sheet */
+.paper-sheet {
+background: white;
+padding: 60px 70px 80px 70px;
+width: 100%;
+max-width: 850px;
+min-height: 1100px;
+box-sizing: border-box;
+box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+/* CRITICAL FIXES FOR WATERMARK */
+position: relative; 
+overflow: hidden;
+-webkit-print-color-adjust: exact; 
+print-color-adjust: exact;
+}
+.paper-sheet::before {
+content: "";
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 450px;
+height: 450px;
+background-image: url('../../images/logo.png');
+background-repeat: no-repeat;
+background-position: center;
+background-size: contain;
+opacity: 0.1; /* High transparency for clear text readability */
+z-index: 0;
+pointer-events: none;
+}
+.school-name-header, .meta-container, #paperContent {
+position: relative;
+z-index: 1;
+}
+.small-logo { 
+height: 50px; 
+margin-right: 12px; 
+vertical-align: middle;
+}
+
+.school-name-header {
+text-align: center;
+border-bottom: 1.5px solid #000;
+padding-bottom: 12px;
+margin-bottom: 20px;
+}
+.school-name-header h1 {
+font-size: 28px;
+margin: 0;
+text-decoration: underline;
+font-weight: bold;
+text-transform: capitalize;
+}
+.meta-container {
+display: flex;
+justify-content: space-between;
+font-size: 14px;
+line-height: 1.6;
+margin-bottom: 30px;
+border-bottom: 2px solid #000;
+padding-bottom: 15px;
+}
+.meta-column { width: 45%; }
+
+/* Section Header Separators Layout */
+.section-header {
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: underline;
+    margin: 35px 0 20px 0;
+    text-transform: capitalize;
+    color: #000;
+    
+    /* 🌟 NEW: Forces the heading to stay attached to the questions following it */
+    break-after: avoid;
+    page-break-after: avoid;
+}
+.urdu-section {
+font-family: 'Urdu Typesetting', 'Nafees', Arial, sans-serif;
+direction: rtl;
+text-align: right;
+font-size: 20px;
+}
+.grid-container {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 25px;
+margin-top: 15px;
+}
+.box-item {
+    border: 2px dashed #475569;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    box-sizing: border-box;
+    background: #fafafa;
+    border-radius: 8px;
+    gap: 20px;
+    
+    /* 🌟 NEW: Prevents this box from splitting across two pages */
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.line-input { 
+border: none;
+border-bottom: 2px solid #000; 
+width: 180px; 
+height: 24px; 
+background: transparent;
+flex-shrink: 0;
+}
+.embedded-img { 
+max-height: 200px; 
+max-width: 320px; 
+object-fit: contain; 
+border-radius: 4px;
+flex-grow: 0;
+}
+.urdu-text { 
+font-family: 'Urdu Typesetting', 'Nafees', Arial, sans-serif; 
+font-size: 22px; 
+}
+
+/* ⚙️ Styling for Configuration Modal Box */
+.config-modal {
+display: none; 
+position: fixed; 
+z-index: 9999; 
+left: 0; top: 0; 
+width: 100%; height: 100%; 
+background-color: rgba(0,0,0,0.4); 
+align-items: center; 
+justify-content: center;
+}
+.config-modal-content {
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px; /* 🌟 Increased from 450px to make space for buttons */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* Add this quick helper rule right below it to prevent button crowding */
+.config-modal-content .nav-btn {
+    height: 38px;
+    font-size: 14px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+/* New style rule to position the worksheet print footer */
+.exampaper-copyright {
+position: absolute;
+bottom: 40px; /* Anchors it precisely at the bottom edge of the sheet */
+left: 70px; /* Aligns perfectly with the left padding of the document */
+right: 70px; /* Aligns perfectly with the right padding of the document */
+display: flex;
+justify-content: space-between;
+font-size: 10px;
+color: #444;
+border-top: 1.5px solid #000;
+padding-top: 5px;
+z-index: 10; /* Keeps it visible on top of the watermark layer */
+}
+
+
+.close-modal-btn:hover { color: #000; }
+
+@media print {
+.config-modal { display: none !important; }
+body { background-color: white; padding: 0; }
+.header-bar { display: none !important; }
+.paper-sheet { box-shadow: none !important; padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Single-Row Aligned Header Operations Bar -->
+<div class="header-bar">
+<div class="filter-row">
+<select id="examType"><option value="">Loading Exams...</option></select>
+<select id="filterClass"><option value="">Loading Classes...</option></select>
+<select id="filterSubject">
+<option value="Urdu">Urdu</option>
+<option value="English">English</option>
+<option value="Maths">Maths</option>
+</select>
+<button onclick="loadSelectedWorksheetPaper()" class="nav-btn btn-load">🔍 Load Worksheet</button>
+<button onclick="openConfigModal()" class="nav-btn" style="background: #475569; color: white; border: none;">⚙️ Configure Layout</button>
+</div>
+<div class="filter-row">
+<a href="qbnkdashboard.html" class="nav-btn">⚙️ Dashboard</a>
+<button onclick="executePdfSave()" class="nav-btn btn-print">🖨 Print Layout</button>
+</div>
+</div>
+
+<!-- Printable Paper Sheet Container Canvas -->
+<div class="paper-sheet">
+<div class="school-name-header">
+<h1 id="lblSchool"><img src="../../images/logo.png" class="small-logo"><span id="institute-name">Loading</span></h1>
+<p><span id="address">Loading</span> <br/>E-mail: <span id="email-address">Loading</span> || Contact: <span id="contact-number">Loading</span></p>
+</div>
+
+<div class="meta-container">
+<div class="meta-column">
+<div><strong>Date:</strong> <span id="lblDate">-</span></div>
+<div><strong>Subject:</strong> <span id="lblSubject">-</span></div>
+<div><strong>Total Marks:</strong> <span id="lblTotalMarks">10</span></div>
+</div>
+<div class="meta-column" style="text-align: right;">
+<div><strong>Exam:</strong> <span id="lblExam">-</span></div>
+<div><strong>Class:</strong> <span id="lblClass">-</span></div>
+<div><strong>Passing Marks:</strong> <span id="lblPassingMarks">-</span></div>
+</div>
+</div>
+<div id="paperContent"></div>
+
+<!-- 🌟 ADDED FOOTER CONTAINER BLOCK HERE 🌟 -->
+<div class="exampaper-copyright">
+<span>© Techinfo. All Rights Reserved.</span>
+<span>Designed by: Raja Bilal || Contact: 0311-5101738</span>
+</div>
+
+</div> <!-- This closing div belongs to class="paper-sheet" -->
+
+</div>
+
+<!-- ⚙️ Modal Window for Updating Layout Configurations -->
+<!-- ⚙️ Modal Window for Updating Layout Configurations (Complete Fixed Layout) -->
+<div id="layoutConfigModal" class="config-modal">
+  <div class="config-modal-content">
+    <span class="close-modal-btn" onclick="closeConfigModal()">&times;</span>
+    <h3 style="margin-top: 0; color: #1e293b; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">⚙️ Configure Layout</h3>
+    
+    <div style="margin-bottom: 15px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:6px; color:#475569;">Total Marks</label>
+      <input type="number" id="modalTotalMarks" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:6px; color:#475569;">Passing Marks</label>
+      <input type="number" id="modalPassingMarks" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+    </div>
+
+    <!-- 🌟 CRITICAL FIX: This input ID was missing or broken, causing the crash! -->
+    <div style="margin-bottom: 20px;">
+      <label style="display:block; font-weight:600; font-size:13px; margin-bottom:6px; color:#475569;">Exam Date</label>
+      <input type="text" id="modalExamDate" placeholder="e.g., 2 Jul 2026" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+    </div>
+    
+    <div style="text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
+      <button onclick="closeConfigModal()" class="nav-btn" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0 16px; border-radius: 6px; cursor: pointer; height: 38px;">Cancel</button>
+      <button onclick="saveConfigModal()" class="nav-btn" style="background:#bd081c; color:white; border:none; padding: 0 16px; border-radius: 6px; cursor: pointer; height: 38px;">💾 Save Settings</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const promptTranslations = {
+urdu: {
+"alfaaz_jor": "حروف جوڑ کر مکمل لفظ لکھیے:",
+"alfaaz_tor": "الفاظ کے توڑ کیجیے اور حروف الگ لکھیے:",
+"naam_tasveer": "دی گئی تصاویر کو دیکھ کر ان کے درست نام لکھیے:",
+"urdu_tracing": "نقاط ملاکر حرف مکمل کریں اور پنسل پھیریں:"
+},
+english: { 
+cvc_match: "Look at the visual clipart patterns below and fill out matching CVC labels.", 
+missing_vowels: "Complete the vocabulary entries words by filling missing vowels (a, e, i, o, u).",
+english_tracing_small: "Trace the lowercase letters cleanly along the dotted lines.",
+english_tracing_capital: "Trace the uppercase capital letters cleanly along the dotted lines."
+},
+maths: { 
+count_write: "Tally the graphic components inside blocks and write numeric totals down.",
+currency_math: "Calculate total Pakistani currency notes values transaction fields below.",
+addition_simple: "Solve the following simple addition mathematical problems.",
+subtraction_simple: "Calculate the differences by solving the subtraction equations below.",
+number_matching: "Count the items in the blocks and draw lines to match them with the correct numbers.",
+math_tracing: "Carefully trace the numbers along the dotted lines.",
+arrange_ascending: "Arrange the given numbers from the smallest to the biggest.",
+arrange_descending: "Arrange the given numbers from the biggest to the smallest.",
+what_comes_after: "Write down the correct tracking number that comes after.",
+what_comes_before: "Write down the correct tracking number that comes before.",
+backward_counting: "Fill in the blanks to complete the backward counting pattern.",
+circle_biggest: "Look closely at each row and circle the biggest number.",
+circle_smallest: "Look closely at each row and circle the smallest number."
+}
+};
+
+window.addEventListener('DOMContentLoaded', async () => {
+/* --- NEW METADATA INTEGRATION PIPELINE --- */
+try {
+const details = await window.api.getAppDetails();
+if (details) {
+document.getElementById('institute-name').innerText = details.instituteName;
+document.getElementById('contact-number').innerText = details.contactNumber;
+document.getElementById('email-address').innerText = details.email;
+document.getElementById('address').innerText = details.address;
+}
+} catch (error) {
+console.error("Failed to load application metadata details into worksheet:", error);
+}
+
+await populateSystemFilters();
+});
+
+
+async function populateSystemFilters() {
+  try {
+    if (window.api && window.api.getClasses) {
+      const classes = await window.api.getClasses();
+      const classDropdown = document.getElementById('filterClass');
+      classDropdown.innerHTML = '';
+      if (classes && classes.length > 0) {
+        classes.forEach(c => {
+          let opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.class_name || c.name;
+          classDropdown.appendChild(opt);
+        });
+      }
+    }
+    if (window.api && window.api.getDropdownData) {
+      const response = await window.api.getDropdownData();
+      const examDropdown = document.getElementById('examType');
+      if (response && response.success && response.exams) {
+        examDropdown.innerHTML = '';
+        response.exams.forEach(e => {
+          const val = e.exam_name || e.name || e.exam_title || e.exam_id;
+          if (val) {
+            let opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            examDropdown.appendChild(opt);
+          }
+        });
+      }
+    }
+
+    // Auto-Select First Available Items Instead of Remaining Blank at Start
+    setTimeout(() => {
+      const examDropdown = document.getElementById('examType');
+      const classDropdown = document.getElementById('filterClass');
+      const localConfig = JSON.parse(localStorage.getItem("current_worksheet_config"));
+
+      if (localConfig) {
+        examDropdown.value = localConfig.exam;
+        classDropdown.value = localConfig.classId;
+        document.getElementById('filterSubject').value = localConfig.subject.charAt(0).toUpperCase() + localConfig.subject.slice(1);
+      }
+      if(examDropdown.value && classDropdown.value) {
+        loadSelectedWorksheetPaper();
+      }
+    }, 300);
+
+  } catch (err) { 
+    console.error("Failed to populate select boxes:", err); 
+  }
+}
+
+async function loadSelectedWorksheetPaper() {
+  const exam = document.getElementById('examType').value;
+  const classId = document.getElementById('filterClass').value;
+  const classDropdown = document.getElementById('filterClass');
+  if (!classDropdown.value || !exam) return;
+  
+  const classText = classDropdown.options[classDropdown.selectedIndex].text;
+  const subject = document.getElementById('filterSubject').value.toLowerCase();
+  
+  document.getElementById('lblExam').innerText = exam;
+  document.getElementById('lblClass').innerText = classText;
+  document.getElementById('lblSubject').innerText = subject.toUpperCase();
+  
+  // 🌟 FIXED DATE SYNC LOGIC:
+  const keySuffix = exam + "_" + classId + "_" + subject;
+  const defaultDate = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric'
+  });
+  
+  // Read saved date or fallback to default
+  let paperDate = localStorage.getItem("ws_date_" + keySuffix) || defaultDate;
+  
+  // Try loading live properties directly from the database settings query
+  try {
+    if (window.api && window.api.getPaperSettings) {
+      const result = await window.api.getPaperSettings({ 
+        examType: exam, 
+        paperName: subject, 
+        classId: parseInt(classId, 10) 
+      });
+      const settings = result?.settings || result;
+      if (settings && settings.exam_date) {
+        paperDate = settings.exam_date;
+        localStorage.setItem("ws_date_" + keySuffix, paperDate); // sync cache
+      }
+    }
+  } catch (e) {
+    console.warn("Could not load date from DB, using cache:", e);
+  }
+  
+  // Update headers on the paper sheet layout canvas
+  document.getElementById('lblDate').innerText = paperDate;
+  const savedTotal = localStorage.getItem("ws_total_" + keySuffix) || '10';
+  const savedPassing = localStorage.getItem("ws_passing_" + keySuffix) || '-';
+  document.getElementById('lblTotalMarks').innerText = savedTotal;
+  document.getElementById('lblPassingMarks').innerText = savedPassing;
+  
+  const contentBlock = document.getElementById('paperContent');
+  contentBlock.innerHTML = "<p style='text-align:center;color:#666;'>Loading worksheet setup...</p>";
+  
+  try {
+    const list = await window.api.getSelectedWorksheetQuestions({
+      examName: exam,
+      classId: parseInt(classId, 10),
+      subject: subject
+    });
+    
+    contentBlock.innerHTML = "";
+    if (!list || list.length === 0) {
+      contentBlock.innerHTML = "<p style='text-align:center;color:#666;padding:20px;'>(No questions added for this worksheet selection.)</p>";
+      return;
+    }
+    
+    const groupedQuestions = {};
+    list.forEach(q => {
+      if (!groupedQuestions[q.activity_type]) { 
+        groupedQuestions[q.activity_type] = []; 
+      }
+      groupedQuestions[q.activity_type].push(q);
+    });
+    
+    let questionCounter = 1;
+    Object.keys(groupedQuestions).forEach(activityType => {
+      const itemsList = groupedQuestions[activityType];
+      const sectionDiv = document.createElement("div");
+      sectionDiv.style.marginBottom = "35px";
+      sectionDiv.style.breakInside = "avoid";
+      
+      const headerDiv = document.createElement("div");
+      headerDiv.className = "section-header";
+      let promptText = "Solve the following items:";
+      if (promptTranslations[subject] && promptTranslations[subject][activityType]) {
+        promptText = promptTranslations[subject][activityType];
+      }
+      
+      if (subject === 'urdu') {
+        headerDiv.classList.add("urdu-section");
+        headerDiv.innerHTML = 'سوال نمبر ' + questionCounter++ + ': ' + promptText;
+      } else {
+        headerDiv.innerHTML = "Q." + questionCounter++ + ". " + promptText;
+      }
+      sectionDiv.appendChild(headerDiv);
+      
+      const gridDiv = document.createElement("div");
+      gridDiv.className = "grid-container";
+      if (subject === 'urdu') gridDiv.style.direction = "rtl";
+      
+      itemsList.forEach(q => {
+        const item = document.createElement("div");
+        item.className = "box-item";
+        
+        let isImg = q.question_text && q.question_text.startsWith("data:image");
+        
+        if (isImg) {
+          item.style.gridColumn = "span 2"; 
+          // Check if this is a counting/matching question pattern
+          if (q.activity_type === "number_matching" || q.activity_type === "count_write") {
+            let repeatCount = parseInt(q.answer_text, 10) || 1; 
+            let clustersHtml = '';
+            let currentClusterHtml = '';
+            
+            for (let i = 0; i < repeatCount; i++) {
+              currentClusterHtml += `<img src="${q.question_text}" style="max-height: 28px; max-width: 28px; object-fit: contain; margin: 2px;">`;
+              if ((i + 1) % 5 === 0 || (i + 1) === repeatCount) {
+                clustersHtml += `
+                  <div style="display: inline-flex; background: #f0f4f8; padding: 4px 6px; border-radius: 6px; border: 1px solid #cbd5e1; gap: 2px; align-items: center;">
+                    ${currentClusterHtml}
+                  </div>
+                `;
+                currentClusterHtml = '';
+              }
+            }
+            
+            item.innerHTML = `
+              <div class="line-input"></div>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; align-items: center; max-width: 75%; padding: 5px;">
+                ${clustersHtml}
+              </div>
+            `;
+          } else {
+            item.innerHTML = '<div class="line-input"></div><img class="embedded-img" src="' + q.question_text + '">';
+          }
+        } else {
+          if (subject === 'english') {
+            item.style.justifyContent = "center";
+            item.innerHTML = '<span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; font-family: \'Calibri\', Arial, sans-serif;">' + q.question_text + '</span>';
+          } else if (subject === 'maths') {
+    // 📦 CUSTOM MATHS FORMATTING 📦
+    let text = q.question_text.trim();
+
+    // 1. Check for "Backward Counting" design layout block first to prevent minus-sign conflicts
+    if (q.activity_type === "backward_counting") {
+        item.style.gridColumn = "span 2";
+        item.style.justifyContent = "center";
+        item.style.alignItems = "center";
+        
+        let startNum = 10; // default backup
+        if (text.includes('-')) {
+            let parts = text.split('-');
+            startNum = parseInt(parts[0], 10) || 10;
+        } else {
+            startNum = parseInt(text, 10) || 10;
+        }
+        
+        // "10-0" means 11 total boxes (10 down to 0)
+        let totalBoxes = startNum + 1; 
+        let boxesHtml = "";
+        
+        for (let i = 0; i < totalBoxes; i++) {
+            // The last box (at the end of the loop) shows the given starting number (e.g., 10)
+            if (i === totalBoxes - 1) {
+                boxesHtml += `<div style="display: inline-block; width: 45px; height: 45px; border: 2px solid #000; border-radius: 6px; text-align: center; line-height: 41px; font-size: 22px; font-weight: bold; margin: 0 4px; background: #ffffff; color: #000000; box-sizing: border-box;">${startNum}</div>`;
+            } else {
+                // All boxes before that remain completely empty for the student to write in
+                boxesHtml += `<div style="display: inline-block; width: 45px; height: 45px; border: 2px solid #000; border-radius: 6px; margin: 0 4px; background: #ffffff; box-sizing: border-box;"></div>`;
+            }
+        }
+        
+        item.innerHTML = `<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; padding: 5px 0;">${boxesHtml}</div>`;
+    }
+    // 2. Check for "What Comes After" design layout block
+    else if (q.activity_type === "what_comes_after") {
+        item.style.justifyContent = "center";
+        item.style.alignItems = "center";
+        item.innerHTML = `
+        <div style="display: flex; gap: 12px; align-items: center; justify-content: center; width: 100%;">
+            <div style="display: inline-block; width: 45px; height: 45px; border: 2px solid #000; border-radius: 6px; text-align: center; line-height: 41px; font-size: 22px; font-weight: bold; background: #ffffff; color: #000000; box-sizing: border-box;">${text}</div>
+            <div style="display: inline-block; width: 45px; height: 45px; border: 2px solid #000; border-radius: 6px; background: #ffffff; box-sizing: border-box;"></div>
+        </div>`;
+    }
+    // 3. Check for "What Comes Before" design layout block
+    else if (q.activity_type === "what_comes_before") {
+        item.style.justifyContent = "center";
+        item.style.alignItems = "center";
+        item.innerHTML = `
+        <div style="display: flex; gap: 12px; align-items: center; justify-content: center; width: 100%;">
+            <div style="display: inline-block; width: 45px; height: 45px; border: 2px solid #000; border-radius: 6px; background: #ffffff; box-sizing: border-box;"></div>
+            <div style="display: inline-block; width: 45px; height: 45px; border: 2px solid #000; border-radius: 6px; text-align: center; line-height: 41px; font-size: 22px; font-weight: bold; background: #ffffff; color: #000000; box-sizing: border-box;">${text}</div>
+        </div>`;
+    }
+    // 4. Check if it's an addition or subtraction sum
+    else if (text.includes('+') || text.includes('-')) {
+        item.style.justifyContent = "center";
+        item.style.alignItems = "center";
+        let operator = text.includes('+') ? '+' : '-';
+        let numbers = text.split(operator);
+
+        // Handle 3 Numbers Addition (e.g. 48+55+64)
+        if (numbers.length === 3) {
+            let num1 = numbers[0].trim();
+            let num2 = numbers[1].trim();
+            let num3 = numbers[2].trim();
+            item.innerHTML = `
+            <div style="font-family: 'Courier New', monospace; font-size: 26px; font-weight: bold; text-align: right; letter-spacing: 4px; line-height: 1.4; min-width: 90px; padding: 10px 0;">
+                <div>${num1}</div>
+                <div>${num2}</div>
+                <div style="border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 8px;">${operator} ${num3}</div>
+                <div style="height: 30px;"></div>
+            </div>`;
+        } 
+        // Handle 2 Numbers Addition/Subtraction (e.g. 112+212)
+        else if (numbers.length === 2) {
+            let num1 = numbers[0].trim();
+            let num2 = numbers[1].trim();
+            item.innerHTML = `
+            <div style="font-family: 'Courier New', monospace; font-size: 26px; font-weight: bold; text-align: right; letter-spacing: 4px; line-height: 1.4; min-width: 90px; padding: 10px 0;">
+                <div>${num1}</div>
+                <div style="border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 8px;">${operator} ${num2}</div>
+                <div style="height: 30px;"></div>
+            </div>`;
+        } else {
+            item.innerHTML = '<span style="font-size: 24px; font-weight: bold;">' + text + '</span>';
+        }
+    } 
+    // 5. Default Sequence Grid Box Rendering
+    else {
+        item.style.gridColumn = "span 2";
+        item.style.justifyContent = "center";
+        item.style.alignItems = "center";
+        let parts = text.split(',');
+        let boxesHtml = parts.map(part => {
+            let trimmed = part.trim();
+            let isMissing = trimmed === '' || trimmed.includes('__') || /\[\s*\]/.test(trimmed);
+            if (isMissing) {
+                return `<div style="display: inline-block; width: 45px; height: 45px; border: 2px solid #000; border-radius: 6px; margin: 0 4px; background: #ffffff;"></div>`;
+            } else {
+                return `<div style="display: inline-block; width: 45px; height: 45px; border: 2px solid #000; border-radius: 6px; text-align: center; line-height: 41px; font-size: 22px; font-weight: bold; margin: 0 4px; background: #ffffff; color: #000000; box-sizing: border-box;">${trimmed}</div>`;
+            }
+        }).join('');
+        item.innerHTML = `<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; padding: 5px 0;">${boxesHtml}</div>`;
+    }
+}
+
+ else {
+            const urduTextClass = subject === 'urdu' ? 'class="urdu-text"' : '';
+            item.innerHTML = '<span ' + urduTextClass + '>' + q.question_text + '</span><div class="line-input"></div>';
+          }
+        }
+        gridDiv.appendChild(item);
+      });
+      
+      sectionDiv.appendChild(gridDiv);
+      contentBlock.appendChild(sectionDiv);
+    });
+  } catch (err) {
+    console.error(err);
+    contentBlock.innerHTML = "<p style='text-align:center;color:red;'>Error loading worksheet data questions.</p>";
+  }
+}
+
+async function openConfigModal() {
+  const exam = document.getElementById('examType').value;
+  const classId = document.getElementById('filterClass').value;
+  const subject = document.getElementById('filterSubject').value.toLowerCase();
+
+  if (!exam || !classId) {
+    alert("Please select Class and Exam first!");
+    return;
+  }
+
+  // 1. Generate local fallback keys
+  const keySuffix = exam + "_" + classId + "_" + subject;
+  const defaultDate = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+
+  // 2. Set default values immediately from local memory cache
+  document.getElementById('modalTotalMarks').value = localStorage.getItem("ws_total_" + keySuffix) || '10';
+  document.getElementById('modalPassingMarks').value = localStorage.getItem("ws_passing_" + keySuffix) || '';
+  document.getElementById('modalExamDate').value = localStorage.getItem("ws_date_" + keySuffix) || defaultDate;
+
+  // 3. Try to load live settings from the database if they exist
+  try {
+    if (window.api && window.api.getPaperSettings) {
+      const result = await window.api.getPaperSettings({ 
+        examType: exam, 
+        paperName: subject, 
+        classId: parseInt(classId, 10) 
+      });
+      
+      const settings = result?.settings || result;
+      if (settings) {
+        // Only use the database value if it is valid, otherwise keep the local value
+        if (settings.total_marks !== undefined && settings.total_marks !== null) {
+          document.getElementById('modalTotalMarks').value = settings.total_marks;
+        }
+        if (settings.passing_marks !== undefined && settings.passing_marks !== null) {
+          document.getElementById('modalPassingMarks').value = settings.passing_marks;
+        }
+        if (settings.exam_date) {
+          document.getElementById('modalExamDate').value = settings.exam_date;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Database read catch trigger, keeping local storage defaults:", err);
+  }
+
+  document.getElementById('layoutConfigModal').style.display = 'flex';
+}
+
+async function saveConfigModal() {
+  const exam = document.getElementById('examType').value;
+  const classId = document.getElementById('filterClass').value;
+  const subject = document.getElementById('filterSubject').value.toLowerCase();
+
+  const totalM = document.getElementById('modalTotalMarks').value || '10';
+  const passM = document.getElementById('modalPassingMarks').value || '-';
+  const examD = document.getElementById('modalExamDate').value.trim();
+
+  const keySuffix = exam + "_" + classId + "_" + subject;
+  
+  // 1. Force save tightly to local memory cache first
+  localStorage.setItem("ws_total_" + keySuffix, totalM);
+  localStorage.setItem("ws_passing_" + keySuffix, passM);
+  localStorage.setItem("ws_date_" + keySuffix, examD);
+
+  // 2. Commit data updates into SQLite storage table
+  try {
+    if (window.api && window.api.savePaperSettingsOnly) {
+      await window.api.savePaperSettingsOnly({
+        examType: exam,
+        paperName: subject,
+        classId: parseInt(classId, 10),
+        totalMarks: parseFloat(totalM) || 10,
+        passingMarks: parseFloat(passM) || 0,
+        examDate: examD, 
+        objectiveMarks: parseFloat(totalM) || 10,
+        subjectiveMarks: 0,
+        noteObjective: '',
+        noteSubjective: ''
+      });
+    }
+  } catch (err) {
+    console.error("Database save pipeline error:", err);
+  }
+
+  closeConfigModal();
+  
+  // 3. Rerender paper to display the new values immediately
+  loadSelectedWorksheetPaper();
+}
+
+function closeConfigModal() {
+  document.getElementById('layoutConfigModal').style.display = 'none';
+}
+function executePdfSave() {
+  if (window.api && window.api.saveToPdf) {
+    window.api.saveToPdf();
+  } else {
+    window.print();
+  }
+}
+</script>
+
+</body>
+</html>

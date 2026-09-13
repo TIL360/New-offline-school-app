@@ -3,172 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Leaving Certificate</title>
+    <title>Student School Leaving Certificate</title>
     <style>
-        :root {
-            --primary-color: #1e293b;
-            --border-gold: #c5a059;
-        }
-
+        /* General Document Layout Rules */
         body {
-            font-family: 'Times New Roman', Times, serif;
-            background-color: #f1f5f9;
+            font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+            background-color: #f4f6f9;
             margin: 0;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            padding: 25px;
+            color: #000;
         }
-
-        /* 📄 CERTIFICATE CONTAINER */
-        .certificate-container {
-            width: 800px;
-            padding: 50px;
+        .header-bar {
             background: white;
-            border: 15px solid var(--primary-color);
-            position: relative;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        /* Inner Decorative Border */
-        .certificate-container::after {
-            content: '';
-            position: absolute;
-            top: 5px; left: 5px; right: 5px; bottom: 5px;
-            border: 2px solid var(--border-gold);
-            pointer-events: none;
-        }
-
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #333;
-            margin-bottom: 30px;
-            padding-bottom: 10px;
-        }
-
-        .school-name {
-            font-size: 32px;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin: 0;
-            text-transform: uppercase;
-        }
-
-        .title {
-            text-align: center;
-            font-size: 24px;
-            text-decoration: underline;
-            margin: 20px 0;
-            font-weight: bold;
-        }
-
-        .content {
-            line-height: 2;
-            font-size: 18px;
-            text-align: justify;
-        }
-
-        .data-field {
-            font-weight: bold;
-            border-bottom: 1px dotted #000;
-            padding: 0 10px;
-            display: inline-block;
-        }
-
-        .footer {
-            margin-top: 60px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
+        /* Classic Border Frame Certificate Layout Rules */
+.certificate-sheet {
+    background: white;
+    padding: 50px 60px;
+    max-width: 850px;
+    margin: 0 auto;
+    min-height: 550px; 
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    
+    /* CRITICAL FIXES FOR WATERMARK POSITIONING */
+    position: relative; 
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
 
-        .sig-box {
+/* Watermark Layout Layer Setup */
+.certificate-sheet::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px; /* Scaled down slightly to fit the certificate design */
+    height: 320px;
+    background-image: url('../../images/logo.png'); /* Points directly to your internal asset folder */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.08; /* Highly faint opacity level to guarantee text readability */
+    z-index: 0; /* Pushes the layer securely behind all foreground content fields */
+    pointer-events: none;
+}
+
+        .filter-row { display: flex; gap: 10px; align-items: center; }
+        .input-field {
+            padding: 6px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .nav-btn {
+            background-color: #f8fafc; color: #475569; border: 1px solid #cbd5e1;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;
+            text-decoration: none; font-size: 13px; display: inline-flex; align-items: center;
+        }
+        .btn-load { background: #bd081c; color: white; border: none; }
+        .btn-print { background: #003049; color: white; border: none; }
+
+        /* Classic Border Frame Certificate Layout Rules */
+        .certificate-sheet {
+            background: white;
+            padding: 50px 60px;
+            max-width: 850px;
+            margin: 0 auto;
+            min-height: 550px; /* Standard Landscape/Portrait balance sizing */
+            box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            border: 10px double #003049; /* Dual-ring border container line layout */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .cert-header {
             text-align: center;
-            width: 200px;
-            border-top: 1px solid #000;
-            padding-top: 10px;
+            margin-bottom: 30px;
         }
-
-        /* 🖨️ PRINT OPTIMIZATION */
-        @media print {
-            body { background: white; padding: 0; }
-            .no-print { display: none !important; }
-            .certificate-container { box-shadow: none; margin: 0; border-width: 10px; }
-        }
-
-        .no-print {
-            margin-bottom: 20px;
-        }
-
-        .btn-print {
-            padding: 10px 25px;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        .cert-title {
+            font-size: 28px;
             font-weight: bold;
+            color: #003049;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 10px 0;
+        }
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+        .cert-body {
+            font-size: 16px;
+            line-height: 2.2;
+            text-align: justify;
+            margin-bottom: 40px;
+        }
+        .underline-data {
+            border-bottom: 1px dashed #000;
+            padding: 0 8px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .cert-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 60px;
+            font-size: 14px;
+        }
+        .signature-line {
+            border-top: 1.5px solid #000;
+            width: 180px;
+            text-align: center;
+            padding-top: 5px;
+        }
+
+        /* Print Media Stylesheet Overrides */
+        @media print {
+            body { background-color: transparent; padding: 0; margin: 0; }
+            .header-bar { display: none !important; }
+            .certificate-sheet { box-shadow: none; border: 10px double #003049; margin: 0 auto; }
         }
     </style>
 </head>
 <body>
 
-    <div class="no-print">
-        <button class="btn-print" onclick="window.print()">🖨️ Print Certificate</button>
-        <button class="btn-print" style="background:#64748b" onclick="window.history.back()">Back</button>
-    </div>
-
-    <div class="certificate-container" id="certArea">
-        <div class="header">
-            <h1 class="school-name">YOUR SCHOOL NAME HERE</h1>
-            <p>123 Education Lane, City Name, Country | Phone: +123 456 789</p>
+    <!-- Upper Application Action Controls Strip Layer -->
+    <div class="header-bar">
+        <div class="filter-row">
+            <input type="text" id="search-regno" class="input-field" placeholder="Enter Registration No (e.g. 1024)">
+            <button class="nav-btn btn-load" id="btn-search">Generate Certificate</button>
         </div>
-
-        <div class="title">SCHOOL LEAVING CERTIFICATE</div>
-
-        <div class="content">
-            This is to certify that <span id="student_name" class="data-field">..........</span> 
-            son/daughter of <span id="father_name" class="data-field">..........</span> 
-            having Registration No <span id="reg_no" class="data-field">..........</span> 
-            was a student of this institution in Class <span id="class" class="data-field">..........</span>.
-            <br><br>
-            According to the school records, his/her Date of Birth is 
-            <span id="dob" class="data-field">..........</span>. 
-            He/She has paid all school dues and left the school on <span id="leaving_date" class="data-field">..........</span>.
-            <br><br>
-            His/Her character and conduct during the stay in school was 
-            <span class="data-field">Good</span>.
-        </div>
-
-        <div class="footer">
-            <div class="sig-box">Class Teacher</div>
-            <div class="sig-box">School Seal</div>
-            <div class="sig-box">Principal Signature</div>
+        <div>
+            <button class="nav-btn btn-print" id="btn-print">Print Certificate</button>
         </div>
     </div>
 
+    <!-- Certificate Sheet Document Base View Container -->
+    <div class="certificate-sheet">
+        <div class="cert-header">
+    <!-- Changed id from "inst-name" to "institute-title" -->
+    <h1 id="institute-name" style="margin:0; font-size: 32px; color: #bd081c;">Loading</h1>
+    <!-- Changed id from "inst-address" to "institute-address" -->
+    <p id="address" style="margin:5px 0 0 0; font-size: 14px; font-style: italic;">Islamabad</p>
+    <div class="cert-title">School Leaving Certificate</div>
+</div>
+
+
+        <div class="meta-row">
+            <div>Sr No: <span id="lbl-serial" class="underline-data">______</span></div>
+            <div>Date: <span id="lbl-date" class="underline-data">______</span></div>
+        </div>
+
+        <div class="cert-body">
+            This is to certify that Mr./Ms. <span id="lbl-name" class="underline-data" style="min-width: 200px;">____________________</span> 
+            Son/Daughter of Mr. <span id="lbl-father" class="underline-data" style="min-width: 200px;">____________________</span> 
+            bearing Registration No <span id="lbl-reg" class="underline-data" style="min-width: 80px;">______</span> 
+            and Roll No <span id="lbl-roll" class="underline-data" style="min-width: 60px;">______</span> 
+            was a bonafide student of this institution. 
+            His/Her Date of Birth recorded in the admission register is 
+            <span id="lbl-dob" class="underline-data" style="min-width: 100px;">__________</span> 
+            (in words): <span id="lbl-dob-words" class="underline-data" style="min-width: 250px;">________________________________________</span>.<br>
+
+            He/She has successfully passed / left the class <span id="lbl-leaving-class" class="underline-data" style="min-width: 80px;">______</span> 
+            in the month of <span id="lbl-leaving-date" class="underline-data" style="min-width: 100px;">__________</span>. 
+            All school dues have been cleared up to <span id="lbl-dues" class="underline-data" style="min-width: 100px;">__________</span>.
+            During his/her stay at this institution, his/her character and conduct remained 
+            <span id="lbl-character" class="underline-data" style="min-width: 120px;">__________</span>. 
+            We wish him/her every success in future endeavors.
+        </div>
+
+        <div class="cert-footer">
+            <div class="signature-line">Class Teacher</div>
+            <div class="signature-line">Principal / Director</div>
+        </div>
+    </div>
+
+    <!-- Frontend Bridge Communication Orchestration Script Block -->
     <script>
-        // Extract Student ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const studentId = urlParams.get('id');
+        document.addEventListener('DOMContentLoaded', async () => {
 
-        async function loadCertificateData() {
-            if (!studentId) return;
+             try {
+      // 1. Invoke the IPC handler exposed in preload.js
+      const details = await window.api.getAppDetails();
+      
+      // 2. Safely populate the text values into your HTML layout elements
+      if (details) {
+        document.getElementById('institute-name').innerText = details.instituteName;
+        document.getElementById('contact-number').innerText = details.contactNumber;
+        document.getElementById('email-address').innerText  = details.email;
+        document.getElementById('address').innerText  = details.address;
+        document.getElementById('footer-text').innerText     = details.footerText;
+      }
+    } catch (error) {
+      console.error("Failed to load application metadata details:", error);
+    }
+            // Load Centralized Application Metadata for Institute Headings
+            try {
+                const appDetails = await window.api.getAppDetails();
+                if (appDetails) {
+                    document.getElementById('inst-name').innerText = appDetails.instituteName;
+                    document.getElementById('inst-address').innerText = appDetails.address;
+                }
+            } catch (err) {
+                console.error("Metadata resolution configuration error:", err);
+            }
 
-            // Fetch specific student details using your API
-            const student = await window.api.getStudentById(studentId); 
+            // Bind Event Actions
+            document.getElementById('btn-search').addEventListener('click', loadStudentCertificate);
+            document.getElementById('btn-print').addEventListener('click', () => {
+                window.api.saveToPdf(); // Triggers native silent/prompt print context handlers
+            });
+        });
 
-            if (student) {
-                document.getElementById('student_name').innerText = student.student_name;
-                document.getElementById('father_name').innerText = student.father_name;
-                document.getElementById('reg_no').innerText = student.registration_no;
-                document.getElementById('class').innerText = student.current_class;
-                document.getElementById('dob').innerText = student.dob; 
-                // Set current date as leaving date
-                document.getElementById('leaving_date').innerText = new Date().toLocaleDateString();
+        async function loadStudentCertificate() {
+            const regNo = document.getElementById('search-regno').value.trim();
+            if (!regNo) {
+                alert("Please input a valid target registration number.");
+                return;
+            }
+
+            try {
+                // Invoke main process runtime via contextIsolation bridge
+                const student = await window.api.getStudentByRegNo(regNo);
+                
+                if (!student) {
+                    alert("No record found matching the specified student registration reference.");
+                    return;
+                }
+
+                // Map database record fields to structural HTML element targets safely
+                document.getElementById('lbl-name').innerText = student.student_name || 'N/A';
+                document.getElementById('lbl-father').innerText = student.father_name || 'N/A';
+                document.getElementById('lbl-reg').innerText = student.registration_no || 'N/A';
+                document.getElementById('lbl-roll').innerText = student.roll_no || 'N/A';
+                document.getElementById('lbl-dob').innerText = student.dob || 'N/A';
+                document.getElementById('lbl-dob-words').innerText = student.dob_in_words || 'N/A';
+                document.getElementById('lbl-leaving-class').innerText = student.leaving_class || student.current_class || 'N/A';
+                document.getElementById('lbl-leaving-date').innerText = student.leaving_date || 'N/A';
+                document.getElementById('lbl-dues').innerText = student.dues_paid_up_to || 'N/A';
+                document.getElementById('lbl-character').innerText = student.character_remarks || 'Good';
+                document.getElementById('lbl-serial').innerText = student.certificate_serial || '______';
+                document.getElementById('lbl-date').innerText = student.cert_issuance_date || new Date().toLocaleDateString('en-GB');
+
+            } catch (error) {
+                console.error("Runtime client data execution exception:", error);
+                alert("An unexpected error occurred while parsing database information parameters.");
             }
         }
-
-        loadCertificateData();
     </script>
 </body>
 </html>

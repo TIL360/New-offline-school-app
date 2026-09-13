@@ -120,6 +120,15 @@
       color: #64748b;
       text-align: center;
     }
+    /* Update the button-grid container to allow multiple rows gracefully */
+.button-grid {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap; /* Allows your two rows of cards to wrap naturally on smaller monitors */
+}
+
   </style>
 </head>
 <body>
@@ -131,32 +140,58 @@
   </div>
 
   <!-- Dashboard Container Box -->
-  <div class="dashboard-container">
+  <!-- Dashboard Container Box -->
+<div class="dashboard-container">
     <h3>Question Bank Navigation Options</h3>
     
     <div class="button-grid">
-      <!-- Button Option 1: Open Add Question Page -->
-      <a href="addq.html" class="menu-card add-q">
-        <span class="icon">📝</span>
-        <span>Add Question</span>
-        <span class="description">Save new questions, MCQs, and fill-in-the-blanks to your bank.</span>
-      </a>
+        <!-- Button Option 1: Open Add Question Page -->
+        <a href="addq.html" class="menu-card add-q">
+            <span class="icon">📝</span>
+            <span>Add Question</span>
+            <span class="description">Save new questions, MCQs, and fill-in-the-blanks to your bank.</span>
+        </a>
 
-      <!-- Button Option 2: Open Build Exam Paper Page -->
-      <a href="build-paper.html" class="menu-card build-p">
-        <span class="icon">📜</span>
-        <span>Build Exam Paper</span>
-        <span class="description">Filter by class or lesson and create complete printable exam layouts.</span>
-      </a>
+        <!-- Button Option 2: Open Build Exam Paper Page -->
+        <a href="build-paper.html" class="menu-card build-p">
+            <span class="icon">📜</span>
+            <span>Build Exam Paper</span>
+            <span class="description">Filter by class or lesson and create complete printable exam layouts.</span>
+        </a>
 
-      <!-- Button Option 3: Open View Paper Page -->
-      <a href="viewpaper.html" class="menu-card view-p">
-        <span class="icon">🔍</span>
-        <span>View Paper</span>
-        <span class="description">Preview, filter, and print completed exam question sheets.</span>
-      </a>
+        <!-- Button Option 3: Open View Paper Page -->
+        <a href="viewpaper.html" class="menu-card view-p">
+            <span class="icon">🔍</span>
+            <span>View Paper</span>
+            <span class="description">Preview, filter, and print completed exam question sheets.</span>
+        </a>
     </div>
-  </div>
+
+    <!-- NEW SECTION ADDED BELOW FOR JUNIOR SCHOOL WORKSHEETS -->
+    <h3 style="margin-top: 40px; margin-bottom: 25px;">Junior School Worksheet Engine</h3>
+    
+    <div class="button-grid">
+        <!-- Button Option 4: Open Prepare Worksheet Page -->
+        <a href="prepare-worksheet.html" class="menu-card add-q" style="border-top: 4px solid #8e44ad;">
+            <span class="icon">📝</span>
+            <span>Add Questions</span>
+            <span class="description">Generate specialized exercises like Alfaaz Jor/Tor, CVC words, or drawings.</span>
+        </a>
+<a href="build-worksheet.html" class="menu-card add-q" style="border-top: 4px solid #8e44ad;">
+            <span class="icon">🛠️</span>
+            <span>Build Worksheet</span>
+            <span class="description">Generate specialized exercises like Alfaaz Jor/Tor, CVC words, or drawings.</span>
+        </a>
+
+        <!-- Button Option 5: View Pre-Compiled Worksheets -->
+        <a href="view-worksheet.html" class="menu-card view-p" style="border-top: 4px solid #2980b9;">
+            <span class="icon">📄</span>
+            <span>Worksheet Preview Canvas</span>
+            <span class="description">Review, format, adjust padding, and instantly compile A4 PDF prints.</span>
+        </a>
+    </div>
+</div>
+
 
 </body>
 </html>

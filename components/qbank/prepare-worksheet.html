@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Worksheet Question Manager</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; padding: 15px 25px; color: #333; margin: 0; height: 100vh; box-sizing: border-box; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        h2 { margin: 0; color: #1e293b; font-size: 20px; }
+        .nav-btn { background-color: #f8fafc; color: #475569; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; font-size: 13px; display: inline-flex; align-items: center; }
+        .box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; max-width: 1100px; margin: 0 auto; }
+        .top-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 12px; color: #475569; }
+        input, select, textarea { width: 100%; padding: 8px 10px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: #1e293b; }
+        .btn-save { background-color: #003049; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; margin-top: 20px; }
+        .urdu-field { direction: rtl; text-align: right; font-family: 'Urdu Typesetting', 'Nafees', Arial; font-size: 16px; }
+        .hidden-element { display: none !important; }
+        .image-preview { max-width: 80px; max-height: 60px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px; display: block; }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <h2>Worksheets Question Manager</h2>
+        <a href="qbnkdashboard.html" class="nav-btn"> Back to Dashboard</a>
+    </div>
+    <div class="box">
+        <h3>1. Add Question to Worksheet Pool</h3>
+        <div class="top-grid">
+            <div class="form-group">
+                <label>Class</label>
+                <select id="classId" required><option value="">Loading classes...</option></select>
+            </div>
+            <div class="form-group">
+                <label>Subject</label>
+                <select id="subject" onchange="handleSubjectChange()" required>
+                    <option value="Urdu">Urdu</option>
+                    <option value="English">English</option>
+                    <option value="Maths">Maths</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Exam Context</label>
+                <select id="examSelect" required><option value="">Loading exams...</option></select>
+            </div>
+            <div class="form-group">
+                <label>Exercise Design Pattern (Type)</label>
+                <select id="activitySelect" onchange="handleActivityChange()" required></select>
+            </div>
+        </div>
+
+        <div class="form-group" id="textPromptGroup">
+            <label id="labelPrompt">Exercise Content / Core Prompt</label>
+            <textarea id="qText" rows="4" placeholder="Type content here..."></textarea>
+        </div>
+        <div class="form-group hidden-element" id="imageUploadGroup">
+            <label>Reference Graphic Asset (Upload Picture)</label>
+            <input type="file" id="imageFileInput" accept="image/png, image/jpeg, image/jpg, image/webp" onchange="previewSelectedImage()" style="padding: 5px;">
+            <img id="imgPreviewCanvas" class="image-preview hidden-element" src="">
+        </div>
+        <div class="form-group" id="answerKeyWrapper">
+            <label id="labelAnswer">Expected Correct Answer / Key</label>
+            <input type="text" id="correctAnswer" placeholder="Type correct answer matching string...">
+        </div>
+        <button type="button" class="btn-save" onclick="saveTargetQuestionRow()">Save to Worksheet Pool</button>
+    </div>
+
+    <script>
+// STRICT SCHEMAS: Keys match your database records exactly
+const activities = {
+Urdu: [
+{ value: "All", text: "All Design Types" }, 
+{ value: "alfaaz_jor", text: "Alfaaz ke Jor" }, 
+{ value: "alfaaz_tor", text: "Alfaaz ke Tor" }, 
+{ value: "tasveer_naam", text: "Tasveer Dekh Kar Naam" }
+],
+English: [
+{ value: "All", text: "All Design Types" }, 
+{ value: "cvc_match", text: "CVC Word-to-Picture" }, 
+{ value: "missing_vowels", text: "Missing Vowel Blanks" },
+],
+Maths: [
+{ value: "All", text: "All Design Types" },
+{ value: "count_write", text: "Count Elements" }, 
+{ value: "addition_simple", text: "Simple Addition" },
+{ value: "subtraction_simple", text: "Simple Subtraction" },
+{ value: "number_matching", text: "Match Numbers" },
+{ value: "math_tracing", text: "Number Tracing" },
+{ value: "arrange_ascending", text: "Arrange Smaller to Greater" },
+{ value: "arrange_descending", text: "Arrange Greater to Smaller" },
+{ value: "what_comes_after", text: "What Comes After" },
+{ value: "what_comes_before", text: "What Comes Before" },
+{ value: "backward_counting", text: "Backward Counting" },
+{ value: "circle_biggest", text: "Circle the Biggest Numbers" },
+{ value: "circle_smallest", text: "Circle the Smallest Numbers" }
+]
+};
+
+        let currentImageBase64 = "";
+
+        window.addEventListener('DOMContentLoaded', () => { populateSystemDropdowns(); });
+
+        async function populateSystemDropdowns() {
+            try {
+                if (window.api && window.api.getDropdownData) {
+                    const data = await window.api.getDropdownData();
+                    if (data && data.success) {
+                        const classBox = document.getElementById('classId');
+                        classBox.innerHTML = '';
+                        data.classes.forEach(c => {
+                            let opt = document.createElement('option');
+                            opt.value = c.id; opt.textContent = c.class_name; classBox.appendChild(opt);
+                        });
+                        const examBox = document.getElementById('examSelect');
+                        examBox.innerHTML = '';
+                        data.exams.forEach(e => {
+                            let opt = document.createElement('option');
+                            opt.value = e.exam_name; opt.textContent = e.exam_name; examBox.appendChild(opt);
+                        });
+                    }
+                }
+                handleSubjectChange();
+            } catch (err) { console.error(err); }
+        }
+
+        function handleSubjectChange() {
+            const subject = document.getElementById("subject").value;
+            const activityBox = document.getElementById("activitySelect");
+            activityBox.innerHTML = "";
+            activities[subject].forEach(act => {
+                let opt = document.createElement("option");
+                opt.value = act.value; opt.textContent = act.text; activityBox.appendChild(opt);
+            });
+            handleActivityChange();
+        }
+
+        function handleActivityChange() {
+            const subject = document.getElementById("subject").value;
+            const activity = document.getElementById("activitySelect").value;
+            const textGroup = document.getElementById("textPromptGroup");
+            const imgGroup = document.getElementById("imageUploadGroup");
+            
+            document.getElementById("imageFileInput").value = "";
+            document.getElementById("imgPreviewCanvas").classList.add("hidden-element");
+            currentImageBase64 = "";
+
+            if (activity === "tasveer_naam" || activity === "cvc_match" || activity === "number_matching") {
+    imgGroup.classList.remove("hidden-element"); 
+    textGroup.classList.add("hidden-element");
+} else {
+    imgGroup.classList.add("hidden-element"); 
+    textGroup.classList.remove("hidden-element");
+}
+
+        }
+
+        function previewSelectedImage() {
+            const fileInput = document.getElementById("imageFileInput");
+            const preview = document.getElementById("imgPreviewCanvas");
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
+            const reader = new FileReader();
+            reader.onloadend = function () { currentImageBase64 = reader.result; preview.src = reader.result; preview.classList.remove("hidden-element"); }
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
+ async function saveTargetQuestionRow() {
+    const activity = document.getElementById("activitySelect").value;
+    const examText = document.getElementById("examSelect").value;
+    if (!examText) { alert("Please select an Exam Context."); return; }
+
+    // Updated line to support image checks for number_matching items
+    let questionText = (activity === "tasveer_naam" || activity === "cvc_match" || activity === "number_matching") 
+        ? currentImageBase64 
+        : document.getElementById("qText").value.trim();
+
+    if (!questionText) { alert("Please supply valid question content prompts."); return; }
+
+    const data = {
+        classId: document.getElementById("classId").value,
+        subject: document.getElementById("subject").value.toLowerCase(),
+        activityType: activity,
+        examType: examText,
+        questionText: questionText,
+        answerText: document.getElementById("correctAnswer").value.trim()
+    };
+
+    const res = await window.api.addWorksheetQuestion(data);
+    if (res.success) {
+        alert("Question saved successfully!");
+        document.getElementById("qText").value = ""; 
+        document.getElementById("correctAnswer").value = "";
+        document.getElementById("imageFileInput").value = ""; 
+        document.getElementById("imgPreviewCanvas").classList.add("hidden-element");
+        currentImageBase64 = "";
+    }
+}
+   </script>
+</body>
+</html>

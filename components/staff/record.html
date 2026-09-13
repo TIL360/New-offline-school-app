@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary History Records</title>
+    <style>
+        :root {
+            --primary: #0077b6;
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --gray: #7f8c8d;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 25px;
+            color: var(--dark);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        /* Top Navigation Header Control Block */
+        .portal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        .portal-title h2 { margin: 0; font-size: 24px; color: var(--dark); }
+        .portal-title p { margin: 5px 0 0 0; color: var(--gray); font-size: 14px; }
+        
+        .btn-back {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        /* Search Filtering Control Interface Box */
+        .search-container {
+            background: #fff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .search-box {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+        }
+        .search-box:focus { border-color: var(--primary); }
+        
+        /* Universal Grid Table Layout Framework */
+        .table-responsive {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+        .history-table th {
+            background-color: #f8f9fa;
+            color: var(--dark);
+            font-weight: 600;
+            padding: 15px 12px;
+            border-bottom: 2px solid #eee;
+            white-space: nowrap;
+        }
+        .history-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        .history-table tr:hover { background-color: #fdfdfd; }
+        
+        /* Text Badge Visual Styling Properties */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        .badge-paid { background: #e8f5e9; color: var(--success); }
+        .text-danger { color: var(--danger); font-weight: 500; }
+        .text-success { color: var(--success); font-weight: 500; }
+        .remarks-text { font-size: 11px; color: var(--gray); font-style: italic; display: block; margin-top: 2px; max-width: 130px; line-height: 13px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Header module area navigation wrapper -->
+        <div class="portal-header">
+            <div class="portal-title">
+                <h2>📊 Historical Salary Remittance Audit Logs</h2>
+                <p>Comprehensive archival tracking records for all paid staff salary distributions.</p>
+            </div>
+            <button onclick="window.location.href='salary.html'" class="btn-back">⬅ Back to Portal</button>
+        </div>
+        <!-- Summary Cards Row for Real-time Aggregations -->
+                <!-- Summary Cards Row for 4 Real-time Aggregations -->
+        <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+            <!-- 1. Fund summary card -->
+            <div style="flex: 1; background: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 4px; border-left: 5px solid var(--danger);">
+                <span style="font-size: 11px; color: var(--gray); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Total Fund Collected:</span>
+                <strong id="totalFundSummary" style="font-size: 22px; color: var(--danger);">Rs. 0</strong>
+            </div>
+            <!-- 2. Security summary card -->
+            <div style="flex: 1; background: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 4px; border-left: 5px solid var(--danger);">
+                <span style="font-size: 11px; color: var(--gray); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Total Security Collected:</span>
+                <strong id="totalSecuritySummary" style="font-size: 22px; color: var(--danger);">Rs. 0</strong>
+            </div>
+            <!-- 3. Other Deduction summary card -->
+            <div style="flex: 1; background: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 4px; border-left: 5px solid var(--danger);">
+                <span style="font-size: 11px; color: var(--gray); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Total Other Deductions:</span>
+                <strong id="totalDeductionSummary" style="font-size: 22px; color: var(--danger);">Rs. 0</strong>
+            </div>
+            <!-- 4. Document Held one-liner summary card -->
+            <div style="flex: 1; background: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 4px; border-left: 5px solid var(--primary);">
+                <span style="font-size: 11px; color: var(--gray); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Documents Held Note:</span>
+                <strong id="totalDocumentsSummary" style="font-size: 18px; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 3px;">None</strong>
+            </div>
+        </div>
+
+
+        <!-- Live Interlocking Search Filter input controls card layout area -->
+        <div class="search-container">
+            <strong>🔍 Search Staff:</strong>
+            <input type="text" id="historySearchInput" onkeyup="filterHistoryRecords()" placeholder="Type staff member name to filter instantly..." class="search-box">
+        </div>
+
+        <!-- Core Historical Grid Table Board Render Block -->
+        <div class="table-responsive">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Staff Member</th>
+                        <th>Month / Year</th>
+                        <th>Basic Salary</th>
+                        <th>Allowances</th>
+                        <th>Bonus / Award</th>
+                        <th>Leaves (A/V)</th>
+                        <th>Leave Ded.</th>
+                        <th>Other Ded.</th>
+                        <th>Fund Cut</th>
+                        <th>Security Cut</th>
+                        <th>Net Paid</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <!-- Data rows loaded dynamically via Part 2 Script -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+<!-- Part 1 ends here. Script contents are passed in Part 2 below -->
+<!-- PART 2: JAVASCRIPT LOGIC ENGINE & AUTOMATED ROW BUILDER -->
+<script>
+    // Global memory array to store database results safely
+    let archivalRecordsList = [];
+
+    // 1. Initialize data fetching instantly when DOM window mounts
+    document.addEventListener("DOMContentLoaded", () => {
+        loadArchivalRecordsFromDatabase();
+    });
+
+    // 2. Fetch data payload records from the backend database layer
+// REPLACE THIS FUNCTION COMPLETELY IN record.html
+async function loadArchivalRecordsFromDatabase() {
+    try {
+        // 1. Fetch salary rows and staff rows in parallel
+        const salaryData = await window.api.loadSalaryData(); 
+        const staffData = await window.api.getStaff();
+        
+        if (salaryData && Array.isArray(salaryData)) {
+            // 2. Map only Paid rows and inject documents dynamically from the staff database list
+            archivalRecordsList = salaryData.filter(record => record.status === 'Paid').map(r => {
+                // Find matching staff profile to extract live documents
+                const matchingStaffProfile = Array.isArray(staffData) ? staffData.find(s => s.name === r.name || s.id === r.staff_id) : null;
+                
+                return {
+                    ...r,
+                    // If salary table doesn't have it, copy it straight from the staff list profile!
+                    documents_held: r.documents_held || (matchingStaffProfile ? matchingStaffProfile.documents_held : 'None')
+                };
+            });
+            
+            renderHistoryTableGrid(archivalRecordsList);
+        }
+    } catch (error) {
+        console.error("Critical History Extraction Error:", error);
+        document.getElementById('historyTableBody').innerHTML = `
+            <tr>
+                <td colspan="12" style="text-align:center; color:var(--danger); font-weight:bold; padding:20px;">
+                    ⚠️ Failed to extract historical archives or connect to staff profile channels.
+                </td>
+            </tr>`;
+    }
+}
+
+    // 3. Render and format data rows directly into the interface framework grid matrix
+function renderHistoryTableGrid(recordsArray) {
+    const body = document.getElementById('historyTableBody');
+    body.innerHTML = ""; 
+
+    // Initialize accumulation tracker metrics
+    let aggregatedFundSum = 0;
+    let aggregatedSecuritySum = 0;
+    let aggregatedDeductionSum = 0;
+    let activeDocumentsList = [];
+
+    // Read the current live search input text to see if the user is typing
+    const currentSearchQuery = document.getElementById('historySearchInput').value.toLowerCase().trim();
+
+    if (recordsArray.length === 0) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="12" style="text-align:center; padding:30px; color:var(--gray);">
+                    No matching historical payout records found.
+                </td>
+            </tr>`;
+        document.getElementById('totalFundSummary').innerText = "Rs. 0";
+        document.getElementById('totalSecuritySummary').innerText = "Rs. 0";
+        document.getElementById('totalDeductionSummary').innerText = "Rs. 0";
+        document.getElementById('totalDocumentsSummary').innerText = ""; // Clear if empty
+        return;
+    }
+
+    recordsArray.forEach(r => {
+        // Isolate historical value dimensions
+        const allowance = parseFloat(r.allowance) || 0;
+        const award = parseFloat(r.award) || 0;
+        const manualDeduction = parseFloat(r.salary_deduction) || 0;
+        const fundCutting = parseFloat(r.fund_cutting) || 0;
+        const securityCutting = parseFloat(r.security_cutting) || 0;
+        
+        // Add current iteration values onto total metrics sums
+        aggregatedFundSum += fundCutting;
+        aggregatedSecuritySum += securityCutting;
+        aggregatedDeductionSum += manualDeduction;
+
+        // ONLY collect document notes if the user has actively typed a search string
+        if (currentSearchQuery !== "" && r.documents_held && r.documents_held.trim() !== "" && r.documents_held !== "None") {
+            if (!activeDocumentsList.includes(r.documents_held.trim())) {
+                activeDocumentsList.push(r.documents_held.trim());
+            }
+        }
+
+        // Extract raw configuration parameters safely
+        const finalNetPaid = parseFloat(r.net_paid) || parseFloat(r.salary) || 0;
+        const basicPay = parseFloat(r.original_base) || 5000; 
+
+        // Compute exact leave fines matching layout parameters standard
+        const dailyRate = basicPay / 30;
+        const authLeaves = parseInt(r.auth_leaves) || 0;
+        const availedLeaves = parseInt(r.availed_leaves) || 0;
+        const extraLeaves = Math.max(0, availedLeaves - authLeaves);
+        const leavesDeduction = Math.round(extraLeaves * dailyRate);
+
+        body.innerHTML += `
+            <tr>
+                <td>
+                    <strong>${r.name}</strong>
+                    <span class="remarks-text" style="color:var(--primary); font-weight:500; font-style:normal;">${r.designation || 'Teacher'}</span>
+                </td>
+                <td><strong>${r.salary_month} ${r.salary_year}</strong></td>
+                <td>Rs. ${basicPay.toLocaleString()}</td>
+                <td>Rs. ${allowance.toLocaleString()}</td>
+                <td>
+                    <span class="text-success">Rs. ${award.toLocaleString()}</span>
+                    <span class="remarks-text">${r.award_remarks || 'None'}</span>
+                </td>
+                <td><strong>${authLeaves} / ${availedLeaves}</strong></td>
+                <td class="text-danger">Rs. ${leavesDeduction.toLocaleString()}</td>
+                <td>
+                    <span class="text-danger">Rs. ${manualDeduction.toLocaleString()}</span>
+                    <span class="remarks-text">${r.deduction_remarks || 'None'}</span>
+                </td>
+                <td class="text-danger">Rs. ${fundCutting.toLocaleString()}</td>
+                <td class="text-danger">Rs. ${securityCutting.toLocaleString()}</td>
+                <td><strong style="color:var(--primary); font-size:15px;">Rs. ${Math.round(finalNetPaid).toLocaleString()}</strong></td>
+                <td><span class="badge badge-paid">Paid ✅</span></td>
+            </tr>
+        `;
+    });
+
+    // Update summary layout text cards with calculated totals
+    document.getElementById('totalFundSummary').innerText = "Rs. " + aggregatedFundSum.toLocaleString();
+    document.getElementById('totalSecuritySummary').innerText = "Rs. " + aggregatedSecuritySum.toLocaleString();
+    document.getElementById('totalDeductionSummary').innerText = "Rs. " + aggregatedDeductionSum.toLocaleString();
+    
+    // Set document notes string display criteria properties based on search query status
+    if (currentSearchQuery !== "" && activeDocumentsList.length > 0) {
+        document.getElementById('totalDocumentsSummary').innerText = activeDocumentsList.join(", ");
+        document.getElementById('totalDocumentsSummary').title = activeDocumentsList.join(", "); 
+    } else {
+        // Keeps the fourth card completely clean and empty if no search is active
+        document.getElementById('totalDocumentsSummary').innerText = "";
+    }
+}
+
+    // 4. Live Interlocking Search Filter Engine Functionality Method
+    function filterHistoryRecords() {
+        const queryText = document.getElementById('historySearchInput').value.toLowerCase().trim();
+        
+        // Execute structural text comparison checks arrays filter rules loops logic
+        const filteredResults = archivalRecordsList.filter(record => {
+            return record.name.toLowerCase().includes(queryText);
+        });
+        
+        renderHistoryTableGrid(filteredResults);
+    }
+</script>
+</html>

@@ -125,7 +125,7 @@
 <body>
 
     <div class="login-card">
-        <h2>🔒 Your Institute Name</h2>
+        <h2 id="institute-name">🔒 Your Institute Name</h2>
         <div class="sub-title">Secure portal for faculty and administration.</div>
         
         <div class="input-group">
@@ -148,6 +148,23 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+ try {
+      // 1. Invoke the IPC handler exposed in preload.js
+      const details = await window.api.getAppDetails();
+      
+      // 2. Safely populate the text values into your HTML layout elements
+      if (details) {
+        document.getElementById('institute-name').innerText = details.instituteName;
+        document.getElementById('contact-number').innerText = details.contactNumber;
+        document.getElementById('email-address').innerText  = details.email;
+        document.getElementById('address').innerText  = details.address;
+        document.getElementById('footer-text').innerText     = details.footerText;
+      }
+    } catch (error) {
+      console.error("Failed to load application metadata details:", error);
+    }
+});
         const loginBtn = document.getElementById('loginBtn');
         const userInp = document.getElementById('username');
         const passInp = document.getElementById('password');

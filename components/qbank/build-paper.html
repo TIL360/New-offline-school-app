@@ -155,7 +155,19 @@
       font-weight: 600;
     }
     .btn-add-paper:hover { background-color: #002133; }
-  </style>
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr) auto; /* 🟢 Updated from 5 to 6 */
+  gap: 15px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+</style>
 </head>
 <body>
 
@@ -178,13 +190,36 @@
         <select id="filterClass"></select>
       </div>
       <div class="form-group">
-        <label>Filter Subject</label>
-        <select id="filterSubject">
-          <option value="English">English</option>
-          <option value="Maths">Maths</option>
-          <option value="Urdu">Urdu</option>
-        </select>
-      </div>
+    <label>Subject</label>
+    <select id="subject" required>
+        <!-- Standard Baseline Subjects -->
+        <option value="Urdu">Urdu</option>
+        <option value="English">English</option>
+        <option value="Maths">Maths</option>
+        <option value="SST">SST</option>
+        <option value="Islamiat">Islamiat</option>
+        <option value="Science">Science</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Biology">Biology</option>
+        <option value="Computer">Computer</option>
+        <option value="Drawing">Drawing</option>
+        <option value="Geography">Geography</option>
+        
+        <!-- Newly Incorporated Subjects -->
+        <option value="Pak Studies">Pak Studies</option>
+        <option value="Islamic Studies">Islamic Studies</option>
+        <option value="Tarjama Tul Quran">Tarjama Tul Quran</option>
+        <option value="General Knowledge">General Knowledge</option>
+        <option value="Functional Maths">Functional Maths</option>
+        <option value="Islamiyat Compulsory">Islamiyat Compulsory</option>
+        <option value="Social Study">Social Study</option>
+        <option value="Essential of Home Economics">Essential of Home Economics</option>
+        <option value="Civics">Civics</option>
+        <option value="General Science">General Science</option>
+    </select>
+</div>
+
       <div class="form-group">
         <label>Filter Lesson Number</label>
         <input type="number" id="filterLessonNo" placeholder="All Lessons">
@@ -202,11 +237,29 @@
     <option value="Long">Long Question</option>
   </select>
 </div>
-      <button onclick="loadQuestions()" class="btn-load">🔍 Load Available Questions</button>
+      <button onclick="loadQuestions()" class="btn-load">🔍 Load Questions</button>
     </div>
-    
+    <!-- 🔍 Dynamic Client-Side Search Box -->
+<div class="form-group">
+  <label>Search Question</label>
+  <input type="text" id="searchQuery" placeholder="Type keywords..." oninput="filterQuestionsPool()">
+</div>
 
-    <h4 style="margin: 0 0 10px 0; color:#1e293b; font-size:14px;">Questions Pool</h4>
+
+    <!-- Enhanced Selection Header and Control Layout Panel -->
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 15px 0 10px 0;">
+  <h4 style="margin: 0; color:#1e293b; font-size:14px;">Questions Pool</h4>
+  
+  <!-- Counter Box & Bulk Action Trigger Button -->
+  <div id="selectionStatusPanel" style="display: none; align-items: center; gap: 12px; background: #e6f4ea; padding: 6px 14px; border-radius: 6px; border: 1px solid #34a853; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <span style="font-size: 13px; color: #137333; font-weight: 600;">
+      Selected: <span id="selectedCount" style="color: #137333; font-weight: 800;">0</span>
+    </span>
+    <button type="button" onclick="addBulkToPaper()" style="background: #137333; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">
+      📥 Add Selected to Paper
+    </button>
+  </div>
+</div>
     
     <!-- Clean, scrollable list wrapper box container -->
     <div class="pool-wrapper" id="questionsPool">
@@ -214,173 +267,330 @@
     </div>
   </div>
 
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      populateClassDropdowns();
-      populateExamDropdown();
-    });
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    populateClassDropdowns();
+    populateExamDropdown();
+});
 
-    async function populateClassDropdowns() {
-      try {
+// --- 1. POPULATE FILTER DROPDOWNS ---
+async function populateClassDropdowns() {
+    try {
         const classes = await window.api.getClasses();
         const filterDropdown = document.getElementById('filterClass');
+        if (!filterDropdown) return;
+        
         filterDropdown.innerHTML = '';
         classes.forEach(c => {
-          const classNameText = c.name || c.class_name || `Class ${c.id}`;
-          const opt = document.createElement('option');
-          opt.value = c.id;
-          opt.textContent = classNameText;
-          filterDropdown.appendChild(opt);
+            const classNameText = c.name || c.class_name || `Class ${c.id}`;
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = classNameText;
+            filterDropdown.appendChild(opt);
         });
-      } catch (err) {
+    } catch (err) {
         console.error("Failed to populate dropdowns:", err);
-      }
     }
+}
 
-    async function populateExamDropdown() {
-      try {
+async function populateExamDropdown() {
+    try {
         const response = await window.api.getDropdownData();
         const examDropdown = document.getElementById('examType');
         if (!examDropdown) return;
+        
         examDropdown.innerHTML = '';
         if (response && response.success && response.exams) {
-          response.exams.forEach(e => {
-            const opt = document.createElement('option');
-            opt.value = e.exam_name;
-            opt.textContent = e.exam_name;
-            examDropdown.appendChild(opt);
-          });
+            response.exams.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.exam_name;
+                opt.textContent = e.exam_name;
+                examDropdown.appendChild(opt);
+            });
         } else {
-          examDropdown.innerHTML = '<option value="">No Exams Configured</option>';
+            examDropdown.innerHTML = '<option value="">No Exams Configured</option>';
         }
-      } catch (err) {
+    } catch (err) {
         console.error("Error linking dropdown contents:", err);
-      }
     }
+}
+
+// --- 2. QUERY AND RENDER QUESTIONS POOL ---
+let cachedQuestionsPool = []; // 🧠 Cache variable to store current database results array
 
 async function loadQuestions() {
-  // 1. Get current values from the dropdown and filter inputs
-  const examType = document.getElementById('examType').value;       // Select Exam Target
-  const classId = parseInt(document.getElementById('filterClass').value); // Filter Class
-  const paperName = document.getElementById('filterSubject').value;  // Filter Subject (Acts as Paper Name)
-  
+  const examType = document.getElementById('examType').value;
+  const classId = parseInt(document.getElementById('filterClass').value);
+  const paperName = document.getElementById('subject').value;
   const lessonInput = document.getElementById('filterLessonNo').value;
-  const lessonNo = lessonInput ? parseInt(lessonInput) : null;      // Filter Lesson Number
-  const selectedType = document.getElementById('filterQType').value; // Filter Question Type
+  const lessonNo = lessonInput ? parseInt(lessonInput) : null;
+  const selectedType = document.getElementById('filterQType').value;
 
-  // Validate that the main paper scope properties are selected
   if (!examType || !classId || !paperName) {
     alert("Please pick an Exam Target, Class, and Subject first!");
     return;
   }
-
   try {
-    // 2. FETCH & AUTO-FILL PREVIOUSLY SAVED PAPER CONFIGURATION SETTINGS
-    const result = await window.api.getPaperSettings({ examType, paperName, classId });
+    // Automatically reset the search bar field text when loading a fresh database pool block
+    document.getElementById('searchQuery').value = '';
     
-    
-      
-
-    // 3. FETCH QUESTIONS POOL RECORDS FROM SQLITE BACKEND
+    // Fetch matching data from your electron main process bridge
     let questions = await window.api.getQuestions(classId, paperName, lessonNo);
-    const container = document.getElementById('questionsPool');
-    container.innerHTML = ''; // Reset container layout canvas
-
-    // Filter by type if the user chose a specific target option (MCQ, FillBlank, etc.)
+    
+    // Filter by question type dropdown criteria selection rule
     if (selectedType !== 'All') {
       questions = questions.filter(q => q.question_type === selectedType);
     }
-
-    // If no records match, show a friendly status update
-    if (!questions || questions.length === 0) {
-      container.innerHTML = '<p style="color:gray; font-style:italic; padding: 10px;">No matching questions found in the database for this selection.</p>';
-      return;
-    }
-
-    // 4. RENDERING LOOP FOR THE MATCHED QUESTIONS
-    questions.forEach(q => {
-      const div = document.createElement('div');
-      div.className = 'q-item';
-      
-      // Determine default display points value based on your screenshot preference
-      let defaultMark = 2;
-      if (q.question_type === 'MCQ' || q.question_type === 'FillBlank') {
-        defaultMark = 1;
-      } else if (q.question_type === 'Long') {
-        defaultMark = 5;
-      }
-
-      // Base layout building string header
-      let questionHtml = `
-        <div style="font-weight: 600; color: #1e293b; font-size: 14px; margin-bottom: 8px;">
-          <span style="color: #bd081c; font-weight: 700;">[${q.question_type}]</span> 
-          <span style="color: #64748b; font-weight: normal; font-size: 13px;">(Lesson ${q.lesson_no || 'N/A'})</span> 
-          ${q.question_text}
-        </div>
-      `;
-      
-      // If question is an MCQ, insert the 4 choices in a grid layout matching your dashboard look
-      if (q.question_type === 'MCQ') {
-        questionHtml += `
-          <div style="margin: 10px 0 15px 0; padding-left: 5px; font-size: 13px; color: #475569; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div><strong style="color:#bd081c;">A)</strong> ${q.opt1 || '---'}</div>
-            <div><strong style="color:#bd081c;">B)</strong> ${q.opt2 || '---'}</div>
-            <div><strong style="color:#bd081c;">C)</strong> ${q.opt3 || '---'}</div>
-            <div><strong style="color:#bd081c;">D)</strong> ${q.opt4 || '---'}</div>
-          </div>
-        `;
-      } else {
-        // Space styling spacer separation buffer padding for non-MCQ layout items
-        questionHtml += `<div style="height: 8px;"></div>`;
-      }
-      
-      // Append footer controls (Marks item box input and the explicit Add button)
-      questionHtml += `
-        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label style="font-size: 12px; font-weight: 600; margin-bottom: 0; color: #64748b;">Marks:</label>
-            <input type="number" id="marks-${q.id}" style="width:60px; padding:6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; text-align: center;" value="${defaultMark}">
-          </div>
-          <button onclick="addToPaper('${paperName}', ${classId}, ${q.id})" class="btn-add-paper" style="background: #003049; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">
-            ➕ Add to Paper
-          </button>
-        </div>
-      `;
-      
-      div.innerHTML = questionHtml;
-      container.appendChild(div);
-    });
-
+    
+    // Cache the result cleanly in memory
+    cachedQuestionsPool = questions;
+    
+    // Execute rendering view pipeline logic layer
+    renderQuestionsDisplay(cachedQuestionsPool, paperName, classId);
   } catch (error) {
     console.error("Error executing loadQuestions:", error);
     alert("An error occurred while loading the question screen layout data.");
   }
 }
 
-  async function addToPaper(paperName, classId, questionId) {
-  const examType = document.getElementById('examType').value;
-  if(!examType) {
-    alert("Please select a valid Exam Target before adding questions.");
+// ⚡ Dynamic input event action handler tool to scan keywords instantly as you type
+function filterQuestionsPool() {
+  const query = document.getElementById('searchQuery').value.toLowerCase().trim();
+  const paperName = document.getElementById('subject').value;
+  const classId = parseInt(document.getElementById('filterClass').value);
+  
+  // Return matching values by performing substring match comparison strings inside the query array list
+  const filtered = cachedQuestionsPool.filter(q => 
+    q.question_text && q.question_text.toLowerCase().includes(query)
+  );
+  
+  renderQuestionsDisplay(filtered, paperName, classId);
+}
+
+// Reusable drawing pipeline block to display items onto the view panel area
+// Reusable drawing pipeline block to display items onto the view panel area
+function renderQuestionsDisplay(questions, paperName, classId) {
+  const container = document.getElementById('questionsPool');
+  container.innerHTML = ''; 
+  
+  const panel = document.getElementById('selectionStatusPanel');
+  if (panel) panel.style.display = 'none';
+
+  if (!questions || questions.length === 0) {
+    container.innerHTML = '<p style="color:gray; font-style: italic; padding: 10px;">No matching questions found.</p>';
     return;
   }
 
-    const marks = parseFloat(document.getElementById(`marks-${questionId}`)?.value) || 2;
+  questions.forEach(async (q) => {
+    const div = document.createElement('div');
+    div.className = 'q-item';
+    div.style.background = '#ffffff';
+    div.style.padding = '15px';
+    div.style.marginBottom = '15px';
+    div.style.borderRadius = '6px';
+    div.style.border = '1px solid #e2e8f0';
+    
+    let defaultMark = 2;
+    if (q.question_type === 'MCQ' || q.question_type === 'FillBlank') {
+      defaultMark = 1;
+    } else if (q.question_type === 'Long') {
+      defaultMark = 5;
+    }
 
-  // 2. Pass all configuration values to the backend database handler api
-const result = await window.api.addQuestionToPaper({ 
-    examType, 
-    paperName, 
-    classId, 
-    questionId, 
-    marks
+    let questionHtml = `
+    <div style="display: flex; align-items: flex-start; gap: 12px;">
+      <input type="checkbox" class="q-select-checkbox" data-qid="${q.id}" onchange="updateSelectedCount()" style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #bd081c;">
+      <div style="flex: 1;">
+        <div style="font-weight: 600; color: #1e293b; font-size: 14px; margin-bottom: 8px;">
+          <span style="color: #bd081c; font-weight: 700;">[${q.question_type}]</span>
+          <span style="color: #64748b; font-weight: normal; font-size: 13px;"> (Lesson ${q.lesson_no || 'N/A'})</span>
+          ${q.question_text}
+        </div>
+    `;
+
+    if (q.diagram_path) {
+      const diagramUrl = await window.api.getImageUrl(q.diagram_path);
+      if (diagramUrl) {
+        questionHtml += `
+        <div style="margin: 12px 0; display: flex; justify-content: flex-start;">
+          <img src="${diagramUrl}" alt="Question Diagram" style="max-height: 220px; max-width: 100%; object-fit: contain; border-radius: 6px; border: 1px solid #e2e8f0; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+        </div>
+        `;
+      }
+    }
+
+    if (q.question_type === 'MCQ') {
+      questionHtml += `
+      <div style="margin: 10px 0 15px 0; padding-left: 5px; font-size: 13px; color: #475569; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div><strong style="color:#bd081c;">A)</strong> ${q.opt1 || '---'}</div>
+        <div><strong style="color:#bd081c;">B)</strong> ${q.opt2 || '---'}</div>
+        <div><strong style="color:#bd081c;">C)</strong> ${q.opt3 || '---'}</div>
+        <div><strong style="color:#bd081c;">D)</strong> ${q.opt4 || '---'}</div>
+      </div>
+      `;
+    } else {
+      questionHtml += '<div style="height: 8px;"></div>';
+    }
+
+    questionHtml += `
+        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 12px; font-weight: 600; margin-bottom: 0; color: #64748b;">Marks:</label>
+            <input type="number" id="marks-${q.id}" onclick="event.stopPropagation();" style="width:60px; padding:6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; text-align: center;" value="${defaultMark}">
+          </div>
+          <div>
+            <button type="button" onclick="event.stopPropagation(); addToPaper('${paperName}', ${classId}, ${q.id})" class="btn-add-paper" style="background: #003049; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;">
+              + Add to Paper
+            </button>
+            <button type="button" class="btn-add-paper edit-action-trigger" data-qid="${q.id}" style="background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; margin-left: 5px;">
+              Edit Question
+            </button>
+            <button type="button" class="btn-add-paper delete-action-trigger" data-qid="${q.id}" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; margin-left: 5px;">
+              Delete Question
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    `;
+    div.innerHTML = questionHtml;
+    container.appendChild(div);
   });
-if (result.success){
+}
 
-  alert(`Question successfully added to the ${examType} (${paperName}) exam paper!`);
-}else{
-  alert('Error: ' + result.error)
+// --- 3. EXPORT / GENERATE EXAM PAPER ROW ACTION ---
+// --- 3. EXPORT / GENERATE EXAM PAPER ROW ACTION ---
+async function addToPaper(paperName, classId, questionId) {
+  const examType = document.getElementById('examType').value;
+  if (!examType) {
+    alert("Please select a valid Exam Target before adding questions.");
+    return;
+  }
+  const marksInput = document.getElementById(`marks-${questionId}`);
+  const marks = marksInput ? parseFloat(marksInput.value) : 2;
+  try {
+    const result = await window.api.addQuestionToPaper({
+      examType,
+      paperName,
+      classId,
+      questionId,
+      marks
+    });
+    if (result.success) {
+      alert(`Question successfully added to the ${examType} (${paperName}) exam paper!`);
+    } else {
+      alert('Error: ' + result.error);
+    }
+  } catch (error) {
+    console.error("IPC request failure in addToPaper transaction:", error);
+  }
 }
+
+// --- 4. NAVIGATION VIEW CONTROLLER PATH ROUTING ROUTINE ---
+// --- 4. NAVIGATION VIEW CONTROLLER PATH ROUTING ROUTINE ---
+function navigateToEdit(questionId) {
+  window.authAPI.send('change-page', `components/qbank/addq.html?editId=${questionId}`);
 }
+
+
+// --- 5. EVENT DELEGATION LISTENER FOR DYNAMIC SELECTION CARDS ---
+document.getElementById('questionsPool').addEventListener('click', async (event) => {
+    
+    // Check if Edit button was clicked
+    const editButton = event.target.closest('.edit-action-trigger');
+    if (editButton) {
+        event.preventDefault();
+        const questionId = editButton.getAttribute('data-qid');
+        if (questionId) {
+            navigateToEdit(questionId);
+        }
+        return;
+    }
+
+    // Check if Delete button was clicked
+    const deleteButton = event.target.closest('.delete-action-trigger');
+    if (deleteButton) {
+        event.preventDefault();
+        const questionId = deleteButton.getAttribute('data-qid');
+        
+        if (questionId) {
+            const confirmDelete = confirm("⚠️ Are you sure you want to permanently delete this specific question from your question pool database?");
+            if (!confirmDelete) return;
+
+            try {
+                const response = await window.api.deleteSingleQuestion(parseInt(questionId));
+                if (response && response.success) {
+                    alert("Question removed successfully!");
+                    // Refresh view dynamically by clicking the search button
+                    
+                      const loadBtn = document.querySelector('.btn-load') || document.getElementById('loadQuestionsBtn');
+  if (loadBtn) loadBtn.click();
+                } else {
+                    alert("Deletion error: " + (response.error || "Could not complete deletion request."));
+                }
+            } catch (error) {
+                console.error("IPC transaction error inside single deletion pipeline:", error);
+            }
+        }
+        return;
+    }
+});
+// --- 5. REAL-TIME BULK SELECTION COUNTER DISPLAYER ---
+function updateSelectedCount() {
+  const checkboxes = document.querySelectorAll('.q-select-checkbox:checked');
+  const count = checkboxes.length;
+  const panel = document.getElementById('selectionStatusPanel');
+  const countSpan = document.getElementById('selectedCount');
+  if (count > 0) {
+    panel.style.display = 'flex';
+    countSpan.textContent = count;
+  } else {
+    panel.style.display = 'none';
+  }
+}
+// --- 6. MULTI-SELECTION BULK TRANSACTION LOOPER ---
+async function addBulkToPaper() {
+  const examType = document.getElementById('examType').value;
+  const paperName = document.getElementById('subject').value;
+  const classId = parseInt(document.getElementById('filterClass').value);
+
+  if (!examType || !classId || !paperName) {
+    alert("Please pick an Exam Target, Class, and Subject first!");
+    return;
+  }
+
+  const selectedBoxes = document.querySelectorAll('.q-select-checkbox:checked');
+  if (selectedBoxes.length === 0) return;
+
+  let successCounter = 0;
+
+  for (let box of selectedBoxes) {
+    const questionId = box.getAttribute('data-qid');
+    const marksInput = document.getElementById(`marks-${questionId}`);
+    const marks = marksInput ? parseFloat(marksInput.value) : 2;
+
+    try {
+      const result = await window.api.addQuestionToPaper({
+        examType,
+        paperName,
+        classId,
+        questionId: parseInt(questionId),
+        marks
+      });
+      if (result && result.success) {
+        successCounter++;
+        box.checked = false; 
+      }
+    } catch (err) {
+      console.error(`Bulk addition interface transaction failed for Question ID ${questionId}:`, err);
+    }
+  }
+
+  alert(`Successfully added ${successCounter} questions in bulk configuration to your paper!`);
+  updateSelectedCount(); 
+}
+
 </script>
+
 </body>
 </html>

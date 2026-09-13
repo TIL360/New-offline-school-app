@@ -5,269 +5,996 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Salary Management</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f8f9fa; --success: #27ae60; --danger: #e74c3c; --white: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 30px; color: #333; }
-        
-        .header-card { background: var(--white); padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
-        .filter-group { display: flex; gap: 15px; align-items: center; }
-        select, input[type="number"] { padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
-        .btn-apply { background: var(--primary); color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
-        
-        .table-container { background: var(--white); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #fdfdfd; padding: 18px; text-align: left; font-size: 13px; color: #7f8c8d; text-transform: uppercase; border-bottom: 2px solid #f4f4f4; }
-        td { padding: 18px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+        :root { 
+  --primary: #2c3e50; 
+  --accent: #3498db; 
+  --bg: #f8f9fa; 
+  --success: #27ae60; 
+  --danger: #e74c3c; 
+  --white: #ffffff; 
+}
+body { 
+  font-family: 'Segoe UI', sans-serif; 
+  background: var(--bg); 
+  margin: 0; 
+  padding: 30px; 
+  color: #333; 
+}
+.header-card { 
+  background: var(--white); 
+  padding: 25px; 
+  border-radius: 12px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+  margin-bottom: 25px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+.filter-group { 
+  display: flex; 
+  gap: 15px; 
+  align-items: center; 
+}
+select, input[type="number"], input[type="text"] { 
+  padding: 10px; 
+  border: 1px solid #ddd; 
+  border-radius: 6px; 
+  outline: none; 
+}
+.btn-apply { 
+  background: var(--primary); 
+  color: white; 
+  border: none; 
+  padding: 10px 25px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  transition: 0.3s; 
+}
+.table-container { 
+  background: var(--white); 
+  border-radius: 12px; 
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+  overflow: hidden; 
+}
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+}
+th { 
+  background: #fdfdfd; 
+  padding: 18px; 
+  text-align: left; 
+  font-size: 13px; 
+  color: #7f8c8d; 
+  text-transform: uppercase; 
+  border-bottom: 2px solid #f4f4f4; 
+}
+td { 
+  padding: 18px; 
+  border-bottom: 1px solid #f9f9f9; 
+  font-size: 14px; 
+}
+.status-badge { 
+  padding: 5px 12px; 
+  border-radius: 20px; 
+  font-size: 12px; 
+  font-weight: bold; 
+}
+.unpaid { 
+  background: #fff4e5; 
+  color: #d35400; 
+}
+.paid { 
+  background: #e6fffa; 
+  color: #2ecc71; 
+}
+.btn-pay { 
+  background: var(--success); 
+  color: white; 
+  border: none; 
+  padding: 8px 16px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+}
+.btn-slip { 
+  background: var(--accent); 
+  color: white; 
+  border: none; 
+  padding: 8px 16px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+}
+.edit-icon { 
+  cursor: pointer; 
+  color: var(--accent); 
+  margin-left: 8px; 
+  font-size: 14px; 
+  border: none; 
+  background: none; 
+}
+.edit-group { 
+  display: flex; 
+  gap: 5px; 
+  align-items: center; 
+}
+.edit-group input { 
+  width: 50px; 
+  padding: 4px; 
+  border: 1px solid var(--accent); 
+  border-radius: 4px; 
+}
+.btn-ok { 
+  background: var(--success); 
+  color: white; 
+  border: none; 
+  padding: 4px 8px; 
+  border-radius: 4px; 
+  cursor: pointer; 
+  font-size: 11px; 
+}
+.small-logo { 
+  height: 100px; 
+  margin-right: 12px; 
+  float: left; 
+}
 
-        .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .unpaid { background: #fff4e5; color: #d35400; }
-        .paid { background: #e6fffa; color: #2ecc71; }
-        .btn-pay { background: var(--success); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        .btn-slip { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        .edit-icon { cursor: pointer; color: var(--accent); margin-left: 8px; font-size: 14px; border: none; background: none; }
-        .edit-group { display: flex; gap: 5px; align-items: center; }
-        .edit-group input { width: 50px; padding: 4px; border: 1px solid var(--accent); border-radius: 4px; }
-        .btn-ok { background: var(--success); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
-.small-logo { height: 100px; margin-right: 12px; float: left;  }
-        /* --- MODAL & PRINT STYLES --- */
-        #slipModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px; }
-        .modal-content { background: white; width: 850px; padding: 20px; border-radius: 8px; position: relative; }
-        .slip-wrapper { border: 2px solid #000; padding: 25px; background: #fff; margin-bottom: 10px; }
-        .slip-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 15px; padding-bottom: 10px; }
-        .slip-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        .slip-table td { padding: 8px; border: 1px solid #ddd; }
-        .net-pay-box { background: #000; color: #fff; padding: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-top: 10px; }
-        .slip-footer { display: flex; justify-content: space-between; margin-top: 40px; }
-        .sig-line { border-top: 1.5px solid #000; width: 200px; text-align: center; padding-top: 5px; font-size: 12px; font-weight: bold; }
+/* --- MODAL & PRINT STYLES --- */
+#slipModal, #salaryModal { 
+  display: none; 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0,0,0,0.8); 
+  backdrop-filter: blur(5px); 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 1000; 
+  overflow-y: auto; 
+  padding: 20px; 
+}
+.modal-content { 
+  background: white; 
+  width: 850px; 
+  padding: 20px; 
+  border-radius: 8px; 
+  position: relative; 
+}
+.processing-modal-content { 
+  background: white; 
+  width: 480px; 
+  padding: 25px; 
+  border-radius: 12px; 
+  position: relative; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+}
+.slip-wrapper { 
+  border: 2px solid #000; 
+  padding: 25px; 
+  background: #fff; 
+  margin-bottom: 10px; 
+}
+.slip-header { 
+  text-align: center; 
+  border-bottom: 2px solid #000; 
+  margin-bottom: 15px; 
+  padding-bottom: 10px; 
+}
+.slip-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  margin-bottom: 15px; 
+}
+.slip-table td { 
+  padding: 8px; 
+  border: 1px solid #ddd; 
+}
+.net-pay-box { 
+  background: #000; 
+  color: #fff; 
+  padding: 12px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  font-weight: bold; 
+  margin-top: 10px; 
+}
+.slip-footer { 
+  display: flex; 
+  justify-content: space-between; 
+  margin-top: 40px; 
+}
+.sig-line { 
+  border-top: 1.5px solid #000; 
+  width: 200px; 
+  text-align: center; 
+  padding-top: 5px; 
+  font-size: 12px; 
+  font-weight: bold; 
+}
 
-      /* --- UPDATED PRINT STYLES --- */
+/* --- ADJUSTMENT POPUP LAYOUT STYLES --- */
+.modal-input-row { 
+  margin-bottom: 12px; 
+  display: flex; 
+  gap: 10px; 
+}
+.modal-input-col { 
+  display: flex; 
+  flex-direction: column; 
+  flex: 1; 
+}
+.modal-input-col.large { 
+  flex: 1.5; 
+}
+.modal-input-col label { 
+  font-weight: bold; 
+  font-size: 12px; 
+  color: #495057; 
+  margin-bottom: 4px; 
+}
+.modal-input-col input { 
+  padding: 8px; 
+  border: 1px solid #ddd; 
+  border-radius: 4px; 
+  width: 100%; 
+  box-sizing: border-box; 
+}
+
+/* --- UPDATED PRINT STYLES --- */
 @media print {
-    /* 1. Hide everything else */
-    body * { visibility: hidden; }
-    #slipModal { display: block !important; position: absolute; left: 0; top: 0; background: none; padding: 0; }
-    
-    /* 2. Force the container to A4 size */
-    #slip-printable, #slip-printable * { visibility: visible; }
-    #slip-printable { 
-        position: absolute; 
-        left: 0; 
-        top: 0; 
-        width: 190mm; /* Narrower to account for printer safety zones */
-        height: 270mm; 
-        padding: 0;
-        margin: 0;
-    }
+  /* 1. Hide background application layout components */
+  body * { 
+    visibility: hidden !important; 
+  }
+  
+  /* 2. Display the main slip modal wrapper context layer */
+  #slipModal { 
+    display: block !important; 
+    position: absolute !important; 
+    left: 0 !important; 
+    top: 0 !important; 
+    background: #fff !important; 
+    padding: 0 !important; 
+    margin: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* 3. Force visibility strictly onto your printArea wrapper */
+  #printArea, #printArea * { 
+    visibility: visible !important; 
+  }
+  
+  /* 4. Enforce strict layout metrics to prevent overflow truncation bugs */
+  #printArea { 
+    position: absolute !important; 
+    left: 0 !important; 
+    top: 0 !important; 
+    width: 190mm !important; 
+    max-height: 275mm !important; /* Prevents stretching past page margins */
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* 5. Set up crisp black boxes with fixed sizing for both slips */
+  #printArea > div { 
+    border: 2px solid #000 !important; 
+    padding: 10px 12px !important; /* Slightly tightens vertical height spacing */
+    margin-bottom: 12px !important; 
+    background: #fff !important;
+    box-sizing: border-box !important; /* Forces borders to stay inside your width rules */
+    page-break-inside: avoid !important; /* Prevents splitting a single slip into two sheets */
+  }
 
-    /* 3. Tighten the spacing between slips */
-    .slip-wrapper { 
-        border: 2px solid #000 !important; 
-        padding: 15px !important; /* Reduced from 25px */
-        margin-bottom: 10px !important; /* Smaller gap */
-    }
-
-    /* 4. Remove automatic headers/footers (Date/URL) from PDF */
-    @page { 
-        size: A4; 
-        margin: 10mm; /* Clean 1cm margin all around */
-    }
-
-    /* 5. Hide the modal buttons and the "Separate Slips" text */
-    .no-print { display: none !important; }
+  /* 6. Enforce portrait rendering rules on the local printing hardware */
+  @page { 
+    size: A4 portrait; 
+    margin: 8mm 10mm; /* Optimizes margins to pull the content away from edges */
+  }
+  
+  /* 7. Tighten table cell padding to save precious A4 height */
+  table {
+    width: 100% !important;
+    table-layout: fixed !important; 
+  }
+  
+  td {
+    padding: 4px 6px !important; /* Keeps table compact to preserve the bottom border */
+    word-wrap: break-word !important; 
+  }
+  
+  /* 8. Hide interactive buttons and close tools */
+  button, .no-print, .btn, #slipModal style { 
+    display: none !important; 
+  }
 }
 
     </style>
 </head>
 <body>
-    <div class="header-card">
-        <div>
-            <h2 style="margin:0;">Staff Salary Portal</h2>
-            <p id="salarySummary" style="margin:5px 0 0; color:var(--accent); font-weight:bold;"></p>
-        </div>
-        <div class="filter-group">
-            <select id="filterMonth">
-                <option value="January">January</option><option value="February">February</option>
-                <option value="March">March</option><option value="April" selected>April</option>
-                <option value="May">May</option><option value="June">June</option>
-                <option value="July">July</option><option value="August">August</option>
-                <option value="September">September</option><option value="October">October</option>
-                <option value="November">November</option><option value="December">December</option>
-            </select>
-            <input type="number" id="filterYear" value="2026" style="width: 80px;">
-            <button class="btn-apply" onclick="loadSalaryData()">Apply Filters</button>
-            <button class="btn-apply" onclick="window.location.href='staff.html'">Staff</button>
-        </div>
-    </div>
+<div class="header-card">
+  <div>
+    <h2 style="margin:0;">Staff Salary Portal</h2>
+    <p id="salarySummary" style="margin:5px 0 0; color:var(--accent); font-weight:bold;"></p>
+  </div>
+  <div class="filter-group">
+    <select id="filterMonth">
+      <option value="January">January</option>
+      <option value="February">February</option>
+      <option value="March">March</option>
+      <option value="April" selected>April</option>
+      <option value="May">May</option>
+      <option value="June">June</option>
+      <option value="July">July</option>
+      <option value="August">August</option>
+      <option value="September">September</option>
+      <option value="October">October</option>
+      <option value="November">November</option>
+      <option value="December">December</option>
+    </select>
+    <input type="number" id="filterYear" value="2026" style="width: 80px;">
+    <button class="btn-apply" onclick="loadSalaryData()">Apply Filters</button>
+    <button class="btn-apply" onclick="window.location.href='staff.html'">Staff</button>
+    <button type="button" onclick="window.location.href='record.html'" style="padding: 10px 20px; background: #0077b6; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 8px; transition: background 0.2s;">
+    📊 Record
+</button>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Staff Member</th>
-                    <th>Basic Salary</th>
-                    <th>Auth Leaves</th>
-                    <th>Availed</th>
-                    <th>Net Payable</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="salaryTableBody"></tbody>
-        </table>
-    </div>
+  </div>
+</div>
 
-    <div id="slipModal">
-        <div class="modal-content">
-            <div id="slip-printable">
-                <!-- SCHOOL COPY -->
-                <div class="slip-wrapper">
-                    <div class="slip-header">
-                        <h2 style="margin:0; letter-spacing: 1px;"><img src="../../images/logo.png" class="small-logo">ISLAMIA MODEL SCHOOL</h2>
-                       <p style="margin:3px 0; font-size:12px; font-weight:bold;">Sohan, Islamabad | Phone: 0300-9813940</p>
-                        <p style="margin:3px 0; font-size:12px; font-weight:bold;">OFFICE COPY</p>
-                        <h3 style="margin:5px 0; text-decoration: underline;">Salary Statement - <span class="p-period"></span></h3>
-                    </div>
-                    <table class="slip-table">
-                        <tr><td><strong>Staff Name:</strong></td><td class="p-name"></td><td><strong>Designation:</strong></td><td class="p-designation"></td></tr>
-                        <tr><td><strong>Basic Pay:</strong></td><td>Rs. <span class="p-basic"></span></td><td><strong>Allowances:</strong></td><td>Rs. <span class="p-allow"></span></td></tr>
-                        <tr><td><strong>Leaves (A/V):</strong></td><td class="p-leaves"></td><td><strong>Deduction:</strong></td><td style="color:red;">Rs. <span class="p-ded"></span></td></tr>
-                    </table>
-                    <div class="net-pay-box"><span>NET PAID:</span><span class="p-total"></span></div>
-                    <div class="slip-footer">
-                        <div class="sig-line">Staff Signature</div>
-                        <div class="sig-line">Principal / Accounts</div>
-                    </div>
-                </div>
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Staff Member</th>
+        <th>Basic Salary</th>
+        <th>Auth Leaves</th>
+        <th>Availed</th>
+        <th>Award</th>
+        <th>Deduction</th>
+        <th>Fund</th>
+        <th>Security</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="salaryTableBody"></tbody>
+  </table>
+</div>
 
-                <div class="no-print" style="border-top: 2px dashed #999; margin: 20px 0; text-align:center;"><small>✂ Separate Slips Here</small></div>
-                <div style="border-top: 1px dashed #000; margin: 15px 0;" class="print-only"></div>
-
-                <!-- STAFF COPY -->
-                <div class="slip-wrapper">
-
-                    <div class="slip-header">
-                       <h2 style="margin:0; letter-spacing: 1px;"><img src="../../images/logo.png" class="small-logo">ISLAMIA MODEL SCHOOL</h2>
-                        <p style="margin:3px 0; font-size:12px; font-weight:bold;">Sohan, Islamabad | Phone: 0300-9813940</p>
-                        <p style="margin:3px 0; font-size:12px; font-weight:bold;">STAFF COPY</p>
-                        <h3 style="margin:5px 0; text-decoration: underline;">Salary Statement - <span class="p-period"></span></h3>
-                    </div>
-                    <table class="slip-table">
-                        <tr><td><strong>Staff Name:</strong></td><td class="p-name"></td><td><strong>Designation:</strong></td><td class="p-designation"></td></tr>
-                        <tr><td><strong>Basic Pay:</strong></td><td>Rs. <span class="p-basic"></span></td><td><strong>Allowances:</strong></td><td>Rs. <span class="p-allow"></span></td></tr>
-                        <tr><td><strong>Leaves (A/V):</strong></td><td class="p-leaves"></td><td><strong>Deduction:</strong></td><td style="color:red;">Rs. <span class="p-ded"></span></td></tr>
-                    </table>
-                    <div class="net-pay-box"><span>NET PAID:</span><span class="p-total"></span></div>
-                    <div class="slip-footer">
-                        <div class="sig-line">Staff Signature</div>
-                        <div class="sig-line">Principal / Accounts</div>
+<!-- COMPLETE SLIP MODAL CONTAINER WITH EXPANDED METRICS -->
+<div id="slipModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items: flex-start; justify-content: center; z-index: 1000; overflow-y: auto; padding: 40px 20px;">
+    <div style="background: #fff; width: 210mm; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 20px; margin-bottom: 40px;">
+        
+        <div id="printArea" style="width: 100%;">
+            
+            <!-- ============================== SLIP 1: OFFICE COPY ============================== -->
+            <div style="border: 2px solid #333; padding: 15px; background: #fff; position: relative; margin-bottom: 25px; box-sizing: border-box;">
+                <!-- Header with Left Logo Alignment Layout -->
+                <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 75px; margin-bottom: 15px; font-family: 'Segoe UI', Arial, sans-serif;">
+                    <img src="../../images/logo.png" style="position: absolute; left: 10px; width: 75px; height: 75px; object-fit: contain; z-index: 5;" alt="Logo">
+                    <div style="text-align: center; padding-left: 20px;">
+                        <h2 style="margin: 0; font-size: 24px; color: #2c3e50; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Islamia Model School</h2>
+                        <div style="font-size: 13px; color: #7f8c8d; margin-top: 2px;">Sohan, Islamabad | Phone: 0300-9813940</div>
+                        <div style="font-size: 11px; font-weight: bold; color: #7f8c8d; letter-spacing: 1px; margin-top: 3px; text-transform: uppercase;">OFFICE COPY</div>
+                        <h4 style="margin: 6px 0 0 0; font-size: 15px; text-decoration: underline; font-weight: 600; color: #2c3e50;">Salary Statement - <span class="p-period">September 2026</span></h4>
                     </div>
                 </div>
-            </div>
-            <div class="no-print" style="margin-top:20px; display:flex; gap:10px;">
-                <button onclick="window.print()" style="flex:2; padding:12px; background:var(--success); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🖨️ Print Slips (A4)</button>
-                <button onclick="closeModal()" style="flex:1; padding:12px; background:#eee; border:none; border-radius:6px; cursor:pointer;">Close</button>
-            </div>
-        </div>
-    </div>
 
-    <script>
-        let records = [];
-        document.addEventListener('DOMContentLoaded', loadSalaryData);
-
-        async function loadSalaryData() {
-            const m = document.getElementById('filterMonth').value;
-            const y = document.getElementById('filterYear').value;
-            records = await window.api.getSalaries(m, y);
-            const body = document.getElementById('salaryTableBody');
-            body.innerHTML = '';
-            let totalSum = 0;
-
-            records.forEach(r => {
-                const isUnpaid = r.status === 'Unpaid';
-                const basicSalary = parseFloat(r.original_base) || 0; 
-                const allowance = parseFloat(r.allowance) || 0;
-                const auth = parseInt(r.auth_leaves) || 0;
-                const availed = parseInt(r.availed_leaves) || 0;
-                
-                let displayNet = 0;
-                if (isUnpaid) {
-                    const daily = basicSalary / 30;
-                    const extra = Math.max(0, availed - auth);
-                    const deduction = Math.round(extra * daily);
-                    displayNet = (basicSalary - deduction) + allowance;
-                } else {
-                    displayNet = parseFloat(r.salary) || 0;
-                }
-                totalSum += displayNet;
-
-                body.innerHTML += `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; font-family: sans-serif;">
                     <tr>
-                        <td><strong>${r.name}</strong></td>
-                        <td>Rs. ${basicSalary.toLocaleString()}</td>
-                        <td>
-                            <div id="auth-display-${r.id}">${auth} ${isUnpaid ? `<button class="edit-icon" onclick="toggleEdit('auth', ${r.id})">✏️</button>` : ''}</div>
-                            <div id="auth-edit-${r.id}" class="edit-group" style="display:none;">
-                                <input type="number" id="auth-input-${r.id}" value="${auth}">
-                                <button class="btn-ok" onclick="saveAuth(${r.id})">ok</button>
-                            </div>
+                        <td style="width: 20%; font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Staff Name:</td>
+                        <td class="p-name" style="width: 30%; padding: 8px; border: 1px solid #ddd;">-</td>
+                        <td style="width: 20%; font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Designation:</td>
+                        <td class="p-designation" style="width: 30%; padding: 8px; border: 1px solid #ddd;">-</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Basic Pay:</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: #2c3e50; font-weight: 500;">Rs. <span class="p-basic">0</span></td>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Allowances:</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: #2c3e50; font-weight: 500;">Rs. <span class="p-allow">0</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Bonus / Award:</td>
+                        <td colspan="3" style="padding: 8px; border: 1px solid #ddd;">
+                            <span style="font-weight: bold; color: #2ecc71;">Rs. <span class="p-award">0</span></span>
+                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;">Note: (<span class="p-award-rem">None</span>)</span>
                         </td>
-                        <td>
-                            <div id="avail-display-${r.id}">${availed} ${isUnpaid ? `<button class="edit-icon" onclick="toggleEdit('avail', ${r.id})">✏️</button>` : ''}</div>
-                            <div id="avail-edit-${r.id}" class="edit-group" style="display:none;">
-                                <input type="number" id="avail-input-${r.id}" value="${availed}">
-                                <button class="btn-ok" onclick="saveAvail(${r.id})">ok</button>
-                            </div>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Leaves (A/V):</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><span class="p-leaves">0 / 0</span></td>
+                        <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Leave Deduction:</td>
+                        <td style="color: #e74c3c; padding: 8px; border: 1px solid #ddd; font-weight: bold;">Rs. <span class="p-leave-ded">0</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd; font-size: 12px; color: #555;">Documents Deposited:</td>
+                        <td colspan="3" style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #2c3e50; font-style: italic; font-weight: 500;">
+                            <span class="p-docs-held">None</span>
                         </td>
-                        <td style="font-weight:bold; color:#0077b6">Rs. ${Math.round(displayNet).toLocaleString()}</td>
-                        <td><span class="status-badge ${r.status.toLowerCase()}">${r.status}</span></td>
-                        <td>${isUnpaid ? `<button class="btn-pay" onclick="markAsPaid(${r.id}, ${Math.round(displayNet)})">💰 Pay Now</button>` : `<button class="btn-slip" onclick="openSlip(${r.id})">📄 Slip</button>`}</td>
-                    </tr>`;
-            });
-            document.getElementById('salarySummary').innerText = `Total Payable: Rs. ${Math.round(totalSum).toLocaleString()}`;
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Other Deduction:</td>
+                        <td colspan="3" style="color: #e74c3c; padding: 8px; border: 1px solid #ddd;">
+                            <span style="font-weight: bold;">Rs. <span class="p-manual-ded">0</span></span>
+                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;">Remarks: (<span class="p-ded-rem">None</span>)</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Fund Cutting:</td>
+                        <td style="color: #e74c3c; padding: 8px; border: 1px solid #ddd;">Rs. <span class="p-fund">0</span></td>
+                        <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Security Cutting:</td>
+                        <td style="color: #e74c3c; padding: 8px; border: 1px solid #ddd;">Rs. <span class="p-security">0</span></td>
+                    </tr>
+                </table>
+
+                <div style="margin-top: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; padding: 12px 15px; border-radius: 4px; font-weight: bold; font-family: sans-serif;">
+                    <span>NET PAID:</span>
+                    <span class="p-total">Rs. 0</span>
+                </div>
+
+                <div style="margin-top: 40px; display: flex; justify-content: space-between; padding: 0 20px; font-size: 12px; font-family: sans-serif;">
+                    <div style="border-top: 1px solid #666; width: 150px; text-align: center; padding-top: 5px;">Staff Signature</div>
+                    <div style="border-top: 1px solid #666; width: 170px; text-align: center; padding-top: 5px;">Principal / Accounts</div>
+                </div>
+
+                <div style="margin-top: 25px; border-top: 1px dotted #ccc; padding-top: 4px; text-align: center; font-size: 10px; color: #95a5a6; font-family: Arial, sans-serif;">
+                    Designed by: Raja Bilal || Contact: 0311-5101738
+                </div>
+            </div>
+
+            <!-- SCISSOR SEPARATOR LINE -->
+            <div style="border-top: 1px dashed #7f8c8d; text-align: center; margin: 5px 0; font-size: 11px; color: #7f8c8d; font-family: sans-serif;">✂ Separate Slips Here</div>
+
+   <!-- ============================== SLIP 2: STAFF COPY ============================== -->
+            <div style="border: 2px solid #333; padding: 15px; background: #fff; position: relative; box-sizing: border-box;">
+                <!-- Header with Left Logo Alignment Layout -->
+                <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 75px; margin-bottom: 15px; font-family: 'Segoe UI', Arial, sans-serif;">
+                    <img src="../../images/logo.png" style="position: absolute; left: 10px; width: 75px; height: 75px; object-fit: contain; z-index: 5;" alt="Logo">
+                    <div style="text-align: center; padding-left: 20px;">
+                        <h2 style="margin: 0; font-size: 24px; color: #2c3e50; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Islamia Model School</h2>
+                        <div style="font-size: 13px; color: #7f8c8d; margin-top: 2px;">Sohan, Islamabad | Phone: 0300-9813940</div>
+                        <div style="font-size: 11px; font-weight: bold; color: #7f8c8d; letter-spacing: 1px; margin-top: 3px; text-transform: uppercase;">STAFF COPY</div>
+                        <h4 style="margin: 6px 0 0 0; font-size: 15px; text-decoration: underline; font-weight: 600; color: #2c3e50;">Salary Statement - <span class="p-period">September 2026</span></h4>
+                    </div>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; font-family: sans-serif;">
+                    <tr>
+                        <td style="width: 20%; font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Staff Name:</td>
+                        <td class="p-name" style="width: 30%; padding: 8px; border: 1px solid #ddd;">-</td>
+                        <td style="width: 20%; font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Designation:</td>
+                        <td class="p-designation" style="width: 30%; padding: 8px; border: 1px solid #ddd;">-</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Basic Pay:</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: #2c3e50; font-weight: 500;">Rs. <span class="p-basic">0</span></td>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Allowances:</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; color: #2c3e50; font-weight: 500;">Rs. <span class="p-allow">0</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Bonus / Award:</td>
+                        <td colspan="3" style="padding: 8px; border: 1px solid #ddd;">
+                            <span style="font-weight: bold; color: #2ecc71;">Rs. <span class="p-award">0</span></span>
+                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;">Note: (<span class="p-award-rem">None</span>)</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Leaves (A/V):</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;"><span class="p-leaves">0 / 0</span></td>
+                        <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Leave Deduction:</td>
+                        <td style="color: #e74c3c; padding: 8px; border: 1px solid #ddd; font-weight: bold;">Rs. <span class="p-leave-ded">0</span></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd; font-size: 12px; color: #555;">Documents Deposited:</td>
+                        <td colspan="3" style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #2c3e50; font-style: italic; font-weight: 500;">
+                            <span class="p-docs-held">None</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Other Deduction:</td>
+                        <td colspan="3" style="color: #e74c3c; padding: 8px; border: 1px solid #ddd;">
+                            <span style="font-weight: bold;">Rs. <span class="p-manual-ded">0</span></span>
+                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;">Remarks: (<span class="p-ded-rem">None</span>)</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Fund Cutting:</td>
+                        <td style="color: #e74c3c; padding: 8px; border: 1px solid #ddd;">Rs. <span class="p-fund">0</span></td>
+                        <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Security Cutting:</td>
+                        <td style="color: #e74c3c; padding: 8px; border: 1px solid #ddd;">Rs. <span class="p-security">0</span></td>
+                    </tr>
+                </table>
+
+                <div style="margin-top: 15px; background: #000; color: #fff; display: flex; justify-content: space-between; padding: 12px 15px; border-radius: 4px; font-weight: bold; font-family: sans-serif;">
+                    <span>NET PAID:</span>
+                    <span class="p-total">Rs. 0</span>
+                </div>
+
+                <div style="margin-top: 40px; display: flex; justify-content: space-between; padding: 0 20px; font-size: 12px; font-family: sans-serif;">
+                    <div style="border-top: 1px solid #666; width: 150px; text-align: center; padding-top: 5px;">Staff Signature</div>
+                    <div style="border-top: 1px solid #666; width: 170px; text-align: center; padding-top: 5px;">Principal / Accounts</div>
+                </div>
+
+                <div style="margin-top: 25px; border-top: 1px dotted #ccc; padding-top: 4px; text-align: center; font-size: 10px; color: #95a5a6; font-family: Arial, sans-serif;">
+                    Designed by: Raja Bilal || Contact: 0311-5101738
+                </div>
+            </div>
+
+        </div> <!-- End Print Area -->
+
+        <!-- Action Control Interface Buttons -->
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px;">
+            <button onclick="window.print()" style="padding: 10px 24px; background: #2ecc71; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px;">🖨 Print Slips (A4)</button>
+            <button onclick="document.getElementById('slipModal').style.display='none';" style="padding: 10px 24px; background: #e74c3c; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px;">Close</button>
+        </div>
+
+    </div>
+</div>
+
+        </div>
+
+        <!-- Action Control Buttons -->
+
+    </div>
+</div>
+
+
+<!-- POPUP MODAL DIALOG PANEL FOR ADDING PARAMETERS DURING REMITTANCE -->
+<div id="salaryModal">
+    <div class="processing-modal-content" style="width: 420px; padding: 30px; text-align: center;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; color: var(--primary);">Confirm Salary Payout</h3>
+        <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 25px;">Please review the calculated net pay summary below before confirming this financial remittance.</p>
+        
+        <!-- Hidden Inputs for logic processing tracking -->
+        <input type="hidden" id="modalSalaryRowId">
+        <input type="hidden" id="modalBaseSalary">
+        <input type="hidden" id="modalAllowance">
+        <input type="hidden" id="modalCalculatedNet">
+
+        <!-- Simplified Receipt Summary Box -->
+        <div style="background: #f8f9fa; border: 2px dashed var(--success); border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <span style="font-size: 13px; color: #7f8c8d; font-weight: bold; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">Calculated Net Pay Total:</span>
+            <strong id="modalLiveNetDisplay" style="font-size: 28px; color: var(--success); display: block;">Rs. 0</strong>
+        </div>
+
+        <!-- Action Control Interface Buttons -->
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button onclick="closeSalaryModal()" style="flex: 1; padding: 12px 20px; background: #eee; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: #555;">Cancel</button>
+            <button onclick="submitSalaryPayment()" style="flex: 1.5; padding: 12px 20px; background: var(--success); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Confirm & Process</button>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+  // Automatically set the filter inputs to the current month and year on load
+document.addEventListener("DOMContentLoaded", () => {
+    const currentCalendarDate = new Date();
+    const listAllMonths = [
+        "January", "February", "March", "April", "May", "June", 
+        "July", "August", "September", "October", "November", "December"
+    ];
+
+    // Set dropdown and input matching current live dates
+    const monthDropdown = document.getElementById('filterMonth');
+    const yearInput = document.getElementById('filterYear');
+
+    if (monthDropdown) monthDropdown.value = listAllMonths[currentCalendarDate.getMonth()];
+    if (yearInput) yearInput.value = currentCalendarDate.getFullYear();
+
+    // Now load the actual database records for this current month
+    loadSalaryData();
+});
+
+let records = [];
+
+// Hook initialization methods safely to the DOM load timeline trigger
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Fetch metadata updates from Electron main system engine
+    await loadApplicationDetails();
+    // 2. Fetch runtime database salary parameters
+    await loadSalaryData();
+});
+
+async function loadApplicationDetails() {
+    try {
+        const details = await window.api.getAppDetails();
+        if (details) {
+            // Apply variables cleanly to all matches via classes across both voucher structures
+            document.querySelectorAll('.render-institute').forEach(e => e.innerText = details.instituteName);
+            document.querySelectorAll('.render-address').forEach(e => e.innerText = details.address || "N/A");
+            document.querySelectorAll('.render-contact').forEach(e => e.innerText = details.contactNumber);
         }
+    } catch (error) {
+        console.error("Failed to load application configuration metadata parameters:", error);
+    }
+}
+async function submitSalaryPayment() {
+    // 1. Grab values only from the hidden fields that actually exist
+    const id = parseInt(document.getElementById('modalSalaryRowId').value);
+    const finalCalculatedNet = parseFloat(document.getElementById('modalCalculatedNet').value) || 0;
 
-        function toggleEdit(type, id) {
-            document.getElementById(`${type}-display-${id}`).style.display = 'none';
-            document.getElementById(`${type}-edit-${id}`).style.display = 'flex';
+    // 2. Format a clean payload package for Main.js to register the payment
+    const payload = {
+        id: id,
+        status: 'Paid',
+        salary: Math.round(finalCalculatedNet)
+    };
+
+    try {
+        // 3. Fire the database change transaction
+        const success = await window.api.updateSalaryStatus(payload);
+        
+        if (success) {
+            // 4. Safely slide away the popup drawer modal window
+            document.getElementById('salaryModal').style.display = 'none';
+            // 5. Instantly rebuild the view grid table with updated information
+            loadSalaryData(); 
+        } else {
+            alert("Error trying to process payment status verification changes.");
         }
+    } catch (err) {
+        console.error("Payment Submission failed:", err);
+    }
+}
 
-        async function saveAuth(id) {
-            const count = parseFloat(document.getElementById(`auth-input-${id}`).value);
-            if(await window.api.updateAuthLeaves({ id, count })) loadSalaryData();
-        }
+async function loadSalaryData() {
+  const m = document.getElementById('filterMonth').value;
+  const y = document.getElementById('filterYear').value;
+  records = await window.api.getSalaries(m, y);
+  const body = document.getElementById('salaryTableBody');
+  body.innerHTML = '';
+  let totalSum = 0;
+  
+  records.forEach(r => {
+    const isPaid = r.status === 'Paid';
+    const basicSalary = parseFloat(r.original_base) || 0; 
+    const allowance = parseFloat(r.allowance) || 0;
+    const auth = parseInt(r.auth_leaves) || 0;
+    const availed = parseInt(r.availed_leaves) || 0;
+    
+    const award = parseFloat(r.award) || 0;
+    const award_remStr = r.award_remarks || '';
+    const salaryDeduction = parseFloat(r.salary_deduction) || 0;
+    const deduction_remStr = r.deduction_remarks || '';
+    const fund = parseFloat(r.fund_cutting) || 0;
+    const security = parseFloat(r.security_cutting) || 0;
+    
+    let displayNet = 0;
+    let leavesDeduction = 0;
+    
+    const dailyRate = basicSalary / 30;
+    const extraLeaves = Math.max(0, availed - auth);
+    // ❌ DELETE THIS OLD BLOCK:
+leavesDeduction = Math.round(extraLeaves * dailyRate);
+if (!isPaid) {
+displayNet = (basicSalary - leavesDeduction + allowance + award) -
+(salaryDeduction + fund + security);
+} else {
+displayNet = (basicSalary + allowance + award) - (salaryDeduction + fund +
+security);
+}
+totalSum += displayNet;
 
-        async function saveAvail(id) {
-            const count = parseFloat(document.getElementById(`avail-input-${id}`).value);
-            if(await window.api.updateAvailedLeaves({ id, count })) loadSalaryData();
-        }
+    
+    body.innerHTML += `
+      <tr>
+        <td><strong>${r.name}</strong>
 
-        async function markAsPaid(id, calculatedNet) {
-            const r = records.find(x => x.id === id);
-            if(confirm(`Confirm payment for ${r.name} of Rs. ${calculatedNet}?`)) {
-                if (await window.api.updateSalaryStatus(id, 'Paid', calculatedNet)) loadSalaryData();
-                else alert("Error updating payment status.");
-            }
-        }
+            </td>
+        <!-- 2. Basic Salary & Allowance Column -->
+<td>
+    <div style="font-weight: bold; color: #2c3e50;">Rs. ${basicSalary.toLocaleString()}</div>
+    <div style="font-size: 12px; color: #7f8c8d; margin-top: 4px;">
+        Allce: Rs. ${allowance.toLocaleString()}
+    </div>
+</td>
 
-        function openSlip(id) {
-            const r = records.find(x => x.id === id);
-            const basic = parseFloat(r.original_base) || 0;
-            const daily = basic / 30;
-            const extra = Math.max(0, (r.availed_leaves || 0) - (r.auth_leaves || 0));
-            const ded = Math.round(extra * daily);
-            const netTotal = (basic - ded) + (r.allowance || 0);
-            const period = `${document.getElementById('filterMonth').value} ${document.getElementById('filterYear').value}`;
+        
+        <!-- Auth Leaves Cell -->
+        <td>
+          <div id="auth-display-${r.id}">${auth} ${!isPaid ? `<button class="edit-icon" onclick="toggleEdit('auth', ${r.id})">✏️</button>` : ''}</div>
+          <div id="auth-edit-${r.id}" class="edit-group" style="display:none;">
+            <input type="number" id="auth-input-${r.id}" value="${auth}">
+            <button class="btn-ok" onclick="saveAuth(${r.id})">ok</button>
+          </div>
+        </td>
+        
+       <!-- Availed Leaves Cell -->
+<td>
+    <div id="avail-display-${r.id}">
+        <div>${availed} ${!isPaid ? `<button class="edit-icon" onclick="toggleEdit('avail', ${r.id})">✏️</button>` : ''}</div>
+        ${leavesDeduction > 0 ? `<div style="font-size: 11px; color: #e74c3c; font-weight: bold;">-Rs. ${leavesDeduction}</div>` : ''}
+    </div>
+    <div id="avail-edit-${r.id}" class="edit-group" style="display:none;">
+        <input type="number" id="avail-input-${r.id}" value="${availed}">
+        <button class="btn-ok" onclick="saveAvail(${r.id})">ok</button>
+    </div>
+</td>
 
-            document.querySelectorAll('.p-period').forEach(e => e.innerText = period);
-            document.querySelectorAll('.p-name').forEach(e => e.innerText = r.name);
-            document.querySelectorAll('.p-designation').forEach(e => e.innerText = r.designation || 'Staff Member');
-            document.querySelectorAll('.p-basic').forEach(e => e.innerText = basic.toLocaleString());
-            document.querySelectorAll('.p-allow').forEach(e => e.innerText = (r.allowance || 0).toLocaleString());
-            document.querySelectorAll('.p-leaves').forEach(e => e.innerText = `${r.auth_leaves || 0} / ${r.availed_leaves || 0}`);
-            document.querySelectorAll('.p-ded').forEach(e => e.innerText = ded.toLocaleString());
-            document.querySelectorAll('.p-total').forEach(e => e.innerText = `Rs. ${Math.round(netTotal).toLocaleString()}`);
-            document.getElementById('slipModal').style.display = 'flex';
-        }
+        
+        <!-- Award & Award Remarks Column Cell -->
+        <td>
+          <div id="award-display-${r.id}">
+            <div>Rs. ${award}</div>
+            <div style="font-size: 11px; color: #7f8c8d; font-style: italic; max-width:120px; line-height:12px; margin-top:2px;">${award_remStr || 'No remarks'}</div>
+            ${!isPaid ? `<button class="edit-icon" onclick="toggleEdit('award', ${r.id})">✏️</button>` : ''}
+          </div>
+          <div id="award-edit-${r.id}" class="edit-group" style="display:none; flex-direction:column; gap:4px; align-items:flex-start;">
+            <input type="number" id="award-input-${r.id}" value="${award}" style="width:70px;" placeholder="Amt">
+            <input type="text" id="award-rem-input-${r.id}" value="${award_remStr}" style="width:110px; font-size:12px; padding:4px;" placeholder="Remarks">
+            <button class="btn-ok" onclick="saveAwardFields(${r.id})">ok</button>
+          </div>
+        </td>
+        
+        <!-- Deduction & Deduction Remarks Column Cell -->
+        <td>
+          <div id="ded-display-${r.id}">
+            <div style="font-weight: 500; color: #e74c3c;">Rs. ${salaryDeduction}</div>
+            <div style="font-size: 11px; color: #7f8c8d; font-style: italic; max-width:120px; line-height:12px; margin-top:2px;">${deduction_remStr || 'No remarks'}</div>
+            ${!isPaid ? `<button class="edit-icon" onclick="toggleEdit('ded', ${r.id})">✏️</button>` : ''}
+          </div>
+          <div id="ded-edit-${r.id}" class="edit-group" style="display:none; flex-direction:column; gap:4px; align-items:flex-start;">
+            <input  type="number" id="ded-input-${r.id}" value="${salaryDeduction}" style="width:70px;" placeholder="Amt">
+            <input type="text" id="ded-rem-input-${r.id}" value="${deduction_remStr}" style="width:110px; font-size:12px; padding:4px;" placeholder="Remarks">
+            <button class="btn-ok" onclick="saveDeductionFields(${r.id})">ok</button>
+          </div>
+        </td>
+        
+        <!-- Fund Cutting Column Cell -->
+        <td>
+          <div id="fund-display-${r.id}" style="font-weight: 500; color: #e74c3c;">Rs. ${fund} ${!isPaid ? `<button class="edit-icon" onclick="toggleEdit('fund', ${r.id})">✏️</button>` : ''}</div>
+          <div id="fund-edit-${r.id}" class="edit-group" style="display:none;">
+            <input type="number" id="fund-input-${r.id}" value="${fund}" style="width:70px;">
+            <button class="btn-ok" onclick="saveFundField(${r.id})">ok</button>
+          </div>
+        </td>
+        
+        <!-- Security Cutting Column Cell -->
+        <td>
+          <div style="font-weight: 500; color: #e74c3c;" id="security-display-${r.id}">Rs. ${security} ${!isPaid ? `<button class="edit-icon" onclick="toggleEdit('security', ${r.id})">✏️</button>` : ''}</div>
+          <div id="security-edit-${r.id}" class="edit-group" style="display:none;">
+            <input type="number" id="security-input-${r.id}" value="${security}" style="width:70px;">
+            <button class="btn-ok" onclick="saveSecurityField(${r.id})">ok</button>
+          </div>
+        </td>
+        
+        <td style="font-weight:bold; color:#0077b6">Rs. ${Math.round(displayNet).toLocaleString()}</td>
+        <td><span class="status-badge ${r.status.toLowerCase()}">${r.status}</span></td>
+        <td>${!isPaid ? `<button class="btn-pay" onclick="openSalaryModal(${r.id}, ${Math.round(displayNet)})">💰 Pay Now</button>` : `<button class="btn-slip" onclick="openSlip(${r.id})">📄 Slip</button>`}</td>
+      </tr>`;
+  });
+  document.getElementById('salarySummary').innerText = `Total Payable: Rs. ${Math.round(totalSum).toLocaleString()}`;
+}
 
-        function closeModal() { document.getElementById('slipModal').style.display = 'none'; }
-    </script>
+// 🌟 REPLACE your existing openSalaryModal() function with this fixed ID-lookup version:
+function openSalaryModal(recordId, initialCalculatedNet) {
+    const data = records.find(x => x.id === recordId);
+    if (!data) return;
+    
+    // 1. Assign hidden structural values
+    document.getElementById('modalSalaryRowId').value = data.id;
+    document.getElementById('modalBaseSalary').value = parseFloat(data.original_base) || 0;
+    document.getElementById('modalAllowance').value = parseFloat(data.allowance) || 0;
+    document.getElementById('modalCalculatedNet').value = initialCalculatedNet;
+    
+    // 2. Render the display text directly inside your dashed container
+    document.getElementById('modalLiveNetDisplay').innerText = "Rs. " + Math.round(initialCalculatedNet).toLocaleString();
+    
+    // 3. Make the modal modal view overlay visible
+    document.getElementById('salaryModal').style.display = 'flex';
+}
+
+function toggleEdit(type, id) {
+    document.getElementById(`${type}-display-${id}`).style.display = 'none';
+    document.getElementById(`${type}-edit-${id}`).style.display = 'flex';
+}
+
+async function saveAuth(id) {
+    const count = parseFloat(document.getElementById(`auth-input-${id}`).value);
+    if(await window.api.updateAuthLeaves({ id, count })) loadSalaryData();
+}
+
+async function saveAvail(id) {
+    const count = parseFloat(document.getElementById(`avail-input-${id}`).value);
+    if(await window.api.updateAvailedLeaves({ id, count })) loadSalaryData();
+}
+async function saveAwardFields(id) {
+  const amt = parseFloat(document.getElementById(`award-input-${id}`).value) || 0;
+  const remarks = document.getElementById(`award-rem-input-${id}`).value.trim();
+  const currentRecord = records.find(x => x.id === id) || {};
+  
+  // 🌟 Packed inside an object matching your exact preload signature on Page 16
+  const payload = {
+    id: id,
+    status: 'Unpaid',
+    salary: {
+      award: amt,
+      award_remarks: remarks,
+      salary_deduction: parseFloat(document.getElementById(`ded-input-${id}`)?.value) || currentRecord.salary_deduction || 0,
+      deduction_remarks: document.getElementById(`ded-rem-input-${id}`)?.value || currentRecord.deduction_remarks || '',
+      fund_cutting: parseFloat(document.getElementById(`fund-input-${id}`)?.value) || currentRecord.fund_cutting || 0,
+      security_cutting: parseFloat(document.getElementById(`security-input-${id}`)?.value) || currentRecord.security_cutting || 0,
+      salary: currentRecord.salary || currentRecord.original_base || 0,
+      allowance: currentRecord.allowance || 0
+    }
+  };
+
+  const success = await window.api.updateSalaryStatus(payload);
+  if (success) loadSalaryData();
+}
+
+async function saveDeductionFields(id) {
+  const amt = parseFloat(document.getElementById(`ded-input-${id}`).value) || 0;
+  const remarks = document.getElementById(`ded-rem-input-${id}`).value.trim();
+  const currentRecord = records.find(x => x.id === id) || {};
+  
+  const payload = {
+    id: id,
+    status: 'Unpaid',
+    salary: {
+      award: parseFloat(document.getElementById(`award-input-${id}`)?.value) || currentRecord.award || 0,
+      award_remarks: document.getElementById(`award-rem-input-${id}`)?.value || currentRecord.award_remarks || '',
+      salary_deduction: amt,
+      deduction_remarks: remarks,
+      fund_cutting: parseFloat(document.getElementById(`fund-input-${id}`)?.value) || currentRecord.fund_cutting || 0,
+      security_cutting: parseFloat(document.getElementById(`security-input-${id}`)?.value) || currentRecord.security_cutting || 0,
+      salary: currentRecord.salary || currentRecord.original_base || 0,
+      allowance: currentRecord.allowance || 0
+    }
+  };
+
+  const success = await window.api.updateSalaryStatus(payload);
+  if (success) loadSalaryData();
+}
+
+async function saveFundField(id) {
+  const amt = parseFloat(document.getElementById(`fund-input-${id}`).value) || 0;
+  const currentRecord = records.find(x => x.id === id) || {};
+  
+  const payload = {
+    id: id,
+    status: 'Unpaid',
+    salary: {
+      award: parseFloat(document.getElementById(`award-input-${id}`)?.value) || currentRecord.award || 0,
+      award_remarks: document.getElementById(`award-rem-input-${id}`)?.value || currentRecord.award_remarks || '',
+      salary_deduction: parseFloat(document.getElementById(`ded-input-${id}`)?.value) || currentRecord.salary_deduction || 0,
+      deduction_remarks: document.getElementById(`ded-rem-input-${id}`)?.value || currentRecord.deduction_remarks || '',
+      fund_cutting: amt,
+      security_cutting: parseFloat(document.getElementById(`security-input-${id}`)?.value) || currentRecord.security_cutting || 0,
+      salary: currentRecord.salary || currentRecord.original_base || 0,
+      allowance: currentRecord.allowance || 0
+    }
+  };
+
+  const success = await window.api.updateSalaryStatus(payload);
+  if (success) loadSalaryData();
+}
+
+async function saveSecurityField(id) {
+  const amt = parseFloat(document.getElementById(`security-input-${id}`).value) || 0;
+  const currentRecord = records.find(x => x.id === id) || {};
+  
+  const payload = {
+    id: id,
+    status: 'Unpaid',
+    salary: {
+      award: parseFloat(document.getElementById(`award-input-${id}`)?.value) || currentRecord.award || 0,
+      award_remarks: document.getElementById(`award-rem-input-${id}`)?.value || currentRecord.award_remarks || '',
+      salary_deduction: parseFloat(document.getElementById(`ded-input-${id}`)?.value) || currentRecord.salary_deduction || 0,
+      deduction_remarks: document.getElementById(`ded-rem-input-${id}`)?.value || currentRecord.deduction_remarks || '',
+      fund_cutting: parseFloat(document.getElementById(`fund-input-${id}`)?.value) || currentRecord.fund_cutting || 0,
+      security_cutting: amt,
+      salary: currentRecord.salary || currentRecord.original_base || 0,
+      allowance: currentRecord.allowance || 0
+    }
+  };
+
+  const success = await window.api.updateSalaryStatus(payload);
+  if (success) loadSalaryData();
+}
+
+
+async function markAsPaid(id, calculatedNet) {
+    const r = records.find(x => x.id === id);
+    if(confirm(`Confirm payment for ${r.name} of Rs. ${calculatedNet}?`)) {
+        if (await window.api.updateSalaryStatus(id, 'Paid', calculatedNet)) loadSalaryData();
+        else alert("Error updating payment status.");
+    }
+
+  }
+
+  function calculateLiveNetPay() {
+    const baseSalary = parseFloat(document.getElementById('modalBaseSalary').value) || 0;
+    const allowance = parseFloat(document.getElementById('modalAllowance').value) || 0;
+    
+    // Get live input values from adjustment fields
+    const award = parseFloat(document.getElementById('modalAward').value) || 0;
+    const deduction = parseFloat(document.getElementById('modalDeduction').value) || 0;
+    const fund = parseFloat(document.getElementById('modalFund').value) || 0;
+    const security = parseFloat(document.getElementById('modalSecurity').value) || 0;
+    
+    // Calculate final Net Pay
+    const netPay = (baseSalary + allowance + award) - (deduction + fund + security);
+    
+    // Render to display
+    document.getElementById('modalLiveNetDisplay').innerText = "Rs. " + Math.round(netPay).toLocaleString();
+}
+
+// Slips compilation routing parameters map handler
+async function openSlip(id) {
+    const r = records.find(x => x.id === id);
+    if (!r) return;
+
+    // 1. Safe parsing of database variables
+    const basic = parseFloat(r.original_base) || 0;
+    const allowance = parseFloat(r.allowance) || 0;
+    const award = parseFloat(r.award) || 0;
+    const salaryDeduction = parseFloat(r.salary_deduction) || 0;
+    const fund = parseFloat(r.fund_cutting) || 0;
+    const security = parseFloat(r.security_cutting) || 0;
+
+    // 2. Automated leave calculation rules
+    const daily = basic / 30;
+    const extra = Math.max(0, (r.availed_leaves || 0) - (r.auth_leaves || 0));
+    const leavesDed = Math.round(extra * daily);
+
+    const period = `${document.getElementById('filterMonth').value} ${document.getElementById('filterYear').value}`;
+
+    // 3. Inject text selectors inside both Office & Staff copy loops
+    document.querySelectorAll('.p-period').forEach(e => e.innerText = period);
+    document.querySelectorAll('.p-name').forEach(e => e.innerText = r.name);
+    document.querySelectorAll('.p-designation').forEach(e => e.innerText = r.designation || 'Teacher');
+    document.querySelectorAll('.p-basic').forEach(e => e.innerText = basic.toLocaleString());
+    document.querySelectorAll('.p-allow').forEach(e => e.innerText = allowance.toLocaleString());
+    document.querySelectorAll('.p-leaves').forEach(e => e.innerText = `${r.auth_leaves || 0} / ${r.availed_leaves || 0}`);
+
+    // 4. Inject structural unified parameters
+    document.querySelectorAll('.p-award').forEach(e => e.innerText = award.toLocaleString());
+    document.querySelectorAll('.p-award-rem').forEach(e => e.innerText = r.award_remarks && r.award_remarks.trim() !== "" ? r.award_remarks : 'None');
+    
+    document.querySelectorAll('.p-leave-ded').forEach(e => e.innerText = leavesDed.toLocaleString());
+    document.querySelectorAll('.p-manual-ded').forEach(e => e.innerText = salaryDeduction.toLocaleString());
+    document.querySelectorAll('.p-ded-rem').forEach(e => e.innerText = r.deduction_remarks && r.deduction_remarks.trim() !== "" ? r.deduction_remarks : 'None');
+
+    document.querySelectorAll('.p-fund').forEach(e => e.innerText = fund.toLocaleString());
+    document.querySelectorAll('.p-security').forEach(e => e.innerText = security.toLocaleString());
+
+    // 🌟 5. Dynamic Profile Mapping: Cross-reference documents held seamlessly
+    try {
+        const staffData = await window.api.getStaff();
+        
+        // Flexible lookup: Trims hidden trailing spaces and ignores case mismatches
+        const matchingProfile = Array.isArray(staffData) ? staffData.find(s => 
+            s.id === r.staff_id || 
+            (s.name && r.name && s.name.trim().toLowerCase() === r.name.trim().toLowerCase())
+        ) : null;
+        
+        const docsHeldString = matchingProfile && matchingProfile.documents_held ? matchingProfile.documents_held.trim() : 'None';
+        document.querySelectorAll('.p-docs-held').forEach(e => e.innerText = docsHeldString !== "" ? docsHeldString : 'None');
+    } catch(err) {
+        console.error("Error linking staff document profile logs:", err);
+        document.querySelectorAll('.p-docs-held').forEach(e => e.innerText = 'None');
+    }
+
+    // 6. Run final exact net pay calculations
+    const netTotal = (basic + allowance + award) - (salaryDeduction + leavesDed + fund + security);
+    document.querySelectorAll('.p-total').forEach(e => e.innerText = `Rs. ${Math.round(netTotal).toLocaleString()}`);
+
+    // 7. Open slip dialog interface cleanly
+    document.getElementById('slipModal').style.display = 'flex';
+}
+
+function closeModal() { 
+    document.getElementById('slipModal').style.display = 'none'; 
+}
+function closeSalaryModal() {
+    document.getElementById('salaryModal').style.display = 'none';
+}
+
+</script>
+
 </body>
 </html>

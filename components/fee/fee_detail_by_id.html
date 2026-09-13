@@ -13,35 +13,96 @@
         .status { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
         .paid { background: #dcfce7; color: #166534; }
         .unpaid { background: #fee2e2; color: #991b1b; }
+        .partial { background: #fef3c7; color: #d97706; }
         .back-btn { text-decoration: none; color: var(--primary); font-weight: bold; margin-bottom: 20px; display: inline-block; }
+   /* Passport Photo Container Rule */
+.passport-box { 
+    width: 150px; 
+    height: 200px; /* Standard 3.5:4.5 passport aspect ratio */
+    object-fit: cover; 
+    border: 2px solid #cbd5e1; 
+    border-radius: 4px; /* Crisp square borders with a slight curve */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background-color: #f8fafc;
+    display: none; /* Controlled dynamically via JS */
+}
+
+/* Updated Header Flex Structure */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+/* Left-aligned details block wrapping name and registration */
+.student-info-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+/* Right-aligned block housing metadata and passport photo */
+.meta-container-right {
+    display: flex;
+    align-items: center;
+    gap: 30px; /* Space between financials data and passport photo */
+    text-align: right;
+}
+
+
     </style>
 </head>
 <body>
     <a href="../student/student_list.html" class="back-btn">← Back to Students</a>
     
-    <div class="card">
-        <div class="header">
+  <div class="card">
+    <div class="header">
+        <!-- LEFT COLUMN: Student metadata information -->
+        <!-- LEFT COLUMN: Student metadata information -->
+<div class="student-info-left">
+    <h2 id="stuName" style="margin: 0 0 2px 0; color: var(--primary); font-size: 1.6rem; font-weight: 700;">Loading...</h2>
+    <div id="stuFather" style="color: #475569; font-size: 0.95rem; font-weight: 600; margin-bottom: 2px;"></div>
+    <!-- ADDED: Element for Current Class -->
+    <div id="stuClass" style="color: #475569; font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;"></div>
+    <small id="stuReg" style="color: #64748b; font-size: 0.9rem; font-weight: 500;"></small>
+</div>
+
+
+        <!-- RIGHT COLUMN: Financial totals grouped side-by-side with passport picture box -->
+        <div class="meta-container-right">
+            <!-- Total Outstanding block remains text-aligned to the right side of info -->
             <div>
-                <h2 id="stuName" style="margin:0; color:var(--primary);">Loading...</h2>
-                <small id="stuReg" style="color:#64748b;"></small>
+                <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Total Outstanding</div>
+                <div id="totalBalance" style="font-size: 1.6rem; font-weight: 800; color: #dc2626;">Rs. 0</div>
             </div>
-            <div style="text-align: right;">
-                <div style="font-size: 0.8rem; color:#64748b;">Total Outstanding</div>
-                <div id="totalBalance" style="font-size: 1.5rem; font-weight: bold; color:#dc2626;">Rs. 0</div>
-            </div>
+            
+            <!-- Passport-sized rect box targeted explicitly by script handler -->
+            <img id="stuPhoto" class="passport-box" src="" alt="Student Photo" onerror="this.src='../../assets/img/default-avatar.png';" />
         </div>
+    </div>
+
+    <!-- Your existing <table> structure follows right below here safely -->
+
 
         <table>
-            <thead>
-                <tr>
-                    <th>Month/Year</th>
-                    <th>Invoice Date</th>
-                    <th>Total Fee</th>
-                    <th>Paid Amount</th>
-                    <th>Balance</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
+           <!-- Replace your existing <thead> block with this -->
+<thead>
+<tr>
+<th>Month/Year</th>
+<th>Invoice Date</th>
+<th>Monthly Fee</th>
+<th>Arrears</th>
+<th>Total Payable</th>
+<th>Paid Amount</th>
+<th>Balance</th>
+<th>Status</th>
+</tr>
+</thead>
+
             <tbody id="feeHistoryBody"></tbody>
         </table>
     </div>
@@ -50,55 +111,103 @@
     const urlParams = new URLSearchParams(window.location.search);
     const studentId = urlParams.get('id');
 
-    async function loadHistory() {
-        try {
-            // 1. Fetch data from backend
-            const response = await window.api.getStudentFeeHistory(studentId);
-            
-            if (!response || response.history.length === 0) {
-                document.getElementById('stuName').innerText = "No Records Found";
-                return;
-            }
-
-            // 2. Set Header Info
-            const student = response.student;
-            document.getElementById('stuName').innerText = student.student_name || "Student Name";
-            document.getElementById('stuReg').innerText = "Reg No: " + (student.registration_no || "N/A");
-            
-            let totalOutstanding = 0;
-            const tbody = document.getElementById('feeHistoryBody');
-            
-            // 3. Build Table Rows
-            tbody.innerHTML = response.history.map(f => {
-                const balance = parseFloat(f.balance) || 0;
-                totalOutstanding += balance;
-
-                // Determine Status based on balance
-                const statusLabel = balance <= 0 ? 'PAID' : 'PENDING';
-                const statusClass = balance <= 0 ? 'paid' : 'unpaid';
-
-                return `
-                    <tr>
-                        <td><strong>${f.invoice_month} ${f.invoice_year}</strong></td>
-                        <td>${new Date(f.created_at).toLocaleDateString()}</td>
-                        <td>Rs. ${(f.total_fee || 0).toLocaleString()}</td>
-                        <td>Rs. ${(f.collection || 0).toLocaleString()}</td>
-                        <td style="font-weight:bold; color: ${balance > 0 ? '#dc2626' : '#16a34a'}">
-                            Rs. ${balance.toLocaleString()}
-                        </td>
-                        <td><span class="status ${statusClass}">${statusLabel}</span></td>
-                    </tr>
-                `;
-            }).join('');
-
-            // 4. Update Outstanding Total
-            document.getElementById('totalBalance').innerText = `Rs. ${totalOutstanding.toLocaleString()}`;
-
-        } catch (err) {
-            console.error("Failed to load history:", err);
-            document.getElementById('stuName').innerText = "Error Loading Data";
+async function loadHistory() {
+    try {
+        // 1. Fetch data from backend
+        const response = await window.api.getStudentFeeHistory(studentId);
+        
+        if (!response || response.history.length === 0) {
+            document.getElementById('stuName').innerText = "No Records Found";
+            return;
         }
+
+        // 2. Set Header Info & Photo Logic
+        const student = response.student;
+        document.getElementById('stuName').innerText = student.student_name || "Student Name";
+        document.getElementById('stuFather').innerText = student.father_name ? `Father Name: ${student.father_name}` : "S/O: N/A";
+
+// ADDED: Display Current Class details securely on screen
+document.getElementById('stuClass').innerText = student.current_class ? `Class: ${student.current_class}` : "Class: N/A";document.getElementById('stuReg').innerText = "Reg No: " + (student.registration_no || "N/A");
+        
+        // Handle Passport Photo Placement
+        const imgElement = document.getElementById('stuPhoto');
+        if (imgElement) {
+            // Confirm the field parameter exists and carries data values
+            if (student.picture_path && student.picture_path.trim() !== "") {
+                const imgSrc = await window.api.getImageUrl(student.picture_path);
+                if (imgSrc) {
+                    imgElement.src = imgSrc;
+                } else {
+                    imgElement.src = "../../assets/img/default-avatar.png";
+                }
+            } else {
+                imgElement.src = "../../assets/img/default-avatar.png";
+            }
+            imgElement.style.display = 'block';
+        }
+
+      // Fix: Get the balance of the latest invoice directly to prevent double-counting arrears
+let totalOutstanding = 0;
+if (response.history.length > 0) {
+    const latest = response.history[0];
+    const latestPayable = (parseFloat(latest.total_fee) || 0) + (parseFloat(latest.arrears) || 0);
+    const latestPaid = parseFloat(latest.collection) || 0;
+    totalOutstanding = latestPayable - latestPaid;
+}
+
+const tbody = document.getElementById('feeHistoryBody');
+// 3. Build Table Rows
+tbody.innerHTML = response.history.map(f => {
+const baseFee = parseFloat(f.total_fee) || 0;
+const arrearsVal = parseFloat(f.arrears) || 0;
+const totalPayable = baseFee + arrearsVal;
+const paidAmount = parseFloat(f.collection) || 0;
+
+const balance = totalPayable - paidAmount;
+// REMOVED: totalOutstanding += balance; <-- This line was causing the double counting bug
+
+// Determine strict contextual status metrics
+let statusLabel = '';
+let statusClass = '';
+
+if (balance <= 0) {
+    statusLabel = 'PAID';
+    statusClass = 'paid';
+} else if (paidAmount > 0) {
+    statusLabel = 'PARTIALLY PAID';
+    statusClass = 'partial'; // Uses the new amber color badge style
+} else {
+    statusLabel = 'PENDING';
+    statusClass = 'unpaid';  // Keeps the red style layout intact
+}
+
+
+
+return `
+<tr>
+<td><strong>${f.invoice_month} ${f.invoice_year}</strong></td>
+<td>${new Date(f.created_at).toLocaleDateString()}</td>
+<td>Rs. ${baseFee.toLocaleString()}</td>
+<td>Rs. ${arrearsVal.toLocaleString()}</td>
+<td style="font-weight:600; color:#475569;">Rs. ${totalPayable.toLocaleString()}</td>
+<td>Rs. ${paidAmount.toLocaleString()}</td>
+<td style="font-weight:bold; color: ${balance > 0 ? '#dc2626' : '#16a34a'}">
+Rs. ${balance.toLocaleString()}
+</td>
+<td><span class="status ${statusClass}">${statusLabel}</span></td>
+</tr>
+`;
+}).join('');
+
+
+        // 4. Update Outstanding Total
+        document.getElementById('totalBalance').innerText = `Rs. ${totalOutstanding.toLocaleString()}`;
+
+    } catch (err) {
+        console.error("Failed to load history:", err);
+        document.getElementById('stuName').innerText = "Error Loading Data";
     }
+}
 
     loadHistory();
 </script>

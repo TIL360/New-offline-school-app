@@ -44,6 +44,10 @@
 
     <div class="card">
         <h2>+ Add New Expense</h2>
+        <div id="successMessage" style="display: none; color: #2ecc71; font-weight: bold; margin-bottom: 15px; text-align: center;">
+  ✓ Expense Saved Successfully!
+</div>
+
         <form id="expenseForm">
             <div class="form-group">
                 <label>Expense Detail</label>
@@ -151,20 +155,32 @@
             `).join('') || '<tr><td colspan="4" style="text-align:center;">No data found</td></tr>';
         }
 
-        document.getElementById('expenseForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const data = {
-                expense: document.getElementById('expenseName').value,
-                amount: document.getElementById('expenseAmount').value
-            };
-            const result = await window.api.addExpense(data);
-            if (result.success) {
-                alert("Expense Saved!");
-                document.getElementById('expenseForm').reset();
-                await populateFilters();
-                await loadExpenses();
-            }
-        });
+document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = {
+    expense: document.getElementById('expenseName').value,
+    amount: document.getElementById('expenseAmount').value
+  };
+  
+  const result = await window.api.addExpense(data);
+  if (result.success) {
+    // 1. Reset the input elements natively
+    document.getElementById('expenseForm').reset();
+    
+    // 2. Show the custom embedded success banner
+    const msg = document.getElementById('successMessage');
+    msg.style.display = 'block';
+    
+    // 3. Hide the message banner automatically after 3 seconds
+    setTimeout(() => {
+      msg.style.display = 'none';
+    }, 3000);
+
+    // 4. Update your views and filter data
+    await populateFilters();
+    await loadExpenses();
+  }
+});
 
         async function openReport() {
             const month = document.getElementById('filterMonth').value;

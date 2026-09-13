@@ -8,12 +8,19 @@
 <title>EduPulse || 2026</title>
 <style>
 :root {
-  --sidebar-bg: #0f172a;
-  --primary: #6366f1;
+  --sidebar-bg: #1b4332;
+  --primary: #d4a373;
   --bg-body: #f1f5f9;
   --card-bg: #ffffff;
   --text-main: #1e293b;
   --text-muted: #64748b;
+}
+.sidebar h1 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 40px;
+  text-align: center;
 }
 * {
   box-sizing: border-box;
@@ -27,6 +34,7 @@ body {
   overflow: hidden;
   color: var(--text-main);
 }
+
 /* --- SIDEBAR --- */
 .sidebar {
   width: 260px;
@@ -35,13 +43,6 @@ body {
   padding: 30px 20px;
   display: flex;
   flex-direction: column;
-}
-.sidebar h1 {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #818cf8;
-  margin-bottom: 40px;
-  text-align: center;
 }
 .nav-group {
   flex: 1;
@@ -54,7 +55,7 @@ body {
   padding: 12px 15px;
   margin-bottom: 8px;
   border-radius: 10px;
-  color: #94a3b8;
+  color: #e0e7ff;
   text-decoration: none;
   font-size: 1.2rem;
   font-weight: 500;
@@ -79,19 +80,22 @@ body {
   color: #fb7185;
   background: rgba(244, 63, 94, 0.1);
 }
+
 /* --- MAIN CONTENT --- */
 .main {
   flex: 1;
-  padding: 30px 40px;
+  padding: 20px; 
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  overflow-y: auto;
+  gap: 15px; 
+  overflow-y: auto; /* Ensures vertical scrolling is available if needed on small screens */
 }
 .header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .welcome-header h2 {
   margin: 0;
@@ -111,68 +115,75 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   font-size: 0.9rem;
 }
-/* --- STAT CARDS --- */
+
+/* --- RESPONSIVE STAT CARDS --- */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  /* Auto-fits columns; will dynamically create 4, 3, 2, or 1 column layout depending on width */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
 }
 .stat-card {
   background: var(--card-bg);
-  padding: 20px;
-  border-radius: 18px;
+  padding: 12px 15px;
+  border-radius: 14px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   border: 1px solid #f1f5f9;
 }
 .icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   background: #e0e7ff;
+  flex-shrink: 0; /* Prevents the icon box from squishing on ultra-narrow views */
 }
 .stat-info small {
   color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
+  display: block;
 }
 .stat-info div {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: var(--text-main);
-  margin-top: 2px;
+  margin-top: 1px;
 }
-/* --- QUICK ACTIONS --- */
+
+/* --- RESPONSIVE QUICK ACTIONS --- */
 .action-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  /* Automatically wraps action boxes smoothly when the window narrows down */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 15px;
 }
 .action-card {
   background: white;
-  padding: 25px;
-  border-radius: 18px;
+  padding: 20px 15px;
+  border-radius: 16px;
   text-align: center;
   text-decoration: none;
   color: var(--text-main);
   border: 1px solid #e2e8f0;
-  transition: 0.2s;
+  transition: 0.2s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .action-card:hover {
   border-color: var(--primary);
   background: #f8fafc;
-  transform: translateY(-3px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 .action-card span {
   font-weight: 700;
@@ -180,6 +191,7 @@ body {
   color: var(--primary);
 }
 </style>
+
 </head>
 <body>
 <div class="sidebar">
@@ -197,12 +209,13 @@ body {
 <span style="margin-right: 8px;">🔒</span> Change Password
 </button>
 </div>
-<!-- <button id="btnDB" class="nav-btn logout-btn" onclick="window.authAPI.openDBFolder()">📁 DB Folder</button> -->
+<button id="btnDB" class="nav-btn logout-btn" onclick="window.authAPI.openDBFolder()">📁 DB Folder</button>
 <button onclick="logout()" class="nav-btn logout-btn">🚪 Logout</button>
 </div>
 <div class="main">
 <div class="header-row">
 <div class="welcome-header">
+<h1 style="color: #1b4332; font-family: 'Georgia', 'Times New Roman', serif; font-size: 40px; font-weight: 800; border-bottom: 2px solid #d4a373; display: inline-block; padding-bottom: 5px; margin-bottom: 15px;"><span id="institute-name">Loading</span></h1>
 <h2 id="welcomeText">Welcome, Administrator</h2>
 <p id="currentDate"></p>
 </div>
@@ -212,68 +225,112 @@ body {
 License Status: <span id="license-info">Validity Period: </span>
 </div> -->
 <div class="stats-row">
-<div class="stat-card" id="cardStudents">
-<div class="icon-box">👥</div>
-<div class="stat-info"><small>Students</small><div id="statStudents">0</div></div>
+    <!-- STUDENTS -->
+    <div class="stat-card" id="cardStudents">
+        <div class="icon-box">👥</div>
+        <div class="stat-info">
+            <small>Students</small>
+            <div id="statStudents">0</div>
+        </div>
+    </div>
+
+    <!-- TOTAL ACTIVE STAFF -->
+    <div class="stat-card" id="cardStaff">
+        <div class="icon-box" style="background: #e0f2fe;">👔</div>
+        <div class="stat-info">
+            <small>Active Staff</small>
+            <div id="statActiveStaff">0</div>
+        </div>
+    </div>
+
+    <!-- PROFIT / LOSS STATUS -->
+    <div class="stat-card" id="cardProfitLoss">
+        <div class="icon-box" id="iconProfitLoss" style="background: #f3f4f6;">📊</div>
+        <div class="stat-info">
+            <small id="labelProfitLoss">Net Status</small>
+            <div id="statProfitLoss">0</div>
+        </div>
+    </div>
+
+    <!-- RECEIVABLES -->
+    <div class="stat-card" id="cardReceivables">
+        <div class="icon-box" style="background: #dcfce7;">📈</div>
+        <div class="stat-info">
+            <small>Receivables</small>
+            <div id="statReceivables">0</div>
+        </div>
+    </div>
+
+    <!-- BALANCE -->
+    <div class="stat-card" id="cardBalance">
+        <div class="icon-box" style="background: #ffedd5;">🏦</div>
+        <div class="stat-info">
+            <small>Balance</small>
+            <div id="statBalance">0</div>
+        </div>
+    </div>
+
+    <!-- FEE RECEIVED -->
+    <div class="stat-card" id="cardFeeReceived">
+        <div class="icon-box" style="background: #d1fae5;">💵</div>
+        <div class="stat-info">
+            <small>Fee Received</small>
+            <div id="statFeeReceived">0</div>
+        </div>
+    </div>
+
+    <!-- SALARIES -->
+    <div class="stat-card" id="cardSalaries">
+        <div class="icon-box" style="background: #fee2e2;">💸</div>
+        <div class="stat-info">
+            <small>Salaries</small>
+            <div id="statSalaries">0</div>
+        </div>
+    </div>
+
+    <!-- EXPENSES -->
+    <div class="stat-card" id="cardExpenses">
+        <div class="icon-box" style="background: #fde68a;">💸</div>
+        <div class="stat-info">
+            <small>Expenses</small>
+            <div id="statExpenses">0</div>
+        </div>
+    </div>
 </div>
-<div class="stat-card" id="cardReceivables">
-<div class="icon-box" style="background:#dcfce7">📈</div>
-<div class="stat-info"><small>Receivables</small><div id="statReceivables">0</div></div>
-</div>
-<div class="stat-card" id="cardBalance">
-<div class="icon-box" style="background:#ffedd5">🏦</div>
-<div class="stat-info"><small>Balance</small><div id="statBalance">0</div></div>
-</div>
-<div class="stat-card" id="cardFeeReceived">
-<div class="icon-box" style="background:#d1fae5">💵</div>
-<div class="stat-info"><small>Fee Received</small><div id="statFeeReceived">0</div></div>
-</div>
-<div class="stat-card" id="cardSalaries">
-<div class="icon-box" style="background:#fee2e2">💸</div>
-<div class="stat-info"><small>Salaries</small><div id="statSalaries">0</div></div>
-</div>
-<div class="stat-card" id="cardExpenses">
-<div class="icon-box" style="background:#fde68a">💸</div>
-<div class="stat-info"><small>Expenses</small><div id="statExpenses">0</div></div>
-</div>
-</div>
+
+
 <h3 id="quickActionsTitle">Quick Actions</h3>
 <div class="action-grid" id="quickActionsGrid">
-<a href="results/result_entry.html" class="action-card" id="actionExams">
-<div style="font-size: 2.5rem; margin-bottom:10px">📄</div>
-<span style="font-weight:bold; display:block">Exams</span>
-<p style="font-size:0.85rem; color:#64748b; margin-top:5px">Manage Marksheets</p>
-</a>
-<a href="fee/feelist.html" class="action-card" id="actionFees">
-<div style="font-size: 2.5rem; margin-bottom:10px">💳</div>
-<span style="font-weight:bold; display:block">Fees</span>
-<p style="font-size:0.85rem; color:#64748b; margin-top:5px">Collect Payments</p>
-</a>
-<a href="student/stu_personal_info.html" class="action-card" id="actionEnroll">
-<div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
-<span style="font-weight:bold; display:block">Enroll</span>
-<p style="font-size:0.85rem; color:#64748b; margin-top:5px">New Admissions</p>
-</a>
-<a href="attendance.html" class="action-card" id="actionEnroll">
-<div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
-<span style="font-weight:bold; display:block">Attendance</span>
-<p style="font-size:0.85rem; color:#64748b; margin-top:5px">New Admissions</p>
-</a>
-
-
-<a href="./qbank/qbnkdashboard.html" class="action-card" id="actionEnroll">
-<div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
-<span style="font-weight:bold; display:block">Question Papers</span>
-<p style="font-size:0.85rem; color:#64748b; margin-top:5px">Q Bank</p>
-</a>
-
-
-<a href="shop_ledger.html" class="action-card" id="actionEnroll">
-<div style="font-size: 2.5rem; margin-bottom:10px">🏦</div>
-<span style="font-weight:bold; display:block">School Ledger</span>
-<p style="font-size:0.85rem; color:#64748b; margin-top:5px">All Entries</p>
-</a>
-
+  <a href="results/result_entry.html" class="action-card" id="actionExams">
+    <div style="font-size: 2.5rem; margin-bottom:10px">📄</div>
+    <span style="font-weight:bold; display:block">Exams</span>
+    <p style="font-size:0.85rem; color:#64748b; margin-top:5px">Manage Marksheets / Progress Reports / Date Sheet</p>
+  </a>
+  <a href="fee/feelist.html" class="action-card" id="actionFees">
+    <div style="font-size: 2.5rem; margin-bottom:10px">💳</div>
+    <span style="font-weight:bold; display:block">Fees</span>
+    <p style="font-size:0.85rem; color:#64748b; margin-top:5px">Collect Payments / Send Fee Notifications on Whatsapp / Print Invoices</p>
+  </a>
+  <a href="student/stu_personal_info.html" class="action-card" id="actionEnroll">
+    <div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
+    <span style="font-weight:bold; display:block">Enroll</span>
+    <p style="font-size:0.85rem; color:#64748b; margin-top:5px">New Admissions</p>
+  </a>
+  <a href="attendance.html" class="action-card" id="actionAttendance">
+    <div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
+    <span style="font-weight:bold; display:block">Attendance</span>
+    <p style="font-size:0.85rem; color:#64748b; margin-top:5px">Students and Staff Attendance Management</p>
+  </a>
+  <a href="./qbank/qbnkdashboard.html" class="action-card" id="actionQBank">
+    <div style="font-size: 2.5rem; margin-bottom:10px">👤</div>
+    <span style="font-weight:bold; display:block">Question Papers</span>
+    <p style="font-size:0.85rem; color:#64748b; margin-top:5px">Q Bank / Prepare Paper / Worksheets</p>
+  </a>
+  <a href="shop_ledger.html" class="action-card" id="actionLedger">
+    <div style="font-size: 2.5rem; margin-bottom:10px">🏦</div>
+    <span style="font-weight:bold; display:block">School Ledger</span>
+    <p style="font-size:0.85rem; color:#64748b; margin-top:5px">All Entries</p>
+  </a>
 </div>
 </div>
 </div>
@@ -295,6 +352,22 @@ License Status: <span id="license-info">Validity Period: </span>
 </div>
 </div>
 <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      // 1. Invoke the IPC handler exposed in preload.js
+      const details = await window.api.getAppDetails();
+      
+      // 2. Safely populate the text values into your HTML layout elements
+      if (details) {
+        document.getElementById('institute-name').innerText = details.instituteName;
+        document.getElementById('contact-number').innerText = details.contactNumber;
+        document.getElementById('email-address').innerText  = details.email;
+        document.getElementById('footer-text').innerText     = details.footerText;
+      }
+    } catch (error) {
+      console.error("Failed to load application metadata details:", error);
+    }
+  });
 const SYNC_URL = 'http://localhost/website/sync_stats.php';
 
 async function syncToWebsite(stats) {
@@ -324,16 +397,52 @@ async function loadStats() {
   try {
     if (window.api && window.api.getDashboardStats) {
       const stats = await window.api.getDashboardStats();
+      
+      // Existing Stats
       document.getElementById('statStudents').innerText = stats.activeStudents || 0;
       document.getElementById('statReceivables').innerText = stats.receivables || 0;
       document.getElementById('statBalance').innerText = stats.balance || 0;
       document.getElementById('statSalaries').innerText = stats.salaries || 0;
       document.getElementById('statFeeReceived').innerText = stats.feeReceived || 0;
       document.getElementById('statExpenses').innerText = stats.expenses || 0;
+      
+      // 1. New Stat: Active Staff
+      const staffElement = document.getElementById('statActiveStaff');
+      if (staffElement) {
+        staffElement.innerText = stats.activeStaff || 0;
+      }
+
+      // 2. New Stat: Profit / Loss Card with Dynamic Background Toggling
+      const plCardElement = document.getElementById('cardProfitLoss');
+      const plValueElement = document.getElementById('statProfitLoss');
+      const plLabelElement = document.getElementById('labelProfitLoss');
+      const plIconElement = document.getElementById('iconProfitLoss');
+
+      if (plCardElement && plValueElement && plLabelElement && plIconElement) {
+        // Math.abs converts negative values into clean positive display numbers
+        plValueElement.innerText = Math.abs(stats.financialAmount !== undefined ? stats.financialAmount : 0);
+
+        if (stats.financialStatus === 'Profit') {
+          plLabelElement.innerText = 'Profit Balance';
+          plIconElement.innerText = '💰';
+          
+          // Soft Green Palette
+          plCardElement.style.backgroundColor = '#d1fae5'; 
+          plIconElement.style.backgroundColor = '#a7f3d0'; 
+        } else {
+          plLabelElement.innerText = 'Loss Balance';
+          plIconElement.innerText = '📉';
+          
+          // Soft Red Palette
+          plCardElement.style.backgroundColor = '#fee2e2'; 
+          plIconElement.style.backgroundColor = '#fecaca'; 
+        }
+      }
+
       syncToWebsite(stats);
     }
   } catch (e) {
-    console.log("Stats fetch skipped.");
+    console.log("Stats fetch skipped.", e);
   }
 }
 
@@ -353,13 +462,13 @@ function logout() {
   window.location.href = "login.html";
 }
 
+// Replace the DOMContentLoaded permission checking block (around Page 25) with this optimized handler:
 document.addEventListener('DOMContentLoaded', () => {
   const user = JSON.parse(sessionStorage.getItem('currentUser') || '{"username": "User1"}');
   document.getElementById('welcomeText').innerText = `Welcome, ${user.username}`;
   document.getElementById('currentDate').innerText = new Date().toDateString();
 
   const isAdmin = user.username.toLowerCase() === 'admin';
-
   if (!isAdmin) {
     let perms = [];
     try {
@@ -367,21 +476,39 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {
       perms = [];
     }
-    const modules = [
-      { key: 'navClasses', elements: ['navClasses'] },
-      { key: 'navStudents', elements: ['navStudents', 'cardStudents', 'actionEnroll'] },
-      { key: 'navFee', elements: ['navFee', 'cardReceivables', 'cardBalance', 'cardFeeReceived', 'actionFees'] },
-      { key: 'navExams', elements: ['navExams', 'actionExams'] },
-      { key: 'navStaff', elements: ['navStaff', 'cardSalaries'] },
-      { key: 'navExpenses', elements: ['navExpenses', 'cardExpenses'] },
-      { key: 'navRoles', elements: ['navRoles'] },
-      { key: 'btnDB', elements: ['btnDB'] }
-    ];
-    // Convert all user permissions to lowercase for accurate checking
+
     const lowercasePerms = perms.map(p => String(p).toLowerCase());
 
+    // 1. GLOBAL METRIC STATS CARD CONTROL
+    if (!lowercasePerms.includes('dashstatscards')) {
+      const statsContainer = document.getElementById('statsRowContainer');
+      if (statsContainer) statsContainer.style.display = 'none';
+    }
+
+    // 2. SIDEBAR MODULES & INTERLINKED CARDS AND ACTIONS MATRIX
+    // Locate the 'const modules = [ ... ]' section inside your Dashboard.html file and update it to this:
+const modules = [
+  { key: 'navClasses', elements: ['navClasses'] },
+  { key: 'navStudents', elements: ['navStudents', 'cardStudents', 'actionEnroll'] },
+  { key: 'navFee', elements: ['navFee', 'cardReceivables', 'cardBalance', 'cardFeeReceived', 'actionFees'] },
+  { key: 'navExams', elements: ['navExams', 'actionExams'] },
+  { key: 'navStaff', elements: ['navStaff', 'cardStaff', 'cardSalaries'] },
+  { key: 'navExpenses', elements: ['navExpenses', 'cardExpenses'] },
+  { key: 'navRoles', elements: ['navRoles'] },
+  { key: 'btnDB', elements: ['btnDB'] },
+  
+  // DASHBOARD ONLY ACTIONS EXPLICIT MAPS
+  { key: 'dashAttendance', elements: ['actionAttendance'] },
+  { key: 'dashQBank', elements: ['actionQBank'] },
+  { key: 'dashLedger', elements: ['actionLedger'] },
+
+  // CONTROL FOR THE PROFIT/LOSS STATUS CARD SPECIFICALLY
+  // This explicitly binds the Loss/Profit Balance card to the 'dashstatscards' admin permission check
+  { key: 'dashstatscards', elements: ['cardProfitLoss'] }
+];
+
+
     modules.forEach(mod => {
-      // Check using lowercase keys to avoid case mismatch
       if (!lowercasePerms.includes(mod.key.toLowerCase())) {
         mod.elements.forEach(id => {
           const el = document.getElementById(id);
@@ -390,20 +517,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    const quickActions = ['actionExams', 'actionFees', 'actionEnroll'];
+    // Clean up empty section titles if every action item inside is hidden
+    const quickActions = ['actionExams', 'actionFees', 'actionEnroll', 'actionAttendance', 'actionQBank', 'actionLedger'];
     const allActionsHidden = quickActions.every(id => {
       const el = document.getElementById(id);
       return !el || el.style.display === 'none';
     });
+
     if (allActionsHidden) {
       const titleEl = document.getElementById('quickActionsTitle');
       const gridEl = document.getElementById('quickActionsGrid');
       if (titleEl) titleEl.style.display = 'none';
       if (gridEl) gridEl.style.display = 'none';
     }
-    
-    // REMOVED FORCED HIDING OF THE CHANGE PASSWORD BUTTON FROM HERE
-    // Every user will now retain access to this element by default
   }
 
   loadStats();

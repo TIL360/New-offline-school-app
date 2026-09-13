@@ -135,20 +135,33 @@
     let activeStudentIndex = null;
 
     // List of all subject fields as per your database schema
-    const subjectsList = [
-        { id: 'Urdu', set: 'urdu_setmarks', obt: 'urdu_obt' },
-        { id: 'Eng', set: 'eng_setmarks', obt: 'eng_obt' },
-        { id: 'Math', set: 'math_setmarks', obt: 'math_obt' },
-        { id: 'SST', set: 'sst_setmarks', obt: 'sst_obt' },
-        { id: 'Isl', set: 'islamiat_setmarks', obt: 'islamiat_obt' },
-        { id: 'Sci', set: 'science_setmarks', obt: 'science_obt' },
-        { id: 'Phy', set: 'physics_setmarks', obt: 'physics_obt' },
-        { id: 'Chem', set: 'chemistry_setmarks', obt: 'chemistry_obt' },
-        { id: 'Bio', set: 'biology_setmarks', obt: 'biology_obt' },
-        { id: 'Comp', set: 'computer_setmarks', obt: 'computer_obt' },
-        { id: 'Draw', set: 'drawing_setmarks', obt: 'drawing_obt' },
-        { id: 'Geog', set: 'geography_setmarks', obt: 'geography_obt' }
-    ];
+// List of all subject fields as per your database schema
+const subjectsList = [
+    { id: 'Urdu', set: 'urdu_setmarks', obt: 'urdu_obt' },
+    { id: 'Eng', set: 'eng_setmarks', obt: 'eng_obt' },
+    { id: 'Math', set: 'math_setmarks', obt: 'math_obt' },
+    { id: 'SST', set: 'sst_setmarks', obt: 'sst_obt' },
+    { id: 'Isl', set: 'islamiat_setmarks', obt: 'islamiat_obt' },
+    { id: 'Sci', set: 'science_setmarks', obt: 'science_obt' },
+    { id: 'Phy', set: 'physics_setmarks', obt: 'physics_obt' },
+    { id: 'Chem', set: 'chemistry_setmarks', obt: 'chemistry_obt' },
+    { id: 'Bio', set: 'biology_setmarks', obt: 'biology_obt' },
+    { id: 'Comp', set: 'computer_setmarks', obt: 'computer_obt' },
+    { id: 'Draw', set: 'drawing_setmarks', obt: 'drawing_obt' },
+    { id: 'Geog', set: 'geography_setmarks', obt: 'geography_obt' },
+    
+    // New Subjects Added
+    { id: 'PakSt', set: 'pak_studies_setmarks', obt: 'pak_studies_obt' },
+    { id: 'IslSt', set: 'islamic_studies_setmarks', obt: 'islamic_studies_obt' },
+    { id: 'Quran', set: 'tarjama_quran_setmarks', obt: 'tarjama_quran_obt' },
+    { id: 'GK', set: 'gk_setmarks', obt: 'gk_obt' },
+    { id: 'FMath', set: 'functional_math_setmarks', obt: 'functional_math_obt' },
+    { id: 'IslCm', set: 'islamiat_compulsory_setmarks', obt: 'islamiat_compulsory_obt' },
+    { id: 'SStdy', set: 'social_studies_setmarks', obt: 'social_studies_obt' },
+    { id: 'HEcon', set: 'home_economics_setmarks', obt: 'home_economics_obt' },
+    { id: 'Civ', set: 'civics_setmarks', obt: 'civics_obt' },
+    { id: 'GSci', set: 'general_science_setmarks', obt: 'general_science_obt' }
+];
 
     // Initialize Dropdowns
     window.addEventListener('DOMContentLoaded', async () => {
@@ -178,58 +191,65 @@
         }
     }
 
-    function renderTable() {
-        const body = document.getElementById('resultBody');
-        const headerRow = document.getElementById('mainHeaderRow');
-        const totalRow = document.getElementById('totalMarksRow');
-        
-        // This is the check that was failing in your screenshot
-        if (!body || !headerRow || !totalRow) {
-            console.error("Missing table IDs in HTML! Check your table structure.");
-            return;
-        }
+function renderTable() {
+    const body = document.getElementById('resultBody');
+    const headerRow = document.getElementById('mainHeaderRow');
+    const totalRow = document.getElementById('totalMarksRow');
 
-        body.innerHTML = "";
-
-        if (currentData.length > 0) {
-            const firstStudent = currentData[0];
-            const activeSubs = subjectsList.filter(sub => firstStudent[sub.set] > 0);
-
-            // 1. Build Headers
-            headerRow.innerHTML = `
-                <th rowspan="2">Reg No</th><th rowspan="2" class="name-col">Name</th>
-                ${activeSubs.map(sub => `<th>${sub.id}</th>`).join('')}
-                <th rowspan="2">Obt</th><th rowspan="2">Total</th><th rowspan="2">%age</th>
-                <th rowspan="2">Grade</th><th rowspan="2">Pos</th><th rowspan="2">Result</th>
-                <th rowspan="2" class="btn-print-hide">Action</th>
-            `;
-
-            // 2. Build Setmarks Row
-            totalRow.innerHTML = activeSubs.map(sub => `<th>${firstStudent[sub.set]}</th>`).join('');
-
-            // 3. Populate Student Data
-            currentData.forEach((row, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.registration_no || '-'}</td>
-                    <td class="name-col">
-  <a href="#" onclick="openSingleReport('${row.student_id}')" style="color: blue; cursor: pointer;">
-    ${row.student_name}
-  </a>
-</td>
-                    ${activeSubs.map(sub => `<td>${row[sub.obt]}</td>`).join('')}
-                    <td style="font-weight:bold">${row.total_obt}</td>
-                    <td>${row.total_setmarks}</td>
-                    <td>${row.percentage ? parseFloat(row.percentage).toFixed(0) : '0'}%</td>
-                    <td>${row.grade || '-'}</td>
-                    <td>${row.position || '-'}</td>
-                    <td>${row.result_status || '-'}</td>
-                    <td class="btn-print-hide"><button class="btn-edit-row" onclick="openModal(${index})">Edit</button></td>
-                `;
-                body.appendChild(tr);
-            });
-        }
+    if (!body || !headerRow || !totalRow) {
+        console.error("Missing table elements in HTML! Check your IDs.");
+        return;
     }
+    
+    body.innerHTML = "";
+    
+    if (currentData.length > 0) {
+        const firstStudent = currentData[0];
+        const activeSubs = subjectsList.filter(sub => firstStudent[sub.set] > 0);
+        
+        // 1. Rebuild Headers Safely
+        headerRow.innerHTML = `
+            <th rowspan="2">Reg No</th>
+            <th rowspan="2" class="name-col">Name</th>
+            ${activeSubs.map(sub => `<th>${sub.id}</th>`).join('')}
+            <th rowspan="2">Obt</th>
+            <th rowspan="2">Total</th>
+            <th rowspan="2">%age</th>
+            <th rowspan="2">Grade</th>
+            <th rowspan="2">Pos</th>
+            <th rowspan="2">Result</th>
+            <th rowspan="2" class="btn-print-hide">Action</th>
+        `;
+        
+        // 2. Build Total Subject Marks Row
+        totalRow.innerHTML = activeSubs.map(sub => `<th>${firstStudent[sub.set]}</th>`).join('');
+        
+        // 3. Loop and Populate Rows with Correct Value Alignment
+        currentData.forEach((row, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.registration_no || '-'}</td>
+                <td class="name-col">
+                    <a href="#" onclick="openSingleReport('${row.student_id}')" style="color: blue; cursor: pointer;">
+                        ${row.student_name}
+                    </a>
+                </td>
+                ${activeSubs.map(sub => `<td>${row[sub.obt]}</td>`).join('')}
+                <td style="font-weight:bold">${row.total_obt}</td>
+                <td>${row.total_setmarks}</td>
+                <td>${row.percentage ? parseFloat(row.percentage).toFixed(0) : '0'}%</td>
+                <td>${row.grade || '-'}</td>
+                <td>${row.position || '-'}</td>
+                <td>${row.result_status || '-'}</td>
+                <td class="btn-print-hide">
+                    <button class="btn-edit-row" onclick="openModal(${index})">Edit</button>
+                    <button class="btn-whatsapp" onclick="sendWhatsApp(${index})" style="background:#25D366; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold; margin-left:5px;">WhatsApp</button>
+                </td>
+            `;
+            body.appendChild(tr);
+        });
+    }
+}
 
     function openModal(index) {
         activeStudentIndex = index;
@@ -290,13 +310,63 @@ async function saveModalMarks() {
             window.location.href = `progress_reports.html?examId=${examId}&className=${className}`;
         }
 
-        window.onload = loadInitialData;
+        // window.onload = loadInitialData;
 
 function openSingleReport(studentId) {
     const examId = document.getElementById('selectExam').value;
     // Redirect to progress_reports.html with an extra studentId parameter
     window.location.href = `progress_reports.html?examId=${examId}&studentId=${studentId}`;
 }
+
+
+function sendWhatsApp(index) {
+    const student = currentData[index];
+    const examName = document.getElementById('displayExam').innerText;
+    const className = document.getElementById('displayClass').innerText;
+
+    if (!student) {
+        alert("Error: Student record data not found!");
+        return;
+    }
+
+    // Safely look up any phone field variants present in your results dataset
+    let phone = student.whatsapp || student.father_phone || student.phone || student.parent_phone || '';
+
+    if (!phone || phone === 'null' || phone == "") {
+        // Fallback popup if no phone number exists in the database row
+        phone = prompt("Phone number not found for " + student.student_name + ".\nPlease enter it manually:");
+        if (!phone) return; 
+    }
+
+    // Clean and format phone number exactly like the working fee function
+    let cleanPhone = String(phone).replace(/[^0-9]/g, "");
+    if (cleanPhone.startsWith("0")) {
+        cleanPhone = "92" + cleanPhone.substring(1);
+    }
+
+    // Construct the result details message structure
+    const message = `Assalam-o-Alaikum!
+Here is the exam performance report card of *${student.student_name}*.
+
+📌 Exam: *${examName}*
+📌 Class: *${className}*
+-----------------------
+🔹 Marks Obtained: *${student.total_obt}* / ${student.total_setmarks}
+🔹 Percentage: *${student.percentage ? parseFloat(student.percentage).toFixed(0) : '0'}%*
+🔹 Grade: *${student.grade || '-'}*
+🔹 Position: *${student.position || '-'}*
+🔹 Final Result: *${student.result_status || '-'}*
+
+Regards,
+IMS Administration.`;
+
+    // Built exactly matching your working fee link mechanism
+    const url = "https://web.whatsapp.com/send?phone=" + cleanPhone + "&text=" + encodeURIComponent(message); 
+
+    // Sends out cleanly using your proven fee bridge
+    window.authAPI.send('open-external-link', url);
+}
+
 
 </script>
 </body>

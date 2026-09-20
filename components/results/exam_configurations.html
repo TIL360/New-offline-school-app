@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Exam Configurations & Settings</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --container-bg: #ffffff;
+            --primary: #003049;
+            --primary-hover: #004b73;
+            --accent-red: #d62828;
+            --accent-red-hover: #b51d1d;
+            --accent-green: #2ec4b6;
+            --accent-green-hover: #259e92;
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --input-bg: #ffffff;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 30px 20px;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container { 
+    width: 100%;
+    max-width: 1400px; /* Increased from 900px to support a wide dashboard layout */
+    box-sizing: border-box;
+}
+        .top-nav {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--primary);
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .nav-btn:hover {
+            color: white;
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        h1.main-title {
+            text-align: center; 
+            color: var(--primary); 
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 25px;
+        }
+        .card {
+            background: var(--container-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        h3 { 
+            font-size: 15px; 
+            font-weight: 700;
+            margin: 0 0 15px 0; 
+            color: var(--primary); 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 8px; 
+            text-transform: uppercase;
+        }
+        .grid-3 { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 15px; 
+        }
+        .form-group { 
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px; 
+        }
+        label { 
+            font-size: 12px; 
+            font-weight: 600; 
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        input, select {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            outline: none;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .btn {
+            padding: 11px 20px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+        }
+        .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Creates 3 equal columns */
+    gap: 20px; /* Space between columns */
+    align-items: start; /* Prevents shorter cards from stretching vertically */
+}
+        .btn-success { background-color: var(--accent-green); }
+        .btn-success:hover { background-color: var(--accent-green-hover); }
+        .btn-primary { background-color: var(--accent-red); }
+        .btn-primary:hover { background-color: var(--accent-red-hover); }
+        .btn-view { background-color: var(--primary); }
+        .btn-view:hover { background-color: var(--primary-hover); }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        th, td { border: 1px solid var(--border-color); padding: 10px; text-align: left; }
+        th { background: #f8f9fa; color: var(--text-muted); font-weight: 600; }
+    @media (max-width: 1024px) {
+    .cards-grid {
+        grid-template-columns: 1fr; /* Stacks vertically on tablet/mobile screens */
+    }
+}
+    </style>
+</head>
+<body>
+
+<body>
+<div class="container">
+    <div class="top-nav">
+        <button class="nav-btn" onclick="window.location.href='../dashboard.html'">📊 Dashboard</button>
+        <button class="nav-btn" onclick="window.location.href='result_entry.html'">🔙 Back to Entry</button>
+    </div>
+
+    <h1 class="main-title">Exam Configurations Panel</h1>
+
+    <!-- 3-Column Parallel Layout Container -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; width: 100%;">
+        
+        <!-- 1. EXAM PASSING CRITERIA PANEL -->
+        <div class="card" style="margin-bottom: 0;">
+            <h3>1. Passing Criteria Rules Configurations</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 0; margin-bottom: 20px;">
+                Select an exam below to set or update its active baseline promotional conditions.
+            </p>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Select Target Exam Profile</label>
+                <select id="settingsExamSelect">
+                    <option value="">-- Choose Exam --</option>
+                </select>
+            </div>
+            
+            <!-- Stacked configuration fields for column visibility -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Per Subject Pass Mark (%)</label>
+                    <input type="number" id="cfg_subject_pass" value="40" min="0" max="100">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Overall Exam Pass Mark (%)</label>
+                    <input type="number" id="cfg_overall_pass" value="33" min="0" max="100">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Max Allowed Failed Subjects</label>
+                    <input type="number" id="cfg_max_failed" value="1" min="0">
+                </div>
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn btn-view" onclick="saveExamCriteria()">Save Criteria Layout</button>
+            </div>
+        </div>
+
+        <!-- 2. GLOBAL GRADING SCALE PANEL -->
+        <div class="card" style="margin-bottom: 0;">
+            <h3>2. Global Grading Scale Configurations</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 0; margin-bottom: 20px;">
+                Define the score percentage bands that generate report card grade letters dynamically.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <div class="form-group" style="margin: 0;">
+                    <label>Grade Letter</label>
+                    <input type="text" id="new_grade_name" placeholder="e.g., A+">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label>Min Percentage (%)</label>
+                    <input type="number" id="new_grade_min" placeholder="e.g., 90" min="0" max="100">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label>Max Percentage (%)</label>
+                    <input type="number" id="new_grade_max" placeholder="e.g., 100" min="0" max="100">
+                </div>
+                <button class="btn btn-success" onclick="addNewGradingRule()" style="height: 42px; width: 100%; margin-top: 5px;">Add Tier</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Grade</th>
+                        <th>Score Range (%)</th>
+                        <th style="text-align: center; width: 80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="gradingRulesTableBody">
+                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Loading configurations...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 3. DYNAMIC SUBJECT MANAGEMENT PANEL -->
+        <div class="card" style="margin-bottom: 0;">
+            <h3>3. Dynamic Subject Management</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 0; margin-bottom: 20px;">
+                Add or maintain active subject classification categories.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <div class="form-group" style="margin: 0;">
+                    <label>Subject Display Name</label>
+                    <input type="text" id="sub_display_name" placeholder="e.g., Computer Science">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label>Database Code Identifier</label>
+                    <input type="text" id="sub_code_id" placeholder="e.g., computer_science">
+                </div>
+                <button class="btn btn-success" onclick="createNewSubject()" style="height: 42px; width: 100%; margin-top: 5px;">Save Subject</button>
+            </div>
+            <table style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Subject Name</th>
+                        <th>DB Code</th>
+                        <th style="text-align:center; width: 80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="subjectsTableBody"></tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+    // 1. Ingest dropdown data options from Electron main process
+    const res = await window.api.getDropdownData();
+    const examSelect = document.getElementById('settingsExamSelect');
+    if (res.success && examSelect) {
+        examSelect.innerHTML = '<option value="">-- Choose Exam --</option>';
+        res.exams.forEach(e => examSelect.add(new Option(e.exam_name, e.exam_id)));
+    }
+
+    // 2. Load Grading Brackets view list
+    loadGradingRulesView();
+
+    // 3. Monitor Exam dropdown adjustments to pull stored configurations instantly
+    if (examSelect) {
+        examSelect.addEventListener('change', async (e) => {
+            const examId = e.target.value;
+            if (!examId) return;
+            try {
+                const criteria = await window.api.getPassingCriteria(parseInt(examId));
+                if (criteria) {
+                    document.getElementById('cfg_subject_pass').value = criteria.subject_pass_percentage;
+                    document.getElementById('cfg_overall_pass').value = criteria.overall_pass_percentage;
+                    document.getElementById('cfg_max_failed').value = criteria.max_failed_subjects_allowed;
+                }
+            } catch (err) {
+                console.error("Failed syncing passing configurations:", err);
+            }
+        });
+    }
+});
+
+async function saveExamCriteria() {
+    const examId = document.getElementById('settingsExamSelect').value;
+    if (!examId) return alert("❌ Please pick a target exam profile first!");
+
+    const payload = {
+        examId: parseInt(examId),
+        subjectPass: parseFloat(document.getElementById('cfg_subject_pass').value) || 0,
+        overallPass: parseFloat(document.getElementById('cfg_overall_pass').value) || 0,
+        maxFailed: parseInt(document.getElementById('cfg_max_failed').value) || 0
+    };
+
+    try {
+        await window.api.savePassingCriteria(payload);
+        alert("✨ Passing metrics layout successfully locked into this exam profile!");
+    } catch (err) {
+        alert("❌ Save transaction rejected: " + err.message);
+    }
+}
+async function loadGradingRulesView() {
+    const tbody = document.getElementById('gradingRulesTableBody');
+    if (!tbody) return;
+    try {
+        const rules = await window.api.getGradingRules();
+        if (!rules || rules.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No custom rules entries present. Fallback rules will apply natively.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = rules.map(rule => `
+            <tr>
+                <td style="font-weight: bold; color: var(--primary);">${rule.grade_name}</td>
+                <td>${rule.min_percentage}% to ${rule.max_percentage}%</td>
+                <td style="text-align: center;">
+                    <button class="btn btn-primary" style="height: 28px; padding: 0 12px; font-size: 11px; background-color:#721c24;" onclick="deleteGradingRule(${rule.id})">Remove</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--accent-red);">Failed loading database tiers.</td></tr>`;
+    }
+}
+
+async function addNewGradingRule() {
+    const name = document.getElementById('new_grade_name').value.trim();
+    const minVal = parseFloat(document.getElementById('new_grade_min').value);
+    const maxVal = parseFloat(document.getElementById('new_grade_max').value);
+
+    if (!name || isNaN(minVal) || isNaN(maxVal)) {
+        return alert("❌ Complete all property field boxes before adding lines.");
+    }
+    if (minVal < 0 || maxVal > 100 || minVal > maxVal) {
+        return alert("❌ Boundaries out of scope: Ranges must fit 0-100, and Min cannot exceed Max settings.");
+    }
+
+    try {
+        const result = await window.api.addGradingRule({ gradeName: name, minPct: minVal, maxPct: maxVal });
+        if(result && result.success) {
+            document.getElementById('new_grade_name').value = '';
+            document.getElementById('new_grade_min').value = '';
+            document.getElementById('new_grade_max').value = '';
+            loadGradingRulesView();
+        } else {
+            alert("❌ Failed to add rule entry: " + (result.error || "Unknown error."));
+        }
+    } catch (err) {
+        alert("❌ Error writing parameters: " + err.message);
+    }
+}
+
+async function deleteGradingRule(ruleId) {
+    if (!confirm("Permanently erase this grading configuration band row?")) return;
+    try {
+        const result = await window.api.deleteGradingRule(ruleId);
+        if (result && result.success) loadGradingRulesView();
+    } catch (err) {
+        alert("❌ Processing error encountered: " + err.message);
+    }
+}
+// --- DYNAMIC SUBJECT MANAGEMENT CALLS ---
+
+// 1. Render all dynamic subjects stored inside the database
+async function loadSubjectsView() {
+    const tbody = document.getElementById('subjectsTableBody');
+    if (!tbody) return;
+    try {
+        const subjects = await window.api.getAllSubjects();
+        if (!subjects || subjects.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No custom subjects added yet.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = subjects.map(sub => `
+            <tr>
+                <td style="font-weight: bold; color: var(--primary);">${sub.subject_display_name}</td>
+                <td style="font-family: monospace; color: var(--text-muted);">${sub.subject_code}</td>
+                <td style="text-align: center;">
+                    <button style="background: #721c24; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;" 
+                        onclick="deleteSubjectEntry(${sub.id})">Remove</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: red;">Failed to load subject records.</td></tr>`;
+    }
+}
+
+// 2. Insert a new custom subject descriptor row into SQLite
+async function createNewSubject() {
+    const displayName = document.getElementById('sub_display_name').value.trim();
+    const codeId = document.getElementById('sub_code_id').value.trim();
+
+    if (!displayName || !codeId) {
+        return alert("❌ Please fill in both the Subject Name and Database Code fields!");
+    }
+
+    try {
+        const res = await window.api.addNewSubject({ name: displayName, code: codeId });
+        if (res.success) {
+            document.getElementById('sub_display_name').value = '';
+            document.getElementById('sub_code_id').value = '';
+            loadSubjectsView(); // Refresh list layout instantly
+        } else {
+            alert("❌ Code Error: The database identifier code must be completely unique!");
+        }
+    } catch (err) {
+        alert("❌ Failed to add subject: " + err.message);
+    }
+}
+
+// 3. Purge a custom subject row matching its internal database ID
+async function deleteSubjectEntry(id) {
+    if (!confirm("Are you sure you want to permanently delete this subject?")) return;
+    try {
+        const res = await window.api.deleteSubject(id);
+        if (res.success) {
+            loadSubjectsView();
+        } else {
+            alert("❌ Deletion failed: " + res.error);
+        }
+    } catch (err) {
+        alert("❌ Error processing request: " + err.message);
+    }
+}
+
+// 4. Update your existing window load event listener to include this initialization:
+window.addEventListener('DOMContentLoaded', () => {
+    loadSubjectsView(); // Add this alongside your existing dropdown/grading loaders!
+});
+
+</script>
+</body>
+</html>

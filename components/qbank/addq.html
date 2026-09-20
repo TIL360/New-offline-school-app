@@ -243,10 +243,10 @@
     <textarea id="questionText" rows="5" placeholder="Type the question content here..."></textarea>
     
     <!-- 🆕 NEW INPUT SECTION FOR ATTACHING RELEVANT SCHEMATICS -->
-    <label style="margin-top: 15px;">Attach Question Diagram (Optional)</label>
+    <!-- <label style="margin-top: 15px;">Attach Question Diagram (Optional)</label>
     <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
         <input type="file" id="diagramFileInput" accept="image/*" style="width: auto; flex: 1;">
-    </div>
+    </div> -->
     
     <label style="margin-top: 15px;">Correct Answer / Key</label>
     <input type="text" id="correctAnswer" placeholder="Correct text string or option name">
@@ -351,9 +351,25 @@
 
 
     <script>
-      // Add this inside window.addEventListener('DOMContentLoaded', ...) in addq.html
+window.addEventListener('DOMContentLoaded', async () => {
+    
 
-// Hook up the Excel File Parser handler button
+     // 👇 ADD THIS BUG FIX BLOCK HERE 👇
+  // Fixes the Windows Electron native dropdown focus-loss glitch
+  document.body.addEventListener('change', (event) => {
+    if (event.target.tagName === 'SELECT') {
+      // 1. Force the dropdown to release focus
+      event.target.blur(); 
+      
+      // 2. Trigger the automated 'Alt+Tab' routine already built into Main.js
+      if (window.authAPI && typeof window.authAPI.send === 'function') {
+        window.authAPI.send('fix-focus');
+      }
+    }
+  });
+  // 👆 END OF BUG FIX BLOCK 👆
+});
+
 document.querySelector('.btn-parse').addEventListener('click', async (e) => {
     e.preventDefault();
 

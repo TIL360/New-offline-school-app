@@ -303,6 +303,8 @@ background-color: var(--primary-hover);
 <div class="container">
 <div class="header">
 <div class="top-nav">
+<!-- Change from exam_configuration.html to exam_configurations.html -->
+<button class="nav-btn" onclick="window.location.href='exam_configurations.html'">⚙️ Exam Configurations</button>
 <button class="nav-btn" onclick="window.location.href='../dashboard.html'">📊 Dashboard</button>
 <button class="nav-btn nav-btn-premium" onclick="window.location.href='datesheet.html'">📅 <strong>Date Sheet</strong></button>
 </div>
@@ -364,30 +366,11 @@ background-color: var(--primary-hover);
   </p>
 </div>
 
-<div class="subjects-grid" id="marksInputArea">
-    <div class="sub-item"><label>Urdu</label><input type="number" id="urdu_setmarks" value="100"></div>
-    <div class="sub-item"><label>English</label><input type="number" id="eng_setmarks" value="100"></div>
-    <div class="sub-item"><label>Math</label><input type="number" id="math_setmarks" value="100"></div>
-    <div class="sub-item"><label>SST</label><input type="number" id="sst_setmarks" value="100"></div>
-    <div class="sub-item"><label>Islamiat</label><input type="number" id="islamiat_setmarks" value="100"></div>
-    <div class="sub-item"><label>Science</label><input type="number" id="science_setmarks" value="100"></div>
-    <div class="sub-item"><label>Physics</label><input type="number" id="physics_setmarks" value="100"></div>
-    <div class="sub-item"><label>Chemistry</label><input type="number" id="chemistry_setmarks" value="100"></div>
-    <div class="sub-item"><label>Biology</label><input type="number" id="biology_setmarks" value="100"></div>
-    <div class="sub-item"><label>Computer</label><input type="number" id="computer_setmarks" value="100"></div>
-    <div class="sub-item"><label>Drawing</label><input type="number" id="drawing_setmarks" value="100"></div>
-    <div class="sub-item"><label>Geography</label><input type="number" id="geography_setmarks" value="100"></div>
-    <div class="sub-item"><label>Pak Studies</label><input type="number" id="pak_studies_setmarks" value="100"></div>
-    <div class="sub-item"><label>Islamic Studies</label><input type="number" id="islamic_studies_setmarks" value="100"></div>
-    <div class="sub-item"><label>Tarjama Tul Quran</label><input type="number" id="tarjama_quran_setmarks" value="100"></div>
-    <div class="sub-item"><label>General Knowledge</label><input type="number" id="gk_setmarks" value="100"></div>
-    <div class="sub-item"><label>Functional Maths</label><input type="number" id="functional_math_setmarks" value="100"></div>
-    <div class="sub-item"><label>Islamiyat Comp.</label><input type="number" id="islamiat_compulsory_setmarks" value="100"></div>
-    <div class="sub-item"><label>Social Study</label><input type="number" id="social_studies_setmarks" value="100"></div>
-    <div class="sub-item"><label>Home Economics</label><input type="number" id="home_economics_setmarks" value="100"></div>
-    <div class="sub-item"><label>Civics</label><input type="number" id="civics_setmarks" value="100"></div>
-    <div class="sub-item"><label>General Science</label><input type="number" id="general_science_setmarks" value="100"></div>
+<!-- 📌 PASTE THIS CLEAN DYNAMIC HOLDER GRID INSTEAD: -->
+<div id="dynamicSubjectsMarksGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #fff; padding: 20px; border-radius: 8px;">
+    <!-- Elements will be generated dynamically on the fly by Javascript -->
 </div>
+
 
 
 <div class="total-banner">
@@ -398,190 +381,249 @@ background-color: var(--primary-hover);
 </div>
 </div>
 
+
 <script>
-const subjectIds = [
-    'urdu_setmarks', 'eng_setmarks', 'math_setmarks', 'sst_setmarks',
-    'islamiat_setmarks', 'science_setmarks', 'physics_setmarks',
-    'chemistry_setmarks', 'biology_setmarks', 'computer_setmarks',
-    'drawing_setmarks', 'geography_setmarks',
-    'pak_studies_setmarks', 'islamic_studies_setmarks', 'tarjama_quran_setmarks',
-    'gk_setmarks', 'functional_math_setmarks', 'islamiat_compulsory_setmarks',
-    'social_studies_setmarks', 'home_economics_setmarks', 'civics_setmarks',
-    'general_science_setmarks'
-];
-
-// 1. Load Data on startup
-window.addEventListener('DOMContentLoaded', async () => {
-loadDropdowns();
-loadClassCheckboxes();
-
-// Live calculation for grand total
-subjectIds.forEach(id => {
-document.getElementById(id).addEventListener('input', calculateGrandTotal);
-});
-});
-
-function calculateGrandTotal() {
-let total = 0;
-subjectIds.forEach(id => total += (parseFloat(document.getElementById(id).value) || 0));
-document.getElementById('displayTotal').innerText = total;
+    // Helper to normalize subject custom code names to match your exact SQLite database column prefixes
+function getNormalizedKeyForSaving(code) {
+    const cleanCode = String(code).toLowerCase().trim();
+    if (cleanCode === 'english' || cleanCode === 'eng') return 'eng';
+    if (cleanCode === 'maths' || cleanCode === 'math') return 'math';
+    if (cleanCode === 'islamiat' || cleanCode === 'isl') return 'islamiat';
+    if (cleanCode === 'science' || cleanCode === 'sci') return 'science';
+    if (cleanCode === 'physics' || cleanCode === 'phy') return 'physics';
+    if (cleanCode === 'chemistry' || cleanCode === 'chem') return 'chemistry';
+    if (cleanCode === 'biology' || cleanCode === 'bio') return 'biology';
+    if (cleanCode === 'computer' || cleanCode === 'comp') return 'computer';
+    if (cleanCode === 'drawing' || cleanCode === 'draw') return 'drawing';
+    if (cleanCode === 'geography' || cleanCode === 'geog') return 'geography';
+    if (cleanCode === 'pak studies' || cleanCode === 'pakst') return 'pak_studies';
+    if (cleanCode === 'islamic studies' || cleanCode === 'islamic_studies') return 'islamic_studies';
+    if (cleanCode === 'tarjama tul quran' || cleanCode === 'tarjama_quran' || cleanCode === 'quran') return 'tarjama_quran';
+    if (cleanCode === 'general knowledge' || cleanCode === 'gk') return 'gk';
+    if (cleanCode === 'functional maths' || cleanCode === 'functional_math') return 'functional_math';
+    if (cleanCode === 'islamiyat comp.' || cleanCode === 'islamiat_compulsory') return 'islamiat_compulsory';
+    if (cleanCode === 'social study' || cleanCode === 'social_studies') return 'social_studies';
+    if (cleanCode === 'home economics' || cleanCode === 'home_economics') return 'home_economics';
+    if (cleanCode === 'general science' || cleanCode === 'general_science') return 'general_science';
+    return cleanCode;
 }
 
+// Single consolidated page initialization routine
+window.addEventListener('DOMContentLoaded', async () => {
+    loadDropdowns();
+    loadClassCheckboxes();
+    loadDynamicSubjectsForm();
+
+    // --- CENTRAL FIX FUNCTION ---
+    function releaseFocusLock() {
+        if (window.authAPI && typeof window.authAPI.send === 'function') {
+            window.authAPI.send('fix-focus');
+        }
+        // 200ms baad pehle input ko force focus
+        setTimeout(() => {
+            const firstInput = document.querySelector('#examNameInput, input[type="text"]');
+            if (firstInput) firstInput.focus();
+        }, 200);
+    }
+
+    // 1. SELECT ka purana fix
+    document.body.addEventListener('change', (event) => {
+        if (event.target.tagName === 'SELECT') {
+            event.target.blur();
+            releaseFocusLock();
+        }
+    });
+
+    // 2. CONFIRM aur ALERT ko hijack karo - ye Delete Exam wala lock khatam karega
+    const _confirm = window.confirm;
+    window.confirm = function(msg) {
+        const result = _confirm(msg);
+        releaseFocusLock();
+        return result;
+    };
+
+    const _alert = window.alert;
+    window.alert = function(msg) {
+        _alert(msg);
+        releaseFocusLock();
+    };
+});
 async function loadDropdowns() {
     const res = await window.api.getDropdownData();
     if (res.success) {
-        // Add 'deleteExamSelect' here to populate it automatically
         const selects = [
             document.getElementById('selectExamInit'), 
             document.getElementById('selectExamSettings'),
-            document.getElementById('deleteExamSelect') 
+            document.getElementById('deleteExamSelect')
         ];
         const classSelect = document.getElementById('selectClassSettings');
         
-        // Clear and Fill Exams
+        // Clear and fill exams dropdowns
         selects.forEach(s => {
-            if(!s) return;
+            if (!s) return;
             s.innerHTML = '<option value="">-- Choose Exam --</option>';
             res.exams.forEach(e => s.add(new Option(e.exam_name, e.exam_id)));
         });
-        
-        // Fill Class Select
-        classSelect.innerHTML = '<option value="">-- Choose Class --</option>';
-        res.classes.forEach(c => classSelect.add(new Option(c.class_name, c.class_name)));
+
+        // Fill class settings dropdown
+        if (classSelect) {
+            classSelect.innerHTML = '<option value="">-- Choose Class --</option>';
+            res.classes.forEach(c => classSelect.add(new Option(c.class_name, c.class_name)));
+        }
     }
 }
 
 async function loadClassCheckboxes() {
-const classes = await window.api.getActiveClasses();
-const container = document.getElementById('classCheckboxContainer');
-if (!classes || classes.length === 0) {
-container.innerHTML = "No active students found.";
-return;
+    const classes = await window.api.getActiveClasses();
+    const container = document.getElementById('classCheckboxContainer');
+    if (!container) return;
+    if (!classes || classes.length === 0) {
+        container.innerHTML = "No active students found.";
+        return;
+    }
+    container.innerHTML = classes.map(c =>
+        `<div class="checkbox-item">
+            <input type="checkbox" name="classCheck" value="${c.current_class}" id="class_${c.current_class}">
+            <label for="class_${c.current_class}">${c.current_class}</label>
+        </div>`
+    ).join('');
 }
-container.innerHTML = classes.map(c => 
-`<div class="checkbox-item">
-<input type="checkbox" name="classCheck" value="${c.current_class}" id="class_${c.current_class}">
-<label for="class_${c.current_class}">${c.current_class}</label>
-</div>`
-).join('');
+// Fetches configured subjects dynamically from database and builds form fields
+async function loadDynamicSubjectsForm() {
+    const grid = document.getElementById('dynamicSubjectsMarksGrid');
+    if (!grid) return;
+    
+    try {
+        const dynamicSubjects = await window.api.getAllSubjects();
+        
+        if (!dynamicSubjects || dynamicSubjects.length === 0) {
+            grid.innerHTML = `<p style="grid-column: span 4; text-align: center; color: var(--text-muted); padding: 20px;">
+                ⚠️ No subjects configured yet. Go to Exam Configurations to add your subjects.</p>`;
+            return;
+        }
+        
+        grid.innerHTML = dynamicSubjects.map(sub => `
+            <div style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #dee2e6; padding: 10px; border-radius: 6px; background: #f8f9fa;">
+                <label style="margin: 0; font-size: 12px; font-weight: bold; color: #333; text-transform: uppercase;">${sub.subject_display_name}</label>
+                <input type="number" id="${sub.subject_code}_setmarks" data-code="${sub.subject_code}" value="100" class="subject-weight-input" 
+                    style="width: 75px; text-align: center; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" 
+                    oninput="calculateDynamicGrandTotal()">
+            </div>
+        `).join('');
+        
+        calculateDynamicGrandTotal(); // Initial weight evaluation
+    } catch (err) {
+        console.error("Failed to build dynamic marks layout:", err);
+    }
 }
 
-// --- STEP 1: CREATE ---
+// Automatically loops through inputs to calculate live total weights banner
+function calculateDynamicGrandTotal() {
+    let grandTotal = 0;
+    document.querySelectorAll('.subject-weight-input').forEach(input => {
+        grandTotal += parseFloat(input.value) || 0;
+    });
+    const totalDisplay = document.getElementById('displayTotal');
+    if (totalDisplay) totalDisplay.innerText = grandTotal;
+}
 async function createNewExam() {
-const name = document.getElementById('newExamName').value.trim();
-if(!name) return alert("Enter exam name");
-const res = await window.api.createExamName(name);
-if(res.success) {
-alert("Exam Created!");
-document.getElementById('newExamName').value = "";
-loadDropdowns();
-} else alert(res.error);
+    const name = document.getElementById('newExamName').value.trim();
+    if (!name) return alert("Enter exam name");
+    const res = await window.api.createExamName(name);
+    if (res.success) {
+        alert("Exam Created!");
+        document.getElementById('newExamName').value = "";
+        loadDropdowns();
+    } else alert(res.error);
 }
 
-// --- STEP 2: INITIATE ---
-// --- STEP 2: INITIATE ---
 async function generateMarkSheets() {
     const examId = document.getElementById('selectExamInit').value;
     const selected = Array.from(document.querySelectorAll('input[name="classCheck"]:checked')).map(cb => cb.value);
-    
-    if(!examId || selected.length === 0) return alert("Select Exam and at least one Class");
-    
+    if (!examId || selected.length === 0) return alert("Select Exam and at least one Class");
+
     const res = await window.api.initiateExamLogic({ examId, selectedClasses: selected });
-    
-    // Check if the database operation failed
-    if (!res.success) {
-        return alert("❌ Database Error: " + res.error);
-    }
-    
-    if(res.newlyAdded === 0) {
+    if (!res.success) return alert("❌ Database Error: " + res.error);
+
+    if (res.newlyAdded === 0) {
         alert("Students from these classes are already in this exam sheet.");
     } else {
         alert(`Success! Added ${res.newlyAdded} students.`);
     }
 }
 
-// --- STEP 3: SET MARKS ---
 async function updateTotalMarks() {
-const examId = document.getElementById('selectExamSettings').value;
-const className = document.getElementById('selectClassSettings').value;
-if(!examId || !className) return alert("Select Exam and Class for settings");
-    const data = {
+    const examId = document.getElementById('selectExamSettings').value;
+    const className = document.getElementById('selectClassSettings').value;
+    if (!examId || !className) return alert("Select Exam and Class for settings");
+    
+    // Core structural payload object package templates
+    const dynamicData = {
         exam_id: examId,
         current_class: className,
-        urdu: document.getElementById('urdu_setmarks').value,
-        eng: document.getElementById('eng_setmarks').value,
-        math: document.getElementById('math_setmarks').value,
-        sst: document.getElementById('sst_setmarks').value,
-        islamiat: document.getElementById('islamiat_setmarks').value,
-        science: document.getElementById('science_setmarks').value,
-        physics: document.getElementById('physics_setmarks').value,
-        chemistry: document.getElementById('chemistry_setmarks').value,
-        biology: document.getElementById('biology_setmarks').value,
-        computer: document.getElementById('computer_setmarks').value,
-        drawing: document.getElementById('drawing_setmarks').value,
-        geography: document.getElementById('geography_setmarks').value,
-        pak_studies: document.getElementById('pak_studies_setmarks').value,
-        islamic_studies: document.getElementById('islamic_studies_setmarks').value,
-        tarjama_quran: document.getElementById('tarjama_quran_setmarks').value,
-        gk: document.getElementById('gk_setmarks').value,
-        functional_math: document.getElementById('functional_math_setmarks').value,
-        islamiat_compulsory: document.getElementById('islamiat_compulsory_setmarks').value,
-        social_studies: document.getElementById('social_studies_setmarks').value,
-        home_economics: document.getElementById('home_economics_setmarks').value,
-        civics: document.getElementById('civics_setmarks').value,
-        general_science: document.getElementById('general_science_setmarks').value,
         total: document.getElementById('displayTotal').innerText
     };
-
-const res = await window.api.updateSetMarks(data);
-if(res.success) alert(`Updated marks for ${res.changes} records.`);
-else alert("Error: " + res.error);
+    
+    // Normalize custom string inputs into exact SQLite prefix tokens to prevent 0 overrides
+    document.querySelectorAll('.subject-weight-input').forEach(input => {
+        const rawCode = input.getAttribute('data-code');
+        const normalCode = getNormalizedKeyForSaving(rawCode);
+        dynamicData[normalCode] = input.value;
+    });
+    
+    console.log("🚀 Dispatched payload values array sent to main.js database pipeline:", dynamicData);
+    
+    const res = await window.api.updateSetMarks(dynamicData);
+    if (res.success) {
+        alert(`✨ Successfully saved total marks settings for ${res.changes} records!`);
+    } else {
+        alert("Error saving: " + res.error);
+    }
 }
+
 async function deleteSelectedExam() {
     const examSelect = document.getElementById('deleteExamSelect');
     const examId = examSelect.value;
     const examName = examSelect.options[examSelect.selectedIndex]?.text;
-
+    
     if (!examId) {
         alert("Please pick an existing exam to delete first!");
+        if (window.authAPI) window.authAPI.send('fix-focus');
         return;
     }
 
-    // STEP 1 ALERT WARNING (Explicit mention of question paper deletion)
-    const confirm1 = confirm(
-        `🚨 CRITICAL WARNING (STEP 1 OF 2):\n\n` +
-        `You are about to completely delete the exam: "${examName}"\n\n` +
-        `⚠️ DANGER: THIS WILL PERMANENTLY PURGE:\n` +
-        `• ALL generated student result marks sheets\n` +
-        `• ALL subject marks criteria parameters\n` +
-        `• THE QUESTION PAPER LAYOUT built for this exam!\n\n` +
-        `Are you absolutely sure you want to proceed?`
-    );
-    if (!confirm1) return;
+    // SELECT ko pehle blur karo - ye Windows ka main glitch hai
+    examSelect.blur();
 
-    // STEP 2 ALERT WARNING (Final safeguard)
-    const confirm2 = confirm(
-        `❌ FINAL SAFEGUARD CHECK (STEP 2 OF 2):\n\n` +
-        `This action is irreversible. All related databases rows, grades, and printed question sheets matching "${examName}" will be destroyed.\n\n` +
-        `Click OK to wipe the data layout, or Cancel to keep it.`
-    );
-    if (!confirm2) return;
+    const confirm1 = confirm(`🚨 CRITICAL WARNING:\nYou are about to completely delete the exam: "${examName}"\nAre you sure you want to proceed?`);
+    
+    // confirm band hote hi focus wapas lao
+    if (window.authAPI) window.authAPI.send('fix-focus');
+    
+    if (!confirm1) return;
 
     try {
         const result = await window.api.deleteExamCascade({ examId: parseInt(examId), examName: examName });
         if (result && result.success) {
-            alert(`✨ Success! "${examName}" and all its student results and question layouts have been completely wiped out.`);
-            loadDropdowns(); // Clear dropdown views
+            alert(`✨ Success! "${examName}" has been completely wiped out.`);
+            await loadDropdowns();
         } else {
-            alert("Database Error: " + (result.error || "Operation failed. Check backend terminal."));
+            alert("Database Error: " + (result.error || "Operation failed."));
         }
     } catch (err) {
-        console.error("IPC path exception inside cascading exam execution routing:", err);
-        alert("Failed to communicate with core system: " + err.message);
+        console.error("IPC path error:", err);
+        alert("Error: " + err.message);
+    } finally {
+        // Ye finally block sab se zaroori hai - delete ke baad input lock khatam karega
+        setTimeout(() => {
+            if (window.authAPI) window.authAPI.send('fix-focus');
+            const firstInput = document.querySelector('input[type="text"]');
+            if(firstInput) {
+                firstInput.focus();
+            }
+        }, 150);
     }
 }
-
 </script>
-
 </body>
 </html>

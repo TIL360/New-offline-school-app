@@ -335,9 +335,9 @@ function renderPage(page) {
             <div class="btn-group">
                 <button class="btn btn-pay" title="Collect Student Fee" onclick="collectFee(${row.id})">💰</button>
                 <button class="btn" style="background: #25D366; color: white;" title="Send WhatsApp notification"
-    onclick="sendWhatsAppReminder('${row.student_name}', '${row.total_fee + row.arrears}', '${row.arrears}', '${row.whatsapp}', '${row.invoice_month}', '${row.monthly_fee}', '${row.adm_fee}', '${row.exam_fee}', '${row.misc_fee}', '${row.lab_fee}', '${row.reg_fee || 0}', '${row.annual_fund || 0}', '${row.stationary_fund || 0}', '${row.bus_charges || 0}', '${row.collection}')">
-    💬
-</button>
+                    onclick="sendWhatsAppReminder('${row.student_name}', '${row.total_fee}', '${row.arrears}', '${row.whatsapp}', '${row.invoice_month}', '${row.monthly_fee}', '${row.adm_fee}', '${row.exam_fee}', '${row.misc_fee}', '${row.lab_fee}', '${row.reg_fee || 0}', '${row.annual_fund || 0}', '${row.stationary_fund || 0}', '${row.bus_charges || 0}')">
+                    💬
+                </button>
                 <button class="btn btn-invoice" title="Generate Invoice" onclick="viewInvoice(${row.id})">📄</button>
                 <button class="btn btn-delete" title="Delete Record" onclick="deleteFee(${row.id})">X</button>
             </div>
@@ -464,25 +464,26 @@ async function deleteFee(id) {
 // Update your button's onclick to pass all the new variables
 // onclick="sendWhatsAppReminder('${row.student_name}', '${row.total_fee}', '${row.arrears}', '${row.whatsapp}', '${row.adm_fee}', '${row.exam_fee}', '${row.lab_fee}', '${row.misc_fee}', '${row.collection}')"
 
-function sendWhatsAppReminder(name, total_fee, arrears, phone, invoice_month, monthly_fee, adm_fee = 0, exam_fee = 0, misc_fee = 0, lab_fee = 0, reg_fee = 0, annual_fund = 0, stationary_fund = 0, bus_charges = 0, collection = 0) {
+function sendWhatsAppReminder (name, total_fee, arrears, phone, monthly_fee, adm_fee = 0, exam_fee = 0, misc_fee = 0, lab_fee = 0, collection = 0, reg_fee = 0, annual_fund = 0, stationary_fund = 0, bus_charges = 0) {
     if (!phone || phone === 'null' || phone == "") {
         alert("Phone number not found for this student!");
         return;
     }
     
-    // Note: total_fee here is already total_fee + arrears from DB, so calculate final
-    const totalWithArrears = parseFloat(total_fee || 0);
-    const finalBalance = totalWithArrears - parseFloat(collection || 0);
+    const finalBalance = (parseFloat(total_fee || 0) + parseFloat(arrears || 0)) - parseFloat(collection || 0);
     
     let feeBreakdown = "";
     if (parseFloat(monthly_fee) > 0) feeBreakdown += `\nMonthly Tuition Fee: *Rs. ${monthly_fee}*`;
     if (parseFloat(adm_fee) > 0) feeBreakdown += `\nAdmission Fee: *Rs. ${adm_fee}*`;
     if (parseFloat(exam_fee) > 0) feeBreakdown += `\nExam Fee: *Rs. ${exam_fee}*`;
     if (parseFloat(lab_fee) > 0) feeBreakdown += `\nLab Fee: *Rs. ${lab_fee}*`;
+    
+    // New Fee Head breakdowns
     if (parseFloat(reg_fee) > 0) feeBreakdown += `\nRegistration Fee: *Rs. ${reg_fee}*`;
     if (parseFloat(annual_fund) > 0) feeBreakdown += `\nAnnual Fund: *Rs. ${annual_fund}*`;
     if (parseFloat(stationary_fund) > 0) feeBreakdown += `\nStationary Fund: *Rs. ${stationary_fund}*`;
     if (parseFloat(bus_charges) > 0) feeBreakdown += `\nBus Charges: *Rs. ${bus_charges}*`;
+    
     if (parseFloat(misc_fee) > 0) feeBreakdown += `\nMisc Fee: *Rs. ${misc_fee}*`;
     if (parseFloat(arrears) > 0) feeBreakdown += `\nPrevious Arrears: *Rs. ${arrears}*`;
 
@@ -491,14 +492,10 @@ function sendWhatsAppReminder(name, total_fee, arrears, phone, invoice_month, mo
         cleanPhone = "92" + cleanPhone.substring(1);
     }
     
-    const message = `Assalam-o-Alaikum!\nThis is a reminder regarding the pending fee of *${name}* (${invoice_month}).\n${feeBreakdown}\n\n*Total Payable: Rs. ${finalBalance}*\nPlease clear the dues at your earliest convenience. Thank you!\n\nRegards,\n${appDetails.instituteName}`;
-    
-    // CORRECT URL FORMAT
-    const url = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-
+    const message = `Assalam-o-Alaikum!\nThis is a reminder regarding the pending fee of *${name}*.\n${feeBreakdown}\n\n*Total Payable: Rs. ${finalBalance}*\nPlease clear the dues at your earliest convenience. Thank you!\n\nRegards,\n${appDetails.instituteName}`;
+    const url = "https://whatsapp.com" + cleanPhone + "&text=" + encodeURIComponent(message);
     window.authAPI.send('open-external-link', url);
 }
-
 function closePrintChoiceModal() {
     document.getElementById('printChoiceModal').style.display = 'none';
     printTargetIds = ''; // Wipe tracker cache

@@ -85,13 +85,59 @@
 </div>
 
 <script>
-const urlParams = new URLSearchParams(window.location.search);
-const studentId = urlParams.get('id');
-const studentForm = document.getElementById('studentForm');
-let existingPhotoPath = '';
+window.addEventListener('DOMContentLoaded', async () => {
 
-// 1. Populate classes and return a promise to ensure timing is correct
-async function populateClasses() {
+  // --- BUG FIX 1: SELECT dropdown focus ---
+window.addEventListener('DOMContentLoaded', async () => {
+
+  // --- KEEP THIS: Bug Fix 1 - SELECT focus ---
+  document.body.addEventListener('change', (event) => {
+    if (event.target.tagName === 'SELECT') {
+      event.target.blur();
+      if (window.authAPI && typeof window.authAPI.send === 'function') {
+        window.authAPI.send('fix-focus');
+      }
+    }
+  });
+
+  // --- KEEP THIS: Bug Fix 2 - alert hijack ---
+  const originalAlert = window.alert;
+  window.alert = function(msg) {
+    originalAlert(msg);
+    if (window.authAPI) window.authAPI.send('fix-focus');
+    setTimeout(() => {
+        const regInput = document.getElementById('regNo');
+        if (regInput) {
+            regInput.focus();
+            regInput.select();
+        }
+    }, 200);
+  };
+
+  // --- NEW: Fix your current Alt+Tab typing issue ---
+  if (window.authAPI && typeof window.authAPI.send === 'function') {
+    window.authAPI.send('fix-focus');
+  }
+
+  await populateClasses();
+  await fillStudentData();
+
+  // Snap focus to Reg No at start
+  setTimeout(() => {
+    const regInput = document.getElementById('regNo');
+    if (regInput) {
+        regInput.focus();
+        regInput.select();
+    }
+  }, 300);
+});
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const studentId = urlParams.get('id');
+  const studentForm = document.getElementById('studentForm');
+  let existingPhotoPath = '';
+
+  async function populateClasses() {
     try {
         const classes = await window.api.getClasses();
         const options = classes.map(c => `<option value="${c.class_name}">${c.class_name}</option>`).join('');
@@ -100,23 +146,15 @@ async function populateClasses() {
             const el = document.getElementById(id);
             if(el) el.innerHTML = defaultOption + options;
         });
-        return true; 
-    } catch (err) { 
-        console.error("Error populating classes:", err); 
-        return false;
-    }
-}
+    } catch (err) { console.error(err); }
+  }
 
-// 2. Fill student data with exact string matching for Status
-async function fillStudentData() {
+  async function fillStudentData() {
     if (!studentId) return;
     try {
         const s = await window.api.getStudentById(studentId);
         if (!s) return;
-
         existingPhotoPath = s.picture_path || '';
-        
-        // --- PERSONAL INFO ---
         document.getElementById('regNo').value = s.registration_no || '';
         document.getElementById('rollNo').value = s.roll_no || '';
         document.getElementById('studentName').value = s.student_name || '';
@@ -126,20 +164,11 @@ async function fillStudentData() {
         document.getElementById('dob').value = s.dob || '';
         document.getElementById('dobWords').value = s.dob_in_words || '';
         document.getElementById('bForm').value = s.cnic_bform || '';
-
-        // --- ACADEMIC DETAILS ---
         document.getElementById('admClass').value = s.admission_class || '';
         document.getElementById('studyClass').value = s.current_class || '';
         document.getElementById('section').value = s.section || '';
         document.getElementById('admDate').value = s.admission_date || '';
-        
-        // --- THE STATUS FIX (Exact Case Match) ---
-        // This will now correctly select "Active" or "Inactive"
-        if (s.status) {
-            document.getElementById('status').value = s.status;
-        }
-
-        // --- CONTACT & OTHER ---
+        if (s.status) document.getElementById('status').value = s.status;
         document.getElementById('mobile').value = s.mobile || '';
         document.getElementById('whatsapp').value = s.whatsapp || '';
         document.getElementById('monthlyFee').value = s.monthly_fee || '';
@@ -153,20 +182,17 @@ async function fillStudentData() {
         document.getElementById('certSerial').value = s.certificate_serial || '';
         document.getElementById('certDate').value = s.cert_issuance_date || '';
         document.getElementById('attendance').value = s.attendance || '';
-
         document.getElementById('submitBtn').innerText = "Update Record";
         document.getElementById('formTitle').innerText = "Edit Admission";
-    } catch (err) { console.error("Error filling student data:", err); }
-}
+    } catch (err) { console.error(err); }
+  }
 
-// 3. Form Submission Logic
-studentForm.addEventListener('submit', async (e) => {
+  studentForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const picInput = document.getElementById('picture');
     let finalPicValue = existingPhotoPath;
-    
     if (picInput.files && picInput.files.length > 0) {
-        finalPicValue = window.api.getFilePath(picInput.files[0]); 
+        finalPicValue = window.api.getFilePath(picInput.files[0]);
     }
 
     const studentData = {
@@ -188,7 +214,7 @@ studentForm.addEventListener('submit', async (e) => {
         section: document.getElementById('section').value,
         admDate: document.getElementById('admDate').value,
         leavingDate: document.getElementById('leavingDate').value,
-        status: document.getElementById('status').value, // Correctly captures "Active"/"Inactive"
+        status: document.getElementById('status').value,
         mobile: document.getElementById('mobile').value,
         whatsapp: document.getElementById('whatsapp').value,
         monthlyFee: document.getElementById('monthlyFee').value,
@@ -202,23 +228,28 @@ studentForm.addEventListener('submit', async (e) => {
     };
 
     try {
-        if (studentId) { 
-            await window.api.updateStudent(studentData); 
-            alert("Updated Successfully!"); 
-        } else { 
-            await window.api.addStudent(studentData); 
-            alert("Saved Successfully!"); 
-            studentForm.reset(); 
+        if (studentId) {
+            await window.api.updateStudent(studentData);
+            alert("Updated Successfully!");
+        } else {
+            await window.api.addStudent(studentData);
+            alert("Saved Successfully!");
+            studentForm.reset();
         }
         window.api.changePage('components/student/student_list.html');
-    } catch (error) { alert("Error: " + error.message); }
-});
+    } catch (error) {
+        if (error.message && error.message.includes('UNIQUE constraint failed: students.registration_no')) {
+            alert("Student already held with this registration no, use different registration no for new student.");
+        } else {
+            alert("Error: " + error.message);
+        }
+    }
+  });
 
-// 4. ONLOAD SEQUENCE: Wait for one before starting the next
-window.onload = async () => { 
-    await populateClasses(); 
-    await fillStudentData(); 
-};
+  // ONLOAD SEQUENCE - ab ek hi jagah pe
+  await populateClasses();
+  await fillStudentData();
+});
 </script>
 
 

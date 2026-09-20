@@ -149,54 +149,56 @@ document.getElementById('stuClass').innerText = student.current_class ? `Class: 
       // Fix: Get the balance of the latest invoice directly to prevent double-counting arrears
 let totalOutstanding = 0;
 if (response.history.length > 0) {
-    const latest = response.history[0];
-    const latestPayable = (parseFloat(latest.total_fee) || 0) + (parseFloat(latest.arrears) || 0);
-    const latestPaid = parseFloat(latest.collection) || 0;
-    totalOutstanding = latestPayable - latestPaid;
+  // Target the last index of the array
+  const latest = response.history[response.history.length - 1]; 
+  
+  const latestPayable = (parseFloat(latest.total_fee) || 0) +
+                        (parseFloat(latest.arrears) || 0);
+  const latestPaid = parseFloat(latest.collection) || 0;
+  totalOutstanding = latestPayable - latestPaid;
 }
 
 const tbody = document.getElementById('feeHistoryBody');
 // 3. Build Table Rows
-tbody.innerHTML = response.history.map(f => {
-const baseFee = parseFloat(f.total_fee) || 0;
-const arrearsVal = parseFloat(f.arrears) || 0;
-const totalPayable = baseFee + arrearsVal;
-const paidAmount = parseFloat(f.collection) || 0;
-
-const balance = totalPayable - paidAmount;
+tbody.innerHTML = [...response.history].reverse().map(f => {
+    const baseFee = parseFloat(f.total_fee) || 0;
+    const arrearsVal = parseFloat(f.arrears) || 0;
+    const totalPayable = baseFee + arrearsVal;
+    const paidAmount = parseFloat(f.collection) || 0;
+    const balance = totalPayable - paidAmount;
 // REMOVED: totalOutstanding += balance; <-- This line was causing the double counting bug
 
 // Determine strict contextual status metrics
 let statusLabel = '';
-let statusClass = '';
-
-if (balance <= 0) {
-    statusLabel = 'PAID';
-    statusClass = 'paid';
-} else if (paidAmount > 0) {
-    statusLabel = 'PARTIALLY PAID';
-    statusClass = 'partial'; // Uses the new amber color badge style
-} else {
-    statusLabel = 'PENDING';
-    statusClass = 'unpaid';  // Keeps the red style layout intact
-}
-
-
-
-return `
-<tr>
-<td><strong>${f.invoice_month} ${f.invoice_year}</strong></td>
-<td>${new Date(f.created_at).toLocaleDateString()}</td>
-<td>Rs. ${baseFee.toLocaleString()}</td>
-<td>Rs. ${arrearsVal.toLocaleString()}</td>
-<td style="font-weight:600; color:#475569;">Rs. ${totalPayable.toLocaleString()}</td>
-<td>Rs. ${paidAmount.toLocaleString()}</td>
-<td style="font-weight:bold; color: ${balance > 0 ? '#dc2626' : '#16a34a'}">
-Rs. ${balance.toLocaleString()}
-</td>
-<td><span class="status ${statusClass}">${statusLabel}</span></td>
-</tr>
-`;
+    let statusClass = '';
+    if (balance <= 0) {
+        statusLabel = 'PAID';
+        statusClass = 'paid';
+    } else if (paidAmount > 0) {
+        statusLabel = 'PARTIALLY PAID';
+        statusClass = 'partial'; 
+    } else {
+        statusLabel = 'PENDING';
+        statusClass = 'unpaid'; 
+    }
+    return `
+    <tr>
+    <td>
+    <a href="invoice2.html?id=${f.id}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: bold;">
+    ${f.invoice_month} ${f.invoice_year}
+    </a>
+    </td>
+    <td>${new Date(f.created_at).toLocaleDateString()}</td>
+    <td>Rs. ${baseFee.toLocaleString()}</td>
+    <td>Rs. ${arrearsVal.toLocaleString()}</td>
+    <td style="font-weight:600; color:#475569;">Rs. ${totalPayable.toLocaleString()}</td>
+    <td>Rs. ${paidAmount.toLocaleString()}</td>
+    <td style="font-weight:bold; color: ${balance > 0 ? '#dc2626' : '#16a34a'}">
+    Rs. ${balance.toLocaleString()}
+    </td>
+    <td><span class="status ${statusClass}">${statusLabel}</span></td>
+    </tr>
+    `;
 }).join('');
 
 

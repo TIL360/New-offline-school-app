@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff ID Cards Generator</title>
+<link rel="stylesheet" href="../../assets/css/all.min.css" />
+<style>
+:root {
+/* Base App Colors */
+--primary: #4f46e5;
+--bg-gray: #f8fafc;
+--border: #e2e8f0;
+--dark: #1e293b;
+--gray: #64748b;
+/* Theme Customisation Matches Student Cards */
+--card-primary: #f88940; 
+--card-secondary: #111213; 
+--card-footer-bg: #02245a; 
+}
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background: var(--bg-gray);
+margin: 0;
+padding: 20px;
+color: var(--dark);
+}
+.id-card::before {
+content: "";
+position: absolute;
+top: 55%; 
+left: 50%;
+transform: translate(-50%, -50%);
+width: 140px;
+height: 140px;
+background-image: url('../../images/logo.png');
+background-repeat: no-repeat;
+background-position: center;
+background-size: contain;
+opacity: 0.06; 
+z-index: 0;
+pointer-events: none;
+}
+.page-container {
+max-width: 1200px;
+margin: 0 auto;
+}
+.top-nav {
+display: flex;
+justify-content: space-between;
+align-items: center;
+background: white;
+padding: 15px 25px;
+border-radius: 12px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+margin-bottom: 20px;
+}
+.top-nav h2 { margin: 0; font-size: 20px; }
+.btn {
+height: 42px;
+padding: 0 20px;
+border-radius: 6px;
+border: none;
+font-weight: 600;
+cursor: pointer;
+font-size: 13px;
+display: inline-flex;
+align-items: center;
+gap: 8px;
+}
+.btn-portal { background: #64748b; color: white; text-decoration: none; }
+.btn-print { background: var(--primary); color: white; }
+.filter-card {
+background: white;
+padding: 20px;
+border-radius: 12px;
+border: 1px solid var(--border);
+margin-bottom: 20px;
+display: flex;
+align-items: center;
+gap: 15px;
+}
+.form-group {
+display: flex;
+flex-direction: column;
+gap: 6px;
+}
+.form-group label {
+font-size: 12px;
+font-weight: bold;
+color: var(--gray);
+text-transform: uppercase;
+}
+.form-select {
+height: 40px;
+padding: 0 12px;
+border: 1px solid var(--border);
+border-radius: 6px;
+outline: none;
+font-size: 14px;
+}
+.cards-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+gap: 25px;
+margin-top: 10px;
+}
+.id-card {
+background: white;
+border: 2px solid var(--card-primary);
+border-radius: 12px;
+width: 400px;
+height: 230px;
+position: relative;
+box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+box-sizing: border-box;
+overflow: hidden;
+display: flex;
+flex-direction: column;
+}
+.card-header {
+background: var(--card-primary);
+color: rgb(4, 2, 117);
+padding: 10px;
+text-align: center;
+}
+.card-header h3 {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+margin: 0;
+font-size: 15px;
+letter-spacing: 0.5px;
+text-transform: uppercase;
+font-weight: 700;
+}
+.card-header p { 
+margin: 2px 0 0 0; 
+font-size: 10px; 
+color: var(--card-secondary); 
+letter-spacing: 1px; 
+}
+.card-body {
+display: flex;
+padding: 20px 15px;
+gap: 15px;
+flex: 1;
+align-items: center;
+justify-content: space-between;
+position: relative;
+z-index: 1;
+}
+.info-area {
+flex: 1;
+display: flex;
+flex-direction: column;
+gap: 5px;
+min-width: 0;
+}
+.staff-name-title {
+font-size: 16px;
+font-weight: 800;
+color: #1e293b;
+margin-bottom: 6px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+.info-row {
+font-size: 12px;
+color: #334155;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+.info-label {
+font-weight: bold;
+color: var(--gray);
+display: inline-block;
+width: 85px;
+}
+.qrcode-area {
+width: 95px;
+height: 95px;
+display: flex;
+align-items: center;
+justify-content: center;
+border: 1px solid #e2e8f0;
+border-radius: 6px;
+padding: 6px;
+background: white;
+flex-shrink: 0;
+}
+.qrcode-area img {
+width: 100%;
+height: 100%;
+object-fit: contain;
+}
+.card-footer {
+background: var(--card-footer-bg);
+color: white;
+font-size: 10px;
+text-align: center;
+padding: 6px;
+font-weight: 500;
+margin-top: auto;
+}
+.no-data {
+grid-column: 1 / -1;
+background: white;
+padding: 40px;
+text-align: center;
+border-radius: 12px;
+border: 1px solid var(--border);
+color: var(--gray);
+font-weight: 500;
+}
+@media print {
+body { background: white; padding: 0; margin: 0; }
+.top-nav, .filter-card { display: none !important; }
+.page-container { max-width: 100%; padding: 0; margin: 0; }
+.cards-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 20px;
+padding: 15px;
+}
+.id-card {
+box-shadow: none !important;
+page-break-inside: avoid;
+break-inside: avoid;
+-webkit-print-color-adjust: exact;
+print-color-adjust: exact;
+}
+}
+</style>
+</head>
+<body>
+<div class="page-container">
+<div class="top-nav">
+<h2><i class="fas fa-user-tie" style="color: var(--primary);"></i> Staff ID Cards Generator</h2>
+<div>
+<button class="btn btn-portal" onclick="window.api.changePage('components/staff/staff.html')">
+<i class="fas fa-th-large"></i> Management Portal
+</button>
+<button class="btn btn-print" onclick="window.print()">
+<i class="fas fa-print"></i> Print Cards
+</button>
+</div>
+</div>
+
+<div class="filter-card">
+<!-- Search Bar -->
+<div class="form-group" style="flex: 1;">
+<label><i class="fas fa-search"></i> Search Staff Member</label>
+<input type="text" id="staffSearchInput" class="form-select" placeholder="Type Staff ID, Name or Designation..." onkeyup="filterStaffCards()">
+</div>
+<!-- Validity Configurator -->
+<div class="form-group" style="width: 200px;">
+<label><i class="fas fa-calendar-alt"></i> Card Validity</label>
+<input type="text" id="cardValidityInput" class="form-select" placeholder="e.g., 2026-2027" value="2026-2027" oninput="updateValidityLive()">
+</div>
+</div>
+
+<div id="cardsContainer" class="cards-grid">
+<div class="no-data">Loading application staff records...</div>
+</div>
+</div>
+
+<script>
+let rawStaffMasterCache = [];
+let applicationMeta = {};
+
+window.onload = async () => {
+    await loadInitialData();
+};
+
+async function loadInitialData() {
+    try {
+        applicationMeta = await window.api.getAppDetails() || {};
+        rawStaffMasterCache = await window.api.getStaff() || [];
+        renderStaffCards(rawStaffMasterCache);
+    } catch (error) {
+        console.error("Data loading failure logs:", error);
+        document.getElementById('cardsContainer').innerHTML = `<div class="no-data" style="color: #ef4444;">Failed to connect to system database resources.</div>`;
+    }
+}
+
+function renderStaffCards(staffList) {
+    const container = document.getElementById('cardsContainer');
+    container.innerHTML = "";
+    
+    if (staffList.length === 0) {
+        container.innerHTML = `<div class="no-data">No matching active staff directories located.</div>`;
+        return;
+    }
+    
+    staffList.forEach(member => {
+        const cardNodeId = `qr-target-${member.id}`;
+        const validityValue = document.getElementById('cardValidityInput').value.trim() || '-';
+        
+        // Formulating clean database property fallbacks matching standard models
+        const staffId = member.staff_id || member.id || '-';
+        const designation = member.designation || member.role || '-';
+        const mobile = member.contact || member.phone || '-';
+        
+        const cardMarkupLayout = `
+        <div class="id-card">
+            <div class="card-header">
+                <h3>${applicationMeta.instituteName || 'INSTITUTION'}</h3>
+                <p>OFFICIAL IDENTIFICATION CARD</p>
+            </div>
+            <div class="card-body">
+                <div class="info-area">
+                    <div class="staff-name-title">${member.name || member.staff_name}</div>
+                    <div class="info-row"><span class="info-label">Staff ID:</span><strong>${staffId}</strong></div>
+                    <div class="info-row"><span class="info-label">Designation:</span>${designation}</div>
+                    <div class="info-row"><span class="info-label">Mobile:</span>${mobile}</div>
+                    <div class="info-row"><span class="info-label">Validity:</span><strong class="live-validity-text">${validityValue}</strong></div>
+                </div>
+                <div id="${cardNodeId}" class="qrcode-area"></div>
+            </div>
+            <div class="card-footer">
+                Contact: ${applicationMeta.contactNumber || '-'}
+            </div>
+        </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', cardMarkupLayout);
+        generatePureQRCodeHTML (cardNodeId, `EMP-${staffId}`);
+    });
+}
+
+// Crash-proof Electron data URL matrix utility matching main.js processing capabilities
+async function generatePureQRCodeHTML(targetElementId, numericString) {
+    try {
+        var box = document.getElementById(targetElementId);
+        if (!box) return;
+        box.innerHTML = "";
+        
+        const qrDataUrl = await window.api.generateQR(String(numericString).trim());
+        
+        var imgNode = document.createElement("img");
+        imgNode.src = qrDataUrl;
+        imgNode.alt = "QR Matrix";
+        box.appendChild(imgNode);
+    } catch (err) {
+        console.error("Secure Bridge QR Generation Failed:", err);
+        document.getElementById(targetElementId).innerHTML = "<span style='color:red; font-size:10px;'>QR Error</span>";
+    }
+}
+
+function filterStaffCards() {
+    const query = document.getElementById('staffSearchInput').value.toLowerCase().trim();
+    
+    const filtered = rawStaffMasterCache.filter(member => {
+        const name = String(member.name || member.staff_name || '').toLowerCase();
+        const designation = String(member.designation || member.role || '').toLowerCase();
+        const id = String(member.staff_id || member.id || '').toLowerCase();
+        
+        return name.includes(query) || designation.includes(query) || id.includes(query);
+    });
+    
+    renderStaffCards(filtered);
+}
+
+function updateValidityLive() {
+    const freshValue = document.getElementById('cardValidityInput').value.trim();
+    const cardLabels = document.querySelectorAll('.live-validity-text');
+    cardLabels.forEach(label => {
+        label.textContent = freshValue || '-';
+    });
+}
+</script>
+</body>

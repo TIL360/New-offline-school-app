@@ -285,7 +285,41 @@ margin: 1px;
 <script>
 let globalUsersList = [];
 
-document.addEventListener('DOMContentLoaded', loadUsers);
+  document.addEventListener('DOMContentLoaded', () => {
+    loadUsers();
+
+    function releaseFocusLock() {
+        if (window.authAPI && typeof window.authAPI.send === 'function') {
+            window.authAPI.send('fix-focus');
+        }
+    }
+
+    // 1. SELECT dropdown ka glitch fix (Status wala)
+    document.body.addEventListener('change', (event) => {
+        if (event.target.tagName === 'SELECT') {
+            event.target.blur();
+            releaseFocusLock();
+        }
+    });
+
+    // 2. alert / confirm ka global fix
+    const _alert = window.alert;
+    window.alert = function(msg) {
+        _alert(msg);
+        releaseFocusLock();
+        setTimeout(() => {
+            const nameInput = document.getElementById('fullName') || document.querySelector('input[placeholder="Enter full name"]');
+            if (nameInput) nameInput.focus();
+        }, 200);
+    };
+
+    const _confirm = window.confirm;
+    window.confirm = function(msg) {
+        const res = _confirm(msg);
+        releaseFocusLock();
+        return res;
+    };
+});
 
 // Safely parses and normalizes strings to lowercase arrays
 function safeParsePermissions(rawJson) {

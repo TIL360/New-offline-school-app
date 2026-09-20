@@ -132,242 +132,203 @@
 
 <script>
     let currentData = [];
-    let activeStudentIndex = null;
+let activeStudentIndex = null;
+let cachedGradingRules = [];
+let subjectsList = [];
 
-    // List of all subject fields as per your database schema
-// List of all subject fields as per your database schema
-const subjectsList = [
-    { id: 'Urdu', set: 'urdu_setmarks', obt: 'urdu_obt' },
-    { id: 'Eng', set: 'eng_setmarks', obt: 'eng_obt' },
-    { id: 'Math', set: 'math_setmarks', obt: 'math_obt' },
-    { id: 'SST', set: 'sst_setmarks', obt: 'sst_obt' },
-    { id: 'Isl', set: 'islamiat_setmarks', obt: 'islamiat_obt' },
-    { id: 'Sci', set: 'science_setmarks', obt: 'science_obt' },
-    { id: 'Phy', set: 'physics_setmarks', obt: 'physics_obt' },
-    { id: 'Chem', set: 'chemistry_setmarks', obt: 'chemistry_obt' },
-    { id: 'Bio', set: 'biology_setmarks', obt: 'biology_obt' },
-    { id: 'Comp', set: 'computer_setmarks', obt: 'computer_obt' },
-    { id: 'Draw', set: 'drawing_setmarks', obt: 'drawing_obt' },
-    { id: 'Geog', set: 'geography_setmarks', obt: 'geography_obt' },
-    
-    // New Subjects Added
-    { id: 'PakSt', set: 'pak_studies_setmarks', obt: 'pak_studies_obt' },
-    { id: 'IslSt', set: 'islamic_studies_setmarks', obt: 'islamic_studies_obt' },
-    { id: 'Quran', set: 'tarjama_quran_setmarks', obt: 'tarjama_quran_obt' },
-    { id: 'GK', set: 'gk_setmarks', obt: 'gk_obt' },
-    { id: 'FMath', set: 'functional_math_setmarks', obt: 'functional_math_obt' },
-    { id: 'IslCm', set: 'islamiat_compulsory_setmarks', obt: 'islamiat_compulsory_obt' },
-    { id: 'SStdy', set: 'social_studies_setmarks', obt: 'social_studies_obt' },
-    { id: 'HEcon', set: 'home_economics_setmarks', obt: 'home_economics_obt' },
-    { id: 'Civ', set: 'civics_setmarks', obt: 'civics_obt' },
-    { id: 'GSci', set: 'general_science_setmarks', obt: 'general_science_obt' }
-];
+function getNormalizedKey(code) {
+    const cleanCode = String(code).toLowerCase().trim();
+    if (cleanCode === 'english' || cleanCode === 'eng') return 'eng';
+    if (cleanCode === 'maths' || cleanCode === 'math') return 'math';
+    if (cleanCode === 'islamiat' || cleanCode === 'isl') return 'islamiat';
+    if (cleanCode === 'science' || cleanCode === 'sci') return 'science';
+    if (cleanCode === 'physics' || cleanCode === 'phy') return 'physics';
+    if (cleanCode === 'chemistry' || cleanCode === 'chem') return 'chemistry';
+    if (cleanCode === 'biology' || cleanCode === 'bio') return 'biology';
+    if (cleanCode === 'computer' || cleanCode === 'comp') return 'computer';
+    if (cleanCode === 'drawing' || cleanCode === 'draw') return 'drawing';
+    if (cleanCode === 'geography' || cleanCode === 'geog') return 'geography';
+    if (cleanCode === 'pak studies' || cleanCode === 'pakst') return 'pak_studies';
+    return cleanCode;
+}
 
-    // Initialize Dropdowns
-    window.addEventListener('DOMContentLoaded', async () => {
-        document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        const res = await window.api.getDropdownData();
-        if (res.success) {
-            res.exams.forEach(e => document.getElementById('selectExam').add(new Option(e.exam_name, e.exam_id)));
-            res.classes.forEach(c => document.getElementById('selectClass').add(new Option(c.class_name, c.class_name)));
+window.addEventListener('DOMContentLoaded', async () => {
+    const dateEl = document.getElementById('printDate');
+    if (dateEl) dateEl.innerText = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    try {
+        if (window.api && typeof window.api.getGradingRules === 'function') {
+            cachedGradingRules = await window.api.getGradingRules();
         }
-    });
 
-    document.getElementById('selectClass').addEventListener('change', fetchReport);
-    document.getElementById('selectExam').addEventListener('change', fetchReport);
+        // FIX 1: Support both API names
+        let dbSubjects = [];
+        if (window.api.getAllSubjects) dbSubjects = await window.api.getAllSubjects();
+        else if (window.api.getAcademySubjects) dbSubjects = await window.api.getAcademySubjects();
 
-    async function fetchReport() {
-        const examId = document.getElementById('selectExam').value;
-        const className = document.getElementById('selectClass').value;
-        if (!examId || !className) return;
+        subjectsList = dbSubjects.map(sub => {
+            const norm = getNormalizedKey(sub.subject_code);
+            return {
+                id: sub.subject_display_name,
+                set: `${norm}_setmarks`,
+                obt: `${norm}_obt`,
+                code: sub.subject_code
+            };
+        });
+    } catch (err) { console.error(err); }
 
-        document.getElementById('displayExam').innerText = document.getElementById('selectExam').options[document.getElementById('selectExam').selectedIndex].text;
-        document.getElementById('displayClass').innerText = className;
-
-        const response = await window.api.getReportData({ examId, className });
-        if (response.success) {
-            currentData = response.data;
-            renderTable();
-        }
+    const res = await window.api.getDropdownData();
+    if (res && res.success) {
+        const examSelect = document.getElementById('selectExam');
+        const classSelect = document.getElementById('selectClass');
+        if (examSelect) res.exams.forEach(e => examSelect.add(new Option(e.exam_name, e.exam_id)));
+        if (classSelect) res.classes.forEach(c => classSelect.add(new Option(c.class_name, c.class_name)));
     }
+});
+
+document.getElementById('selectClass')?.addEventListener('change', fetchReport);
+document.getElementById('selectExam')?.addEventListener('change', fetchReport);
+
+function getGrade(score, max) {
+    if (!max || max === 0) return '-';
+    const p = (score / max) * 100;
+    if (cachedGradingRules && cachedGradingRules.length > 0) {
+        const matchedRule = cachedGradingRules.find(r => p >= r.min_percentage && p <= r.max_percentage);
+        if (matchedRule) return matchedRule.grade_name;
+    }
+    if (p >= 90) return 'A+'; if (p >= 80) return 'A'; if (p >= 70) return 'B+';
+    if (p >= 60) return 'B'; if (p >= 50) return 'C'; if (p >= 40) return 'D'; return 'F';
+}
+
+async function fetchReport() {
+    const examId = document.getElementById('selectExam').value;
+    const className = document.getElementById('selectClass').value;
+    if (!examId ||!className) return;
+    document.getElementById('displayExam').innerText = document.getElementById('selectExam').options[document.getElementById('selectExam').selectedIndex].text;
+    document.getElementById('displayClass').innerText = className;
+    const response = await window.api.getReportData({ examId, className });
+    if (response.success) { currentData = response.data; renderTable(); }
+}
 
 function renderTable() {
     const body = document.getElementById('resultBody');
     const headerRow = document.getElementById('mainHeaderRow');
     const totalRow = document.getElementById('totalMarksRow');
-
-    if (!body || !headerRow || !totalRow) {
-        console.error("Missing table elements in HTML! Check your IDs.");
-        return;
-    }
-    
     body.innerHTML = "";
-    
-    if (currentData.length > 0) {
-        const firstStudent = currentData[0];
-        const activeSubs = subjectsList.filter(sub => firstStudent[sub.set] > 0);
-        
-        // 1. Rebuild Headers Safely
-        headerRow.innerHTML = `
-            <th rowspan="2">Reg No</th>
-            <th rowspan="2" class="name-col">Name</th>
-            ${activeSubs.map(sub => `<th>${sub.id}</th>`).join('')}
-            <th rowspan="2">Obt</th>
-            <th rowspan="2">Total</th>
-            <th rowspan="2">%age</th>
-            <th rowspan="2">Grade</th>
-            <th rowspan="2">Pos</th>
-            <th rowspan="2">Result</th>
-            <th rowspan="2" class="btn-print-hide">Action</th>
+    if (!currentData || currentData.length===0) { body.innerHTML=`<tr><td colspan="20" style="text-align:center; padding:20px;">No records found.</td></tr>`; return; }
+
+    const firstStudent = currentData[0];
+    // FINAL LOGIC: Only subjects where Total > 0
+    const activeSubs = subjectsList.filter(sub => {
+        const maxMarks = parseFloat(firstStudent[sub.set]) || 0;
+        return maxMarks > 0;
+    });
+
+    headerRow.innerHTML = `
+        <th rowspan="2">Reg No</th><th rowspan="2" class="name-col">Name</th>
+        ${activeSubs.map(sub => `<th>${sub.id}</th>`).join('')}
+        <th rowspan="2">Obt</th><th rowspan="2">Total</th><th rowspan="2">%age</th><th rowspan="2">Grade</th><th rowspan="2">Pos</th><th rowspan="2">Result</th>
+        <th rowspan="2" class="btn-print-hide">Action</th>
+    `;
+    totalRow.innerHTML = `${activeSubs.map(sub => `<th>${firstStudent[sub.set] || 0}</th>`).join('')}`;
+
+    currentData.forEach((row, index) => {
+        // FIX 2: Recalculate total based on ACTIVE subjects only
+        let dynamicTotal = 0, dynamicObt = 0;
+        activeSubs.forEach(sub=>{ dynamicTotal += parseFloat(row[sub.set])||0; dynamicObt += parseFloat(row[sub.obt])||0; });
+
+        const pct = dynamicTotal>0? (dynamicObt/dynamicTotal)*100 : 0;
+        const grade = getGrade(dynamicObt, dynamicTotal);
+
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+            <td>${row.registration_no||'-'}</td>
+            <td class="name-col"><a href="#" onclick="openSingleReport('${row.student_id}')" style="color: blue; cursor: pointer; text-decoration: none;">${row.student_name}</a></td>
+            ${activeSubs.map(sub => `<td>${row[sub.obt]??0}</td>`).join('')}
+            <td style="font-weight:bold">${dynamicObt}</td><td>${dynamicTotal}</td><td>${pct.toFixed(0)}%</td>
+            <td style="font-weight:bold; color:var(--primary-blue);">${grade}</td>
+            <td>${row.position||'-'}</td><td>${row.result_status||'-'}</td>
+            <td class="btn-print-hide"><button class="btn-edit-row" onclick="openModal(${index})">Edit</button>
+            <button onclick="sendWhatsApp(${index})" style="background:#25D366; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold; margin-left:5px;">WhatsApp</button></td>
         `;
-        
-        // 2. Build Total Subject Marks Row
-        totalRow.innerHTML = activeSubs.map(sub => `<th>${firstStudent[sub.set]}</th>`).join('');
-        
-        // 3. Loop and Populate Rows with Correct Value Alignment
-        currentData.forEach((row, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${row.registration_no || '-'}</td>
-                <td class="name-col">
-                    <a href="#" onclick="openSingleReport('${row.student_id}')" style="color: blue; cursor: pointer;">
-                        ${row.student_name}
-                    </a>
-                </td>
-                ${activeSubs.map(sub => `<td>${row[sub.obt]}</td>`).join('')}
-                <td style="font-weight:bold">${row.total_obt}</td>
-                <td>${row.total_setmarks}</td>
-                <td>${row.percentage ? parseFloat(row.percentage).toFixed(0) : '0'}%</td>
-                <td>${row.grade || '-'}</td>
-                <td>${row.position || '-'}</td>
-                <td>${row.result_status || '-'}</td>
-                <td class="btn-print-hide">
-                    <button class="btn-edit-row" onclick="openModal(${index})">Edit</button>
-                    <button class="btn-whatsapp" onclick="sendWhatsApp(${index})" style="background:#25D366; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold; margin-left:5px;">WhatsApp</button>
-                </td>
-            `;
-            body.appendChild(tr);
-        });
-    }
+        body.appendChild(tr);
+    });
 }
-
-    function openModal(index) {
-        activeStudentIndex = index;
-        const student = currentData[index];
-        document.getElementById('modalStudentName').innerText = `Update Marks: ${student.student_name}`;
-        const container = document.getElementById('modalInputContainer');
-        container.innerHTML = "";
-
-        subjectsList.forEach(sub => {
-            if (student[sub.set] > 0) {
-                container.innerHTML += `
-                <div class="modal-input-group">
-                    <label>${sub.id} (Max: ${student[sub.set]})</label>
-                    <input type="number" id="modal_${sub.obt}" value="${student[sub.obt]}" max="${student[sub.set]}" min="0">
-                </div>`;
-            }
-        });
-        document.getElementById('editModal').style.display = 'flex';
-    }
-
-    function closeModal() { document.getElementById('editModal').style.display = 'none'; }
-
+function openModal(index) {
+    activeStudentIndex = index;
+    const student = currentData[index];
+    document.getElementById('modalStudentName').innerText = `Update Marks: ${student.student_name}`;
+    const container = document.getElementById('modalInputContainer'); container.innerHTML = "";
+    subjectsList.forEach(sub => {
+        if (parseFloat(student[sub.set]) > 0) {
+            container.innerHTML += `<div class="modal-input-group"><label>${sub.id} (Max: ${student[sub.set]})</label><input type="number" id="modal_${sub.obt}" value="${student[sub.obt] || 0}" max="${student[sub.set]}" min="0"></div>`;
+        }
+    });
+    document.getElementById('editModal').style.display = 'flex';
+}
+function closeModal() { document.getElementById('editModal').style.display = 'none'; }
 async function saveModalMarks() {
     const student = currentData[activeStudentIndex];
     const examId = document.getElementById('selectExam').value;
     const className = document.getElementById('selectClass').value;
-
-    // 1. Collect updated marks from modal inputs
-    subjectsList.forEach(sub => {
-        const input = document.getElementById(`modal_${sub.obt}`);
-        if (input) student[sub.obt] = parseFloat(input.value) || 0;
-    });
-
-    // 2. Save to Database
+    subjectsList.forEach(sub => { const input=document.getElementById(`modal_${sub.obt}`); if(input) student[sub.obt]=parseFloat(input.value)||0; });
     const res = await window.api.updateStudentMarks(student);
-    
-    if (res.success) {
-        // 3. IMMEDIATELY recalculate positions for this class
-        await window.api.recalculatePositions({ examId, className });
-        
-        // 4. Refresh UI
-        closeModal();
-        fetchReport(); // This will now show "1" instead of "-"
-    } else {
-        alert("Save failed: " + res.error);
-    }
+    if (res.success) { await window.api.recalculatePositions({ examId, className }); closeModal(); fetchReport(); } else alert("Save failed: " + res.error);
 }
-
- function navigateToProgressReports() {
-            const examId = document.getElementById('selectExam').value;
-            const className = document.getElementById('selectClass').value;
-
-            if (!examId || !className) {
-                alert("Please select both Exam and Class first!");
-                console.warn({examId, className})
-                return;
-            }
-            window.location.href = `progress_reports.html?examId=${examId}&className=${className}`;
-        }
-
-        // window.onload = loadInitialData;
-
+function navigateToProgressReports() {
+    const examId = document.getElementById('selectExam').value; const className = document.getElementById('selectClass').value;
+    if (!examId ||!className) return alert("Please select both Exam and Class first!");
+    window.location.href = `progress_reports.html?examId=${examId}&className=${className}`;
+}
 function openSingleReport(studentId) {
     const examId = document.getElementById('selectExam').value;
-    // Redirect to progress_reports.html with an extra studentId parameter
+    if (!examId) return alert("Please select an active Exam first.");
     window.location.href = `progress_reports.html?examId=${examId}&studentId=${studentId}`;
 }
-
-
 function sendWhatsApp(index) {
     const student = currentData[index];
     const examName = document.getElementById('displayExam').innerText;
     const className = document.getElementById('displayClass').innerText;
 
-    if (!student) {
-        alert("Error: Student record data not found!");
-        return;
+    let phone = student.whatsapp || student.father_phone || student.phone || student.contact || '';
+    if (!phone || phone.length < 7) {
+        phone = prompt(`Phone not found for ${student.student_name}. Enter WhatsApp number (e.g. 0312xxxxxxx):`);
+        if (!phone) return;
     }
 
-    // Safely look up any phone field variants present in your results dataset
-    let phone = student.whatsapp || student.father_phone || student.phone || student.parent_phone || '';
-
-    if (!phone || phone === 'null' || phone == "") {
-        // Fallback popup if no phone number exists in the database row
-        phone = prompt("Phone number not found for " + student.student_name + ".\nPlease enter it manually:");
-        if (!phone) return; 
-    }
-
-    // Clean and format phone number exactly like the working fee function
     let cleanPhone = String(phone).replace(/[^0-9]/g, "");
-    if (cleanPhone.startsWith("0")) {
-        cleanPhone = "92" + cleanPhone.substring(1);
-    }
+    if (cleanPhone.startsWith("0")) cleanPhone = "92" + cleanPhone.substring(1);
+    if (cleanPhone.length === 10) cleanPhone = "92" + cleanPhone;
 
-    // Construct the result details message structure
-    const message = `Assalam-o-Alaikum!
-Here is the exam performance report card of *${student.student_name}*.
+    // Calculate totals from active subjects only
+    let dynamicTotal=0, dynamicObt=0;
+    const firstSubs = subjectsList.filter(s=> (parseFloat(currentData[0][s.set])||0) > 0);
+    firstSubs.forEach(s=>{ dynamicTotal+=parseFloat(student[s.set])||0; dynamicObt+=parseFloat(student[s.obt])||0; });
+    const pct = dynamicTotal>0? (dynamicObt/dynamicTotal)*100 : 0;
+    const grade = getGrade(dynamicObt, dynamicTotal);
 
-📌 Exam: *${examName}*
-📌 Class: *${className}*
------------------------
-🔹 Marks Obtained: *${student.total_obt}* / ${student.total_setmarks}
-🔹 Percentage: *${student.percentage ? parseFloat(student.percentage).toFixed(0) : '0'}%*
-🔹 Grade: *${student.grade || '-'}*
-🔹 Position: *${student.position || '-'}*
-🔹 Final Result: *${student.result_status || '-'}*
+    // Properly formatted message
+    const message =
+`Assalam-o-Alaikum!
+
+Result of *${student.student_name}*
+Exam: *${examName}*
+Class: *${className}*
+
+Obtained: *${dynamicObt} / ${dynamicTotal}*
+Percentage: *${pct.toFixed(0)}%*
+Grade: *${grade}*
+Position: *${student.position || '-'}*
+Result: *${student.result_status || '-'}*
 
 Regards,
-IMS Administration.`;
+Eagle's Nest School System`;
 
-    // Built exactly matching your working fee link mechanism
-    const url = "https://web.whatsapp.com/send?phone=" + cleanPhone + "&text=" + encodeURIComponent(message); 
-
-    // Sends out cleanly using your proven fee bridge
-    window.authAPI.send('open-external-link', url);
+    // Use web.whatsapp.com to skip that Download page
+const url = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+window.authAPI.send('open-external-link', url);
 }
-
-
 </script>
+
 </body>
 </html>

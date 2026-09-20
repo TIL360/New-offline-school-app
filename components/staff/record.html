@@ -197,35 +197,58 @@
 
     // 2. Fetch data payload records from the backend database layer
 // REPLACE THIS FUNCTION COMPLETELY IN record.html
+// REPLACE THIS FUNCTION COMPLETELY IN record.html
 async function loadArchivalRecordsFromDatabase() {
     try {
         // 1. Fetch salary rows and staff rows in parallel
         const salaryData = await window.api.loadSalaryData(); 
         const staffData = await window.api.getStaff();
-        
+
         if (salaryData && Array.isArray(salaryData)) {
-            // 2. Map only Paid rows and inject documents dynamically from the staff database list
-            archivalRecordsList = salaryData.filter(record => record.status === 'Paid').map(r => {
-                // Find matching staff profile to extract live documents
-                const matchingStaffProfile = Array.isArray(staffData) ? staffData.find(s => s.name === r.name || s.id === r.staff_id) : null;
-                
-                return {
-                    ...r,
-                    // If salary table doesn't have it, copy it straight from the staff list profile!
-                    documents_held: r.documents_held || (matchingStaffProfile ? matchingStaffProfile.documents_held : 'None')
-                };
-            });
-            
+            // Helper map to convert month names into numerical order for chronological sorting
+            const monthMap = {
+                'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+                'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+            };
+
+            // 2. Map Paid rows, inject documents, and sort chronologically (Newest First)
+            archivalRecordsList = salaryData
+                .filter(record => record.status === 'Paid')
+                .map(r => {
+                    // Find matching staff profile to extract live documents
+                    const matchingStaffProfile = Array.isArray(staffData) ?
+                        staffData.find(s => s.name === r.name || s.id === r.staff_id) : null;
+                    return {
+                        ...r,
+                        // If salary table doesn't have it, copy it straight from the staff list profile!
+                        documents_held: r.documents_held || (matchingStaffProfile ?
+                            matchingStaffProfile.documents_held : 'None')
+                    };
+                })
+                .sort((a, b) => {
+                    // Normalize values for safe comparison
+                    const yearA = parseInt(a.salary_year) || 0;
+                    const yearB = parseInt(b.salary_year) || 0;
+                    const monthA = monthMap[(a.salary_month || '').toLowerCase()] || 0;
+                    const monthB = monthMap[(b.salary_month || '').toLowerCase()] || 0;
+
+                    // Sort primary by Year descending, secondary by Month descending
+                    if (yearB !== yearA) {
+                        return yearB - yearA;
+                    }
+                    return monthB - monthA;
+                });
+
             renderHistoryTableGrid(archivalRecordsList);
         }
     } catch (error) {
         console.error("Critical History Extraction Error:", error);
         document.getElementById('historyTableBody').innerHTML = `
-            <tr>
-                <td colspan="12" style="text-align:center; color:var(--danger); font-weight:bold; padding:20px;">
-                    ⚠️ Failed to extract historical archives or connect to staff profile channels.
-                </td>
-            </tr>`;
+        <tr>
+            <td colspan="12" style="text-align:center; color:var(--danger); font-weight:bold; padding:20px;">
+                ⚠️ Failed to extract historical archives or connect to staff profile channels.
+            </td>
+        </tr>`;
     }
 }
 

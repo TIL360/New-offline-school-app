@@ -101,207 +101,128 @@ th { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
 <div id="reportsContainer"></div>
 
 <script>
-    // Global function to update institute details everywhere on the page at once
-async function applyCentralAppDetails() {
-  try {
-    if (window.api && window.api.getAppDetails) {
-      const details = await window.api.getAppDetails();
-      
-      // Update every single student progress sheet generated in the batch loop
-      document.querySelectorAll('.dynamic-institute-title').forEach(el => {
-        // Preserves your logo image while updating the text node alongside it
-        el.innerHTML = `<img src="../../images/logo.png" class="small-logo">${details.instituteName}`;
-      });
-      
-      document.querySelectorAll('.dynamic-institute-details').forEach(el => {
-        el.innerText = `Address: Islamabad || Contact: ${details.contactNumber}`;
-      });
-      
-      document.querySelectorAll('.dynamic-institute-email').forEach(el => {
-        el.innerText = `E-mail: ${details.email}`;
-      });
-    }
-  } catch (err) {
-    console.error("Failed to inject centralized details:", err);
-  }
+let gradingRules = [];
+let passingCriteria = { subject_pass_percentage: 40.0, overall_pass_percentage: 33.0, max_failed_subjects_allowed: 1 };
+let subjectsList = [];
+
+function getNormalizedKey(code){
+    const c = String(code).toLowerCase().trim();
+    if(c==='english'||c==='eng') return 'eng';
+    if(c==='maths'||c==='math') return 'math';
+    if(c==='islamiat'||c==='isl') return 'islamiat';
+    if(c==='science'||c==='sci') return 'science';
+    if(c==='physics'||c==='phy') return 'physics';
+    if(c==='chemistry'||c==='chem') return 'chemistry';
+    if(c==='biology'||c==='bio') return 'biology';
+    if(c==='computer'||c==='comp') return 'computer';
+    if(c==='drawing'||c==='draw') return 'drawing';
+    if(c==='geography'||c==='geog') return 'geography';
+    if(c==='pak studies'||c==='pakst') return 'pak_studies';
+    return c;
 }
 
-// Clean up your DOMContentLoaded block to only handle the trigger action execution
-document.addEventListener('DOMContentLoaded', () => {
-  // Keep this empty or use it to initialize standard page metrics
-});
+async function applyCentralAppDetails(){ try{ if(window.api && window.api.getAppDetails){ const d=await window.api.getAppDetails(); document.querySelectorAll('.dynamic-institute-title').forEach(el=>el.innerHTML=`<img src="../../images/logo.png" class="small-logo">${d.instituteName}`); document.querySelectorAll('.dynamic-institute-details').forEach(el=>el.innerText=`Address: Islamabad || Contact: ${d.contactNumber}`); document.querySelectorAll('.dynamic-institute-email').forEach(el=>el.innerText=`E-mail: ${d.email}`);} }catch(e){} }
+async function startExport(){ await window.api.saveToPdf(); }
 
-
-async function startExport() { await window.api.saveToPdf(); }
-
-function getGrade(score, max) {
-    if (!max) return '-'; const p = (score / max) * 100;
-    if (p >= 90) return 'A+'; if (p >= 80) return 'A'; if (p >= 70) return 'B+';
-    if (p >= 60) return 'B'; if (p >= 50) return 'C'; if (p >= 40) return 'D';
-    return 'F';
+function getGrade(score, max){
+    if(!max) return '-'; const p=(score/max)*100;
+    if(gradingRules && gradingRules.length>0){ const r=gradingRules.find(x=>p>=x.min_percentage && p<=x.max_percentage); if(r) return r.grade_name; }
+    if(p>=90) return 'A+'; if(p>=80) return 'A'; if(p>=70) return 'B+'; if(p>=60) return 'B'; if(p>=50) return 'C'; if(p>=40) return 'D'; return 'F';
 }
 
-async function loadReports() {
-    const container = document.getElementById('reportsContainer');
-    const progText = document.getElementById('loadProgress');
-    const printBtn = document.getElementById('btnPrint');
-    const recordCounter = document.getElementById('recordCounter');
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const examId = urlParams.get('examId');
-    const className = urlParams.get('className');
-    const studentId = urlParams.get('studentId');
+async function loadReports(){
+    const container=document.getElementById('reportsContainer');
+    const progText=document.getElementById('loadProgress');
+    const printBtn=document.getElementById('btnPrint');
+    const recordCounter=document.getElementById('recordCounter');
+    const urlParams=new URLSearchParams(window.location.search);
+    const examId=urlParams.get('examId'); const className=urlParams.get('className'); const studentId=urlParams.get('studentId');
 
-    try {
-        let data = [];
-        if (studentId) {
-            const singleRecord = await window.api.getStudentProgress(studentId);
-            if (singleRecord) { data = [singleRecord]; recordCounter.innerText = `Report for: ${singleRecord.student_name}`; }
-        } else {
-            data = await window.api.getAllStudentProgress({ examId, className });
-            recordCounter.innerText = `Total Records: ${data.length}`;
-        }
+    try{
+        if(window.api.getGradingRules) gradingRules=await window.api.getGradingRules();
+        if(window.api.getPassingCriteria && examId){ const c=await window.api.getPassingCriteria(parseInt(examId)); if(c) passingCriteria=c; }
 
-        if (!data || data.length === 0) { 
-            container.innerHTML = "<h2 style='text-align:center;'>No records found.</h2>"; 
-            return; 
-        }
+        // 1. LOAD SUBJECTS FROM DB (academy_subjects)
+        let dbSubjects=[];
+        if(window.api.getAllSubjects) dbSubjects=await window.api.getAllSubjects();
+        else if(window.api.getAcademySubjects) dbSubjects=await window.api.getAcademySubjects();
+        
+        subjectsList = dbSubjects.map(sub=>{
+            const norm=getNormalizedKey(sub.subject_code);
+            return { id: sub.subject_display_name, set: `${norm}_setmarks`, obt: `${norm}_obt`, code: sub.subject_code };
+        });
 
-        const subjects = [
-            { id: 'Urdu', set: 'urdu_setmarks', obt: 'urdu_obt' },
-            { id: 'English', set: 'eng_setmarks', obt: 'eng_obt' },
-            { id: 'Math', set: 'math_setmarks', obt: 'math_obt' },
-            { id: 'SST', set: 'sst_setmarks', obt: 'sst_obt' },
-            { id: 'Islamiat', set: 'islamiat_setmarks', obt: 'islamiat_obt' },
-            { id: 'Science', set: 'science_setmarks', obt: 'science_obt' },
-            { id: 'Physics', set: 'physics_setmarks', obt: 'physics_obt' },
-            { id: 'Chemistry', set: 'chemistry_setmarks', obt: 'chemistry_obt' },
-            { id: 'Biology', set: 'biology_setmarks', obt: 'biology_obt' },
-            { id: 'Computer', set: 'computer_setmarks', obt: 'computer_obt' },
-            { id: 'Drawing', set: 'drawing_setmarks', obt: 'drawing_obt' },
-            { id: 'Geography', set: 'geography_setmarks', obt: 'geography_obt' },
-            { id: 'Pak Studies', set: 'pak_studies_setmarks', obt: 'pak_studies_obt' },
-            { id: 'Islamic Studies', set: 'islamic_studies_setmarks', obt: 'islamic_studies_obt' },
-            { id: 'Tarjama Tul Quran', set: 'tarjama_quran_setmarks', obt: 'tarjama_quran_obt' },
-            { id: 'General Knowledge', set: 'gk_setmarks', obt: 'gk_obt' },
-            { id: 'Functional Maths', set: 'functional_math_setmarks', obt: 'functional_math_obt' },
-            { id: 'Islamiyat Comp.', set: 'islamiat_compulsory_setmarks', obt: 'islamiat_compulsory_obt' },
-            { id: 'Social Study', set: 'social_studies_setmarks', obt: 'social_studies_obt' },
-            { id: 'Home Economics', set: 'home_economics_setmarks', obt: 'home_economics_obt' },
-            { id: 'Civics', set: 'civics_setmarks', obt: 'civics_obt' },
-            { id: 'General Science', set: 'general_science_setmarks', obt: 'general_science_obt' }
-        ];
+        // 2. LOAD STUDENTS
+        let data=[];
+        if(studentId){ const rec=await window.api.getStudentProgress(studentId); if(rec) data=[rec]; recordCounter.innerText=`Report for: ${rec.student_name}`; }
+        else{ data=await window.api.getAllStudentProgress({examId, className}); recordCounter.innerText=`Total Records: ${data.length}`; }
+        if(!data || data.length===0){ container.innerHTML="<h2 style='text-align:center;'>No records found.</h2>"; return; }
 
-        let index = 0;
-        async function renderBatch() {
-            const batchSize = 10; 
-            const end = Math.min(index + batchSize, data.length);
-            for (; index < end; index++) {
-                const s = data[index];
-                let rows = ''; let tObt = 0; let tMax = 0; let failed = 0;
-                
-                subjects.filter(sub => s[sub.set] > 0).forEach(sub => {
-                    const ob = s[sub.obt] || 0; const mx = s[sub.set] || 0;
-                    tObt += ob; tMax += mx; if ((ob/mx)*100 < 40) failed++;
-                    rows += `<tr><td class="subject-col">${sub.id}</td><td>${mx}</td><td>${ob}</td><td>${Math.round((ob/mx)*100)}%</td><td>${getGrade(ob, mx)}</td></tr>`;
+        let index=0;
+        async function renderBatch(){
+            const end=Math.min(index+10, data.length);
+            for(; index<end; index++){
+                const s=data[index];
+                let rows=''; let tObt=0; let tMax=0; let failed=0;
+
+                // 3. FINAL FILTER: Only show where Total > 0
+                const activeSubs = subjectsList.filter(sub=>{
+                    const mx=parseFloat(s[sub.set])||0;
+                    return mx > 0;
                 });
 
-                const totalPercentage = tMax > 0 ? Math.round((tObt/tMax)*100) : 0;
-                const totalGrade = getGrade(tObt, tMax);
-                const finalResult = failed > 1 ? 'Detained' : 'Promoted';
+                activeSubs.forEach(sub=>{
+                    const ob=parseFloat(s[sub.obt])||0; const mx=parseFloat(s[sub.set])||0;
+                    tObt+=ob; tMax+=mx;
+                    const per=mx>0? (ob/mx)*100:0;
+                    if(per < passingCriteria.subject_pass_percentage) failed++;
+                    rows+=`<tr><td class="subject-col">${sub.id}</td><td>${mx}</td><td>${ob}</td><td>${Math.round(per)}%</td><td>${getGrade(ob,mx)}</td></tr>`;
+                });
 
-                let imgSrc = `https://ui-avatars.com{encodeURIComponent(s.student_name)}&background=008080&color=fff`;
-                if (s.picture_path) { 
-                    try { const p = await window.api.getImageUrl(s.picture_path); if (p) imgSrc = p; } catch (e) {} 
+                if(activeSubs.length===0){
+                    rows=`<tr><td colspan="5" style="padding:15px; color:#888;">No subjects with Total > 0 found. Please enter marks in Result Entry.</td></tr>`;
                 }
 
-                const sheet = document.createElement('div');
-                sheet.className = 'report-sheet';
-                sheet.innerHTML = `
-                    <div class="school-header">
-  <!-- COMBINED INTO ONE SINGLE ELEMENT WITH A TARGET CLASS SELECTOR -->
-  <h1 class="dynamic-institute-title">
-    <img src="../../images/logo.png" class="small-logo">YOUR INSTITUTE NAME
-  </h1>
-  <p style="margin:2px; font-size:11px;" class="dynamic-institute-details">Address: Islamabad || Contact: 0300-1234567</p>
-  <p style="margin:2px; font-size:11px;" class="dynamic-institute-email">E-mail: abc@gmail.com</p>
+                const totalPer=tMax>0? Math.round((tObt/tMax)*100):0;
+                const totalGrade=getGrade(tObt,tMax);
+                const finalResult=(totalPer>=passingCriteria.overall_pass_percentage && failed<=passingCriteria.max_failed_subjects_allowed)?'Promoted':'Detained';
+                let imgSrc=`https://ui-avatars.com/api/?name=${encodeURIComponent(s.student_name)}&background=008080&color=fff`;
+                if(s.picture_path){ try{ const p=await window.api.getImageUrl(s.picture_path); if(p) imgSrc=p; }catch(e){} }
+
+                const sheet = document.createElement('div'); 
+sheet.className = 'report-sheet';
+sheet.innerHTML = `
+<div class="school-header"><h1 class="dynamic-institute-title"><img src="../../images/logo.png" class="small-logo">YOUR INSTITUTE NAME</h1><p style="margin:2px; font-size:11px;" class="dynamic-institute-details"></p><p style="margin:2px; font-size:11px;" class="dynamic-institute-email"></p></div>
+<div class="student-id-section"><div class="info-col"><div class="info-row"><div class="info-field">Name: <strong>${s.student_name}</strong></div><div class="info-field">Roll No: <strong>${s.roll_no||'___'}</strong></div><div class="info-field">Reg No: <strong>${s.registration_no}</strong></div></div><div class="info-row"><div class="info-field">Father: <strong>${s.father_name||'___________'}</strong></div><div class="info-field">Class: <strong>${s.class} - ${s.section||'A'}</strong></div></div></div><img src="${imgSrc}" class="student-photo" /></div>
+
+<!-- ➕ ADDED: Exam Name Heading (Center Aligned) -->
+<div style="text-align: center; font-size: 18px; font-weight: bold; margin: 15px 0; text-transform: uppercase; color: #222; letter-spacing: 0.5px;">
+    ${s.exam_name || urlParams.get('examName') || 'Progress Report'}
 </div>
 
-                    <div class="student-id-section">
-                        <div class="info-col">
-                            <div class="info-row">
-                                <div class="info-field">Name: <strong>${s.student_name}</strong></div>
-                                <div class="info-field">Roll No: <strong>${s.roll_no || '___'}</strong></div>
-                                <div class="info-field">Reg No: <strong>${s.registration_no}</strong></div>
-                            </div>
-                            <div class="info-row">
-                                <div class="info-field">Father: <strong>${s.father_name || '___________'}</strong></div>
-                                <div class="info-field">Class: <strong>${s.class} - ${s.section || 'A'}</strong></div>
-                            </div>
-                        </div>
-                        <img src="${imgSrc}" class="student-photo" />
-                    </div>
-                    <table>
-                        <thead><tr><th>Subject</th><th>Total</th><th>Obt</th><th>%</th><th>Grade</th></tr></thead>
-                        <tbody>${rows}</tbody>
-                        <tfoot><tr style="font-weight:bold; background:#f2f2f2;"><td>TOTAL</td><td>${tMax}</td><td>${tObt}</td><td>${totalPercentage}%</td><td>${totalGrade}</td></tr></tfoot>
-                    </table>
-                    <div style="margin-top:20px; display: flex; border: 2px solid #333; padding: 10px; background: #f9f9f9; -webkit-print-color-adjust: exact;">
-                        <div style="text-align:center; flex:1;"><div>RESULT</div><div style="font-size:18px; font-weight:bold; color:${failed > 1 ? '#c0392b' : '#27ae60'}">${finalResult}</div></div>
-                        <div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>POSITION</div><div style="font-size:22px; font-weight:bold;">${s.position ? Math.round(s.position) : '___'}</div></div>
-                        <div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>PERCENTAGE</div><div style="font-size:22px; font-weight:bold;">${totalPercentage}%</div></div>
-                        <div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>GRADE</div><div style="font-size:22px; font-weight:bold;">${totalGrade}</div></div>
-                    </div>
-                    <div class="remarks-box">
-                        <div style="font-weight:bold; text-decoration:underline;">General Report: <span onclick="enableEdit('${s.result_id}')" style="cursor:pointer">✏️</span></div>
-                        <div id="display-text-${s.result_id}" style="font-style:italic; font-size:16px;">${s.remarks || 'No remarks entered.'}</div>
-                        <div id="edit-container-${s.result_id}" style="display:none; margin-top:5px;">
-                            <textarea id="input-${s.result_id}" style="width:100%; height:50px;">${s.remarks || ''}</textarea>
-                            <button onclick="saveRemarks('${s.result_id}')">Save</button>
-                            <button onclick="cancelEdit('${s.result_id}')">Cancel</button>
-                        </div>
-                    </div>
-                    <div class="footer-sigs">
-                        <div class="sig-line">Result Date</div>
-                        <div class="sig-line">Exam Incharge</div>
-                        <div class="sig-line">Principal Signature</div>
-                        </div>
-<div class="footer-end">
-  <span>© Techinfolab. All Rights Reserved.</span>
-  <span>Designed by: Raja Bilal || Contact: 0311-5101738</span>
-</div>
-
-                        `
-                    ;
+                    
+                    <table><thead><tr><th>Subject</th><th>Total</th><th>Obt</th><th>%</th><th>Grade</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold; background:#f2f2f2;"><td>TOTAL</td><td>${tMax}</td><td>${tObt}</td><td>${totalPer}%</td><td>${totalGrade}</td></tr></tfoot></table>
+                    <div style="margin-top:20px; display: flex; border: 2px solid #333; padding: 10px;"><div style="text-align:center; flex:1;"><div>RESULT</div><div style="font-size:18px; font-weight:bold; color:${finalResult==='Detained'?'#c0392b':'#27ae60'}">${finalResult}</div></div><div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>POSITION</div><div style="font-size:22px; font-weight:bold;">${s.position?Math.round(s.position):'___'}</div></div><div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>PERCENTAGE</div><div style="font-size:22px; font-weight:bold;">${totalPer}%</div></div><div style="text-align:center; flex:1; border-left:1px solid #ccc;"><div>GRADE</div><div style="font-size:22px; font-weight:bold;">${totalGrade}</div></div></div>
+                    <div class="remarks-box"><div style="font-weight:bold; text-decoration:underline;">General Report: <span onclick="enableEdit('${s.result_id}')" style="cursor:pointer">✏️</span></div><div id="display-text-${s.result_id}" style="font-style:italic; font-size:16px;">${s.remarks||'No remarks entered.'}</div><div id="edit-container-${s.result_id}" style="display:none; margin-top:5px;"><textarea id="input-${s.result_id}" style="width:100%; height:50px;">${s.remarks||''}</textarea><button onclick="saveRemarks('${s.result_id}')">Save</button><button onclick="cancelEdit('${s.result_id}')">Cancel</button></div></div>
+                    <div class="footer-sigs"><div class="sig-line">Result Date</div><div class="sig-line">Exam Incharge</div><div class="sig-line">Principal Signature</div></div>
+                    <div class="footer-end"><span>© Techinfolab</span><span>Designed by: Raja Bilal</span></div>
+                `;
                 container.appendChild(sheet);
             }
-            // Find this section near the end of your script tags on Page 8:
-progText.innerText = `Loaded: ${Math.round((index/data.length)*100)}%`;
-if (index < data.length) {
-  setTimeout(renderBatch, 5);
-} else { 
-  printBtn.disabled = false; 
-  progText.innerText = "Ready!"; 
-  
-  // ADD THIS LINE HERE: Fires immediately once all student sheets are appended to the screen
-  applyCentralAppDetails(); 
-}
-
+            progText.innerText=`Loaded: ${Math.round((index/data.length)*100)}%`;
+            if(index<data.length) setTimeout(renderBatch,5);
+            else{ printBtn.disabled=false; progText.innerText="Ready!"; applyCentralAppDetails(); }
         }
         renderBatch();
-    } catch (err) { container.innerHTML = "Error loading reports."; }
+    }catch(err){ container.innerHTML="<h2 style='text-align:center;'>Error loading reports.</h2>"; console.error(err); }
 }
-
-function enableEdit(id) { document.getElementById(`edit-container-${id}`).style.display = 'block'; }
-function cancelEdit(id) { document.getElementById(`edit-container-${id}`).style.display = 'none'; }
-async function saveRemarks(id) {
-    const val = document.getElementById(`input-${id}`).value;
-    if (await window.api.updateResultRemarks(id, val)) {
-        document.getElementById(`display-text-${id}`).innerText = val || 'No remarks entered.';
-        cancelEdit(id);
-    }
-}
-window.onload = loadReports;
+function enableEdit(id){ document.getElementById(`edit-container-${id}`).style.display='block'; }
+function cancelEdit(id){ document.getElementById(`edit-container-${id}`).style.display='none'; }
+async function saveRemarks(id){ const val=document.getElementById(`input-${id}`).value; if(await window.api.updateResultRemarks(id,val)){ document.getElementById(`display-text-${id}`).innerText=val||'No remarks entered.'; cancelEdit(id); } }
+window.onload=loadReports;
 </script>
+
+
+
 </body>
 </html>

@@ -210,6 +210,17 @@ td {
   font-size: 12px; 
   font-weight: bold; 
 }
+.slip-watermark-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 250px;      /* Adjust dimensions to fit card boundaries perfectly */
+    height: 250px;
+    opacity: 0.06;     /* Keeps watermark transparent so text remains easily readable */
+    z-index: 1;        /* Placed securely underneath all structural data columns */
+    pointer-events: none; /* Prevents interference with text selection */
+}
 
 /* --- ADJUSTMENT POPUP LAYOUT STYLES --- */
 .modal-input-row { 
@@ -242,9 +253,10 @@ td {
 /* --- UPDATED PRINT STYLES --- */
 @media print {
   /* 1. Hide background application layout components */
-  body * { 
-    visibility: hidden !important; 
-  }
+  body {
+        -webkit-print-color-adjust: exact !important; /* Forces Chrome/Electron to print transparent watermarks */
+        print-color-adjust: exact !important;
+    }
   
   /* 2. Display the main slip modal wrapper context layer */
   #slipModal { 
@@ -277,6 +289,7 @@ td {
   
   /* 5. Set up crisp black boxes with fixed sizing for both slips */
   #printArea > div { 
+    position:relative;
     border: 2px solid #000 !important; 
     padding: 10px 12px !important; /* Slightly tightens vertical height spacing */
     margin-bottom: 12px !important; 
@@ -370,15 +383,22 @@ td {
             
             <!-- ============================== SLIP 1: OFFICE COPY ============================== -->
             <div style="border: 2px solid #333; padding: 15px; background: #fff; position: relative; margin-bottom: 25px; box-sizing: border-box;">
-                <!-- Header with Left Logo Alignment Layout -->
+                  <!-- Dynamic Background Image Watermark Layer -->
+    <img src="../../images/logo.png" class="slip-watermark-bg" alt="Watermark">
+ 
+              <!-- Header with Left Logo Alignment Layout -->
                 <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 75px; margin-bottom: 15px; font-family: 'Segoe UI', Arial, sans-serif;">
                     <img src="../../images/logo.png" style="position: absolute; left: 10px; width: 75px; height: 75px; object-fit: contain; z-index: 5;" alt="Logo">
-                    <div style="text-align: center; padding-left: 20px;">
-                        <h2 style="margin: 0; font-size: 24px; color: #2c3e50; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Islamia Model School</h2>
-                        <div style="font-size: 13px; color: #7f8c8d; margin-top: 2px;">Sohan, Islamabad | Phone: 0300-9813940</div>
-                        <div style="font-size: 11px; font-weight: bold; color: #7f8c8d; letter-spacing: 1px; margin-top: 3px; text-transform: uppercase;">OFFICE COPY</div>
-                        <h4 style="margin: 6px 0 0 0; font-size: 15px; text-decoration: underline; font-weight: 600; color: #2c3e50;">Salary Statement - <span class="p-period">September 2026</span></h4>
-                    </div>
+                    <!-- Replace the hardcoded text container with this dynamic version -->
+<div style="text-align: center; padding-left: 20px;">
+    <h2 class="render-institute" style="margin: 0; font-size: 24px; color: #2c3e50; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Loading School...</h2>
+    <div style="font-size: 13px; color: #7f8c8d; margin-top: 2px;">
+        <span class="render-address">Loading Address...</span> | Phone: <span class="render-contact">Loading Phone...</span>
+    </div>
+    <div style="font-size: 11px; font-weight: bold; color: #7f8c8d; letter-spacing: 1px; margin-top: 3px; text-transform: uppercase;">OFFICE COPY</div>
+    <h4 style="margin: 6px 0 0 0; font-size: 15px; text-decoration: underline; font-weight: 600; color: #2c3e50;">Salary Statement - <span class="p-period">September 2026</span></h4>
+</div>
+
                 </div>
 
                 <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; font-family: sans-serif;">
@@ -388,6 +408,10 @@ td {
                         <td style="width: 20%; font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Designation:</td>
                         <td class="p-designation" style="width: 30%; padding: 8px; border: 1px solid #ddd;">-</td>
                     </tr>
+<tr>
+<td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">CNIC:</td>
+<td class="p-cnic" colspan="3" style="padding: 8px; border: 1px solid #ddd;">-</td>
+</tr>
                     <tr>
                         <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Basic Pay:</td>
                         <td style="padding: 8px; border: 1px solid #ddd; color: #2c3e50; font-weight: 500;">Rs. <span class="p-basic">0</span></td>
@@ -398,26 +422,29 @@ td {
                         <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Bonus / Award:</td>
                         <td colspan="3" style="padding: 8px; border: 1px solid #ddd;">
                             <span style="font-weight: bold; color: #2ecc71;">Rs. <span class="p-award">0</span></span>
-                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;">Note: (<span class="p-award-rem">None</span>)</span>
+                            <span class="p-award-rem-container" style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;"></span>
+
                         </td>
                     </tr>
+
                     <tr>
                         <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Leaves (A/V):</td>
                         <td style="padding: 8px; border: 1px solid #ddd;"><span class="p-leaves">0 / 0</span></td>
                         <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Leave Deduction:</td>
                         <td style="color: #e74c3c; padding: 8px; border: 1px solid #ddd; font-weight: bold;">Rs. <span class="p-leave-ded">0</span></td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                         <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd; font-size: 12px; color: #555;">Documents Deposited:</td>
                         <td colspan="3" style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #2c3e50; font-style: italic; font-weight: 500;">
                             <span class="p-docs-held">None</span>
                         </td>
-                    </tr>
+                    </tr> -->
                     <tr>
                         <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Other Deduction:</td>
                         <td colspan="3" style="color: #e74c3c; padding: 8px; border: 1px solid #ddd;">
                             <span style="font-weight: bold;">Rs. <span class="p-manual-ded">0</span></span>
-                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;">Remarks: (<span class="p-ded-rem">None</span>)</span>
+                            <span class="p-ded-rem-container" style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;"></span>
+
                         </td>
                     </tr>
                     <tr>
@@ -448,24 +475,40 @@ td {
 
    <!-- ============================== SLIP 2: STAFF COPY ============================== -->
             <div style="border: 2px solid #333; padding: 15px; background: #fff; position: relative; box-sizing: border-box;">
-                <!-- Header with Left Logo Alignment Layout -->
+                  <!-- Dynamic Background Image Watermark Layer -->
+    <img src="../../images/logo.png" class="slip-watermark-bg" alt="Watermark">
+ 
+              <!-- Header with Left Logo Alignment Layout -->
                 <div style="display: flex; align-items: center; justify-content: center; position: relative; min-height: 75px; margin-bottom: 15px; font-family: 'Segoe UI', Arial, sans-serif;">
                     <img src="../../images/logo.png" style="position: absolute; left: 10px; width: 75px; height: 75px; object-fit: contain; z-index: 5;" alt="Logo">
-                    <div style="text-align: center; padding-left: 20px;">
-                        <h2 style="margin: 0; font-size: 24px; color: #2c3e50; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Islamia Model School</h2>
-                        <div style="font-size: 13px; color: #7f8c8d; margin-top: 2px;">Sohan, Islamabad | Phone: 0300-9813940</div>
-                        <div style="font-size: 11px; font-weight: bold; color: #7f8c8d; letter-spacing: 1px; margin-top: 3px; text-transform: uppercase;">STAFF COPY</div>
-                        <h4 style="margin: 6px 0 0 0; font-size: 15px; text-decoration: underline; font-weight: 600; color: #2c3e50;">Salary Statement - <span class="p-period">September 2026</span></h4>
-                    </div>
+                   <!-- Replace the hardcoded text container with this dynamic version -->
+<div style="text-align: center; padding-left: 20px;">
+    <h2 class="render-institute" style="margin: 0; font-size: 24px; color: #2c3e50; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Loading School...</h2>
+    <div style="font-size: 13px; color: #7f8c8d; margin-top: 2px;">
+        <span class="render-address">Loading Address...</span> | Phone: <span class="render-contact">Loading Phone...</span>
+    </div>
+    <div style="font-size: 11px; font-weight: bold; color: #7f8c8d; letter-spacing: 1px; margin-top: 3px; text-transform: uppercase;">STAFF COPY</div>
+    <h4 style="margin: 6px 0 0 0; font-size: 15px; text-decoration: underline; font-weight: 600; color: #2c3e50;">Salary Statement - <span class="p-period">September 2026</span></h4>
+</div>
+
                 </div>
 
                 <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; font-family: sans-serif;">
-                    <tr>
-                        <td style="width: 20%; font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Staff Name:</td>
-                        <td class="p-name" style="width: 30%; padding: 8px; border: 1px solid #ddd;">-</td>
-                        <td style="width: 20%; font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Designation:</td>
-                        <td class="p-designation" style="width: 30%; padding: 8px; border: 1px solid #ddd;">-</td>
-                    </tr>
+<tr>
+<td style="width: 20%; font-weight: bold; padding: 8px; 
+border: 1px solid #ddd; background: #fdfdfd;">Staff Name:</td>
+<td class="p-name" style="width: 30%; padding: 8px; 
+border: 1px solid #ddd;">-</td>
+<td style="width: 20%; font-weight: bold; padding: 8px; 
+border: 1px solid #ddd; background: #fdfdfd;">Designation:</td>
+<td class="p-designation" style="width: 30%; padding: 
+8px; border: 1px solid #ddd;">-</td>
+</tr>
+<tr>
+<td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">CNIC:</td>
+<td class="p-cnic" colspan="3" style="padding: 8px; border: 1px solid #ddd;">-</td>
+</tr>
+
                     <tr>
                         <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Basic Pay:</td>
                         <td style="padding: 8px; border: 1px solid #ddd; color: #2c3e50; font-weight: 500;">Rs. <span class="p-basic">0</span></td>
@@ -476,7 +519,8 @@ td {
                         <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd;">Bonus / Award:</td>
                         <td colspan="3" style="padding: 8px; border: 1px solid #ddd;">
                             <span style="font-weight: bold; color: #2ecc71;">Rs. <span class="p-award">0</span></span>
-                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;">Note: (<span class="p-award-rem">None</span>)</span>
+                            <span class="p-award-rem-container" style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;"></span>
+
                         </td>
                     </tr>
                     <tr>
@@ -485,17 +529,18 @@ td {
                         <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Leave Deduction:</td>
                         <td style="color: #e74c3c; padding: 8px; border: 1px solid #ddd; font-weight: bold;">Rs. <span class="p-leave-ded">0</span></td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                         <td style="font-weight: bold; padding: 8px; border: 1px solid #ddd; background: #fdfdfd; font-size: 12px; color: #555;">Documents Deposited:</td>
                         <td colspan="3" style="padding: 8px; border: 1px solid #ddd; font-size: 12px; color: #2c3e50; font-style: italic; font-weight: 500;">
                             <span class="p-docs-held">None</span>
                         </td>
-                    </tr>
+                    </tr> -->
                     <tr>
                         <td style="font-weight: bold; color: #e74c3c; padding: 8px; border: 1px solid #ddd; background: #fff5f5;">Other Deduction:</td>
                         <td colspan="3" style="color: #e74c3c; padding: 8px; border: 1px solid #ddd;">
                             <span style="font-weight: bold;">Rs. <span class="p-manual-ded">0</span></span>
-                            <span style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;">Remarks: (<span class="p-ded-rem">None</span>)</span>
+                            <span class="p-ded-rem-container" style="color: #7f8c8d; font-size: 12px; margin-left: 12px; font-style: italic;"></span>
+
                         </td>
                     </tr>
                     <tr>
@@ -602,15 +647,17 @@ async function loadApplicationDetails() {
     try {
         const details = await window.api.getAppDetails();
         if (details) {
-            // Apply variables cleanly to all matches via classes across both voucher structures
+            // Apply variables cleanly with the missing assignment operators (=) fixed
             document.querySelectorAll('.render-institute').forEach(e => e.innerText = details.instituteName);
             document.querySelectorAll('.render-address').forEach(e => e.innerText = details.address || "N/A");
-            document.querySelectorAll('.render-contact').forEach(e => e.innerText = details.contactNumber);
+            document.querySelectorAll('.render-contact').forEach(e => e.innerText = details.contactNumber || "N/A");
         }
     } catch (error) {
         console.error("Failed to load application configuration metadata parameters:", error);
     }
 }
+
+
 async function submitSalaryPayment() {
     // 1. Grab values only from the hidden fields that actually exist
     const id = parseInt(document.getElementById('modalSalaryRowId').value);
@@ -669,13 +716,9 @@ async function loadSalaryData() {
     const extraLeaves = Math.max(0, availed - auth);
     // ❌ DELETE THIS OLD BLOCK:
 leavesDeduction = Math.round(extraLeaves * dailyRate);
-if (!isPaid) {
-displayNet = (basicSalary - leavesDeduction + allowance + award) -
-(salaryDeduction + fund + security);
-} else {
-displayNet = (basicSalary + allowance + award) - (salaryDeduction + fund +
-security);
-}
+// Calculate net pay uniformly regardless of payment status
+displayNet = (basicSalary - leavesDeduction + allowance + award) - (salaryDeduction + fund + security);
+
 totalSum += displayNet;
 
     
@@ -924,7 +967,8 @@ async function markAsPaid(id, calculatedNet) {
 }
 
 // Slips compilation routing parameters map handler
-async function openSlip(id) {
+// Slips compilation routing parameters map handler
+async function openSlip (id) {
     const r = records.find(x => x.id === id);
     if (!r) return;
 
@@ -940,7 +984,6 @@ async function openSlip(id) {
     const daily = basic / 30;
     const extra = Math.max(0, (r.availed_leaves || 0) - (r.auth_leaves || 0));
     const leavesDed = Math.round(extra * daily);
-
     const period = `${document.getElementById('filterMonth').value} ${document.getElementById('filterYear').value}`;
 
     // 3. Inject text selectors inside both Office & Staff copy loops
@@ -952,32 +995,74 @@ async function openSlip(id) {
     document.querySelectorAll('.p-leaves').forEach(e => e.innerText = `${r.auth_leaves || 0} / ${r.availed_leaves || 0}`);
 
     // 4. Inject structural unified parameters
-    document.querySelectorAll('.p-award').forEach(e => e.innerText = award.toLocaleString());
-    document.querySelectorAll('.p-award-rem').forEach(e => e.innerText = r.award_remarks && r.award_remarks.trim() !== "" ? r.award_remarks : 'None');
-    
-    document.querySelectorAll('.p-leave-ded').forEach(e => e.innerText = leavesDed.toLocaleString());
-    document.querySelectorAll('.p-manual-ded').forEach(e => e.innerText = salaryDeduction.toLocaleString());
-    document.querySelectorAll('.p-ded-rem').forEach(e => e.innerText = r.deduction_remarks && r.deduction_remarks.trim() !== "" ? r.deduction_remarks : 'None');
+// 4. Inject structural unified parameters
+document.querySelectorAll('.p-award').forEach(e => e.innerText =
+award.toLocaleString());
 
-    document.querySelectorAll('.p-fund').forEach(e => e.innerText = fund.toLocaleString());
-    document.querySelectorAll('.p-security').forEach(e => e.innerText = security.toLocaleString());
+const awardRemText = r.award_remarks && r.award_remarks.trim() !== "" ? `Note: (${r.award_remarks})` : '';
+document.querySelectorAll('.p-award-rem-container').forEach(e => e.innerText = awardRemText);
 
-    // 🌟 5. Dynamic Profile Mapping: Cross-reference documents held seamlessly
+document.querySelectorAll('.p-leave-ded').forEach(e => e.innerText =
+leavesDed.toLocaleString());
+
+    document.querySelectorAll('.p-manual-ded').forEach(e => e.innerText =
+salaryDeduction.toLocaleString());
+
+const dedRemText = r.deduction_remarks && r.deduction_remarks.trim() !== "" ? `Remarks: (${r.deduction_remarks})` : '';
+document.querySelectorAll('.p-ded-rem-container').forEach(e => e.innerText = dedRemText);
+
+
+    // DYNAMIC FUND LABEL & VALUE LOGIC
+    document.querySelectorAll('.p-fund').forEach(e => {
+        if (fund < 0) {
+            e.innerText = Math.abs(fund).toLocaleString(); // Removes minus sign
+            if (e.parentElement && e.parentElement.previousElementSibling) {
+                e.parentElement.previousElementSibling.innerText = "Fund Returned:";
+            }
+        } else {
+            e.innerText = fund.toLocaleString();
+            if (e.parentElement && e.parentElement.previousElementSibling) {
+                e.parentElement.previousElementSibling.innerText = "Fund Cutting:";
+            }
+        }
+    });
+
+    // DYNAMIC SECURITY LABEL & VALUE LOGIC
+    document.querySelectorAll('.p-security').forEach(e => {
+        if (security < 0) {
+            e.innerText = Math.abs(security).toLocaleString(); // Removes minus sign
+            if (e.parentElement && e.parentElement.previousElementSibling) {
+                e.parentElement.previousElementSibling.innerText = "Security Returned:";
+            }
+        } else {
+            e.innerText = security.toLocaleString();
+            if (e.parentElement && e.parentElement.previousElementSibling) {
+                e.parentElement.previousElementSibling.innerText = "Security Cutting:";
+            }
+        }
+    });
+
+    // 5. Dynamic Profile Mapping: Cross-reference documents held seamlessly
     try {
         const staffData = await window.api.getStaff();
-        
-        // Flexible lookup: Trims hidden trailing spaces and ignores case mismatches
-        const matchingProfile = Array.isArray(staffData) ? staffData.find(s => 
-            s.id === r.staff_id || 
+        const matchingProfile = Array.isArray(staffData) ? staffData.find(s =>
+            s.id === r.staff_id ||
             (s.name && r.name && s.name.trim().toLowerCase() === r.name.trim().toLowerCase())
         ) : null;
-        
-        const docsHeldString = matchingProfile && matchingProfile.documents_held ? matchingProfile.documents_held.trim() : 'None';
-        document.querySelectorAll('.p-docs-held').forEach(e => e.innerText = docsHeldString !== "" ? docsHeldString : 'None');
-    } catch(err) {
-        console.error("Error linking staff document profile logs:", err);
-        document.querySelectorAll('.p-docs-held').forEach(e => e.innerText = 'None');
-    }
+     const docsHeldString = matchingProfile && matchingProfile.documents_held 
+? matchingProfile.documents_held.trim() : 'None';
+document.querySelectorAll('.p-docs-held').forEach(e => e.innerText =
+docsHeldString !== "" ? docsHeldString : 'None');
+
+const cnicString = matchingProfile && matchingProfile.cnic ? matchingProfile.cnic.trim() : 'N/A';
+document.querySelectorAll('.p-cnic').forEach(e => e.innerText = cnicString);
+
+} catch(err) {
+console.error("Error linking staff document profile logs:", err);
+document.querySelectorAll('.p-docs-held').forEach(e => e.innerText =
+'None');
+document.querySelectorAll('.p-cnic').forEach(e => e.innerText = 'N/A');
+}
 
     // 6. Run final exact net pay calculations
     const netTotal = (basic + allowance + award) - (salaryDeduction + leavesDed + fund + security);

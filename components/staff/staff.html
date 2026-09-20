@@ -43,6 +43,7 @@
     <div class="header">
     <h2>Staff Management</h2>
     <div>
+        <button class="btn-apply" onclick="window.location.href='staff-card.html'" style="background: #020e7c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px;">Staff Card</button>
         <button class="btn-apply" onclick="window.location.href='../dashboard.html'" style="background: #020e7c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px;">Dashboard</button>
         <button class="btn-apply" onclick="window.location.href='salary.html'" style="background: #d8da7a; color: rgb(5, 5, 5); border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px;">💵 Salary</button>
         <button onclick="openSalaryModal()" style="background: #e67e22; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px;">💰 Initiate Salary</button>
@@ -154,7 +155,41 @@
     let currentEditId = null;
 
     // Run automatically when the window loads
-    document.addEventListener('DOMContentLoaded', loadStaff);
+   document.addEventListener('DOMContentLoaded', () => {
+    loadStaff();
+
+    function releaseFocusLock() {
+        if (window.authAPI && typeof window.authAPI.send === 'function') {
+            window.authAPI.send('fix-focus');
+        }
+    }
+
+    // 1. SELECT dropdown ka glitch fix (Status wala)
+    document.body.addEventListener('change', (event) => {
+        if (event.target.tagName === 'SELECT') {
+            event.target.blur();
+            releaseFocusLock();
+        }
+    });
+
+    // 2. alert / confirm ka global fix
+    const _alert = window.alert;
+    window.alert = function(msg) {
+        _alert(msg);
+        releaseFocusLock();
+        setTimeout(() => {
+            const nameInput = document.getElementById('fullName') || document.querySelector('input[placeholder="Enter full name"]');
+            if (nameInput) nameInput.focus();
+        }, 200);
+    };
+
+    const _confirm = window.confirm;
+    window.confirm = function(msg) {
+        const res = _confirm(msg);
+        releaseFocusLock();
+        return res;
+    };
+});
 
     // --- READ: Fetch staff array from backend and draw table rows ---
     async function loadStaff() {

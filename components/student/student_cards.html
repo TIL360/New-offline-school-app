@@ -9,220 +9,298 @@
 <script src="../../node_modules/qrcode/build/qrcode.min.js"></script>
 
 
-  <style>
-    :root {
-      --primary: #4f46e5;
-      --bg-gray: #f8fafc;
-      --border: #e2e8f0;
-      --dark: #1e293b;
-      --gray: #64748b;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--bg-gray);
-      margin: 0;
-      padding: 20px;
-      color: var(--dark);
-    }
-    .page-container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .top-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: white;
-      padding: 15px 25px;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-    }
-    .top-nav h2 { margin: 0; font-size: 20px; }
-    .btn {
-      height: 42px;
-      padding: 0 20px;
-      border-radius: 6px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 13px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .btn-portal { background: #64748b; color: white; text-decoration: none; }
-    .btn-print { background: var(--primary); color: white; }
-    
-    .filter-card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .form-group label {
-      font-size: 12px;
-      font-weight: bold;
-      color: var(--gray);
-      text-transform: uppercase;
-    }
-    .form-select {
-      height: 40px;
-      width: 250px;
-      padding: 0 12px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      outline: none;
-      font-size: 14px;
-    }
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-      gap: 25px;
-      margin-top: 10px;
-    }
-    .id-card {
-      background: white;
-      border: 2px solid #1e3a8a;
-      border-radius: 12px;
-      width: 400px;
-      height: 230px;
-      position: relative;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-      box-sizing: border-box;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .card-header {
-      background: #1e3a8a;
-      color: white;
-      padding: 10px;
-      text-align: center;
-    }
-    .card-header h3 { margin: 0; font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; }
-    .card-header p { margin: 2px 0 0 0; font-size: 10px; color: #93c5fd; letter-spacing: 1px; }
-    .card-body {
-      display: flex;
-      padding: 15px;
-      gap: 15px;
-      flex: 1;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .photo-area {
-      width: 90px;
-      height: 115px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-      background: #f1f5f9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .photo-area img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .photo-placeholder {
-      font-size: 32px;
-      color: #94a3b8;
-    }
-    .info-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      min-width: 0;
-    }
-    .student-name-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: #1e293b;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .info-row {
-      font-size: 12px;
-      color: #334155;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .info-label {
-      font-weight: bold;
-      color: var(--gray);
-      display: inline-block;
-      width: 55px;
-    }
-    .qrcode-area {
-      width: 80px;
-      height: 80px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 4px;
-      background: white;
-      flex-shrink: 0;
-    }
-    .qrcode-area svg {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    .card-footer {
-      background: #1e293b;
-      color: white;
-      font-size: 10px;
-      text-align: center;
-      padding: 6px;
-      font-weight: 500;
-      margin-top: auto;
-    }
-    .no-data {
-      grid-column: 1 / -1;
-      background: white;
-      padding: 40px;
-      text-align: center;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      color: var(--gray);
-      font-weight: 500;
-    }
-    @media print {
-      body { background: white; padding: 0; margin: 0; }
-      .top-nav, .filter-card, .btn-portal { display: none !important; }
-      .page-container { max-width: 100%; padding: 0; margin: 0; }
-      .cards-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        padding: 15px;
-      }
-      .id-card {
-        box-shadow: none !important;
-        page-break-inside: avoid;
-        break-inside: avoid;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-    }
-  </style>
+ <style>
+ :root {
+   /* Base App Colors */
+   --primary: #4f46e5;
+   --bg-gray: #f8fafc;
+   --border: #e2e8f0;
+   --dark: #1e293b;
+   --gray: #64748b;
+   /* KIPS Nest */
+   /* --card-primary: #ec9005;    
+   --card-secondary: #ffffff;   */
+
+
+   /* Eagle Nest */
+   --card-primary: #09115e;    
+   --card-secondary: #ffffff;  
+   --card-footer-bg: #02245a;  /* Bottom footer block background color */
+ }
+ 
+ body {
+   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+   background: var(--bg-gray);
+   margin: 0;
+   padding: 20px;
+   color: var(--dark);
+ }
+ 
+ .id-card::before {
+   content: "";
+   position: absolute;
+   top: 55%; /* Centers the watermark vertically below the header */
+   left: 50%;
+   transform: translate(-50%, -50%);
+   width: 140px;
+   height: 140px;
+   background-image: url('../../images/logo.png');
+   background-repeat: no-repeat;
+   background-position: center;
+   background-size: contain;
+   opacity: 0.08; /* Low opacity keeps text readable */
+   z-index: 0;
+   pointer-events: none;
+ }
+ 
+ .page-container {
+   max-width: 1200px;
+   margin: 0 auto;
+ }
+ 
+ .top-nav {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   background: white;
+   padding: 15px 25px;
+   border-radius: 12px;
+   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+   margin-bottom: 20px;
+ }
+ 
+ .top-nav h2 { margin: 0; font-size: 20px; }
+ 
+ .btn {
+   height: 42px;
+   padding: 0 20px;
+   border-radius: 6px;
+   border: none;
+   font-weight: 600;
+   cursor: pointer;
+   font-size: 13px;
+   display: inline-flex;
+   align-items: center;
+   gap: 8px;
+ }
+ .btn-portal { background: #64748b; color: white; text-decoration: none; }
+ .btn-print { background: var(--primary); color: white; }
+ 
+ .filter-card {
+   background: white;
+   padding: 20px;
+   border-radius: 12px;
+   border: 1px solid var(--border);
+   margin-bottom: 20px;
+   display: flex;
+   align-items: center;
+   gap: 15px;
+ }
+ 
+ .form-group {
+   display: flex;
+   flex-direction: column;
+   gap: 6px;
+ }
+ 
+ .form-group label {
+   font-size: 12px;
+   font-weight: bold;
+   color: var(--gray);
+   text-transform: uppercase;
+ }
+ 
+ .form-select {
+   height: 40px;
+   width: 250px;
+   padding: 0 12px;
+   border: 1px solid var(--border);
+   border-radius: 6px;
+   outline: none;
+   font-size: 14px;
+ }
+ 
+ .cards-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+   gap: 25px;
+   margin-top: 10px;
+ }
+ 
+ /* Updated styling linked to dynamic theme variables */
+ .id-card {
+   background: white;
+   border: 2px solid var(--card-primary);
+   border-radius: 12px;
+   width: 400px;
+   height: 230px;
+   position: relative;
+   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+   box-sizing: border-box;
+   overflow: hidden;
+   display: flex;
+   flex-direction: column;
+ }
+ 
+ .card-header {
+   background: var(--card-primary);
+   color: rgb(250, 250, 250); /*KIPS*/
+   /* color: rgb(251, 255, 14);  Eagle Nest */
+   padding: 10px;
+   text-align: center;
+ }
+ 
+ .card-header h3 {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+   margin: 0;
+   font-size: 15px;
+   letter-spacing: 0.5px;
+   text-transform: uppercase;
+   font-weight: 700;
+ }
+ 
+ .card-logo {
+   height: 22px;
+   width: auto;
+   object-fit: contain;
+ }
+ 
+ .card-header p { 
+   margin: 2px 0 0 0; 
+   font-size: 10px; 
+   color: var(--card-secondary); 
+   letter-spacing: 1px; 
+ }
+ 
+ .card-body {
+   display: flex;
+   padding: 15px;
+   gap: 15px;
+   flex: 1;
+   align-items: center;
+   justify-content: space-between;
+   position: relative;
+   z-index: 1;
+ }
+ 
+ .photo-area {
+   width: 90px;
+   height: 115px;
+   border: 1px solid var(--border);
+   border-radius: 6px;
+   overflow: hidden;
+   background: #f1f5f9;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   flex-shrink: 0;
+ }
+ 
+ .photo-area img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+ }
+ 
+ .photo-placeholder {
+   font-size: 32px;
+   color: #94a3b8;
+ }
+ 
+ .info-area {
+   flex: 1;
+   display: flex;
+   flex-direction: column;
+   gap: 3px;
+   min-width: 0;
+ }
+ 
+ .student-name-title {
+   font-size: 15px;
+   font-weight: 800;
+   color: #1e293b;
+   margin-bottom: 4px;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+ 
+ .info-row {
+   font-size: 12px;
+   color: #334155;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+ 
+ .info-label {
+   font-weight: bold;
+   color: var(--gray);
+   display: inline-block;
+   width: 55px;
+ }
+ 
+ .qrcode-area {
+   width: 80px;
+   height: 80px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   border: 1px solid #e2e8f0;
+   border-radius: 6px;
+   padding: 4px;
+   background: white;
+   flex-shrink: 0;
+ }
+ 
+ .qrcode-area svg {
+   width: 100% !important;
+   height: 100% !important;
+ }
+ 
+ .card-footer {
+   background: var(--card-footer-bg);
+   color: white;
+   font-size: 10px;
+   text-align: center;
+   padding: 6px;
+   font-weight: 500;
+   margin-top: auto;
+ }
+ 
+ .no-data {
+   grid-column: 1 / -1;
+   background: white;
+   padding: 40px;
+   text-align: center;
+   border-radius: 12px;
+   border: 1px solid var(--border);
+   color: var(--gray);
+   font-weight: 500;
+ }
+ 
+ @media print {
+   body { background: white; padding: 0; margin: 0; }
+   .top-nav, .filter-card, .btn-portal { display: none !important; }
+   .page-container { max-width: 100%; padding: 0; margin: 0; }
+   .cards-grid {
+     display: grid;
+     grid-template-columns: repeat(2, 1fr);
+     gap: 20px;
+     padding: 15px;
+   }
+   .id-card {
+     box-shadow: none !important;
+     page-break-inside: avoid;
+     break-inside: avoid;
+     -webkit-print-color-adjust: exact;
+     print-color-adjust: exact;
+   }
+ }
+ </style>
 </head>
 <body>
 
@@ -253,6 +331,10 @@
         <input type="text" id="studentSearchInput" class="form-select" style="width: 100%;" 
                placeholder="Type Registration Number or Student Name..." onkeyup="filterStudentCards()">
     </div>
+    <div class="form-group" style="width: 200px; margin-left: 10px;">
+    <label><i class="fas fa-calendar-alt"></i> Card Validity</label>
+    <input type="text" id="cardValidityInput" class="form-select" style="width: 100%;" placeholder="e.g., 2026-2027" value="2026-2027" oninput="updateValidityLive()">
+</div>
 </div>
 
 
@@ -327,7 +409,8 @@ async function renderClassCards() {
         const cardMarkupLayout = `
         <div class="id-card">
             <div class="card-header">
-                <h3>${applicationMeta.instituteName || 'ISLAMIA MODEL SCHOOL'}</h3>
+
+                <h3>${applicationMeta.instituteName}</h3>
                 <p>STUDENT IDENTIFICATION CARD</p>
             </div>
             <div class="card-body">
@@ -335,12 +418,14 @@ async function renderClassCards() {
                     ${imageDOMElementHtml}
                 </div>
                 <div class="info-area">
-                    <div class="student-name-title">${student.student_name}</div>
-                    <div class="info-row"><span class="info-label">Reg No:</span><strong>${student.registration_no}</strong></div>
-                    <div class="info-row"><span class="info-label">Father:</span>${student.father_name}</div>
-                    <div class="info-row"><span class="info-label">Class:</span>${student.current_class}</div>
-                    <div class="info-row"><span class="info-label">Mobile:</span>${student.mobile || '-'}</div>
-                </div>
+    <div class="student-name-title">${student.student_name}</div>
+    <div class="info-row"><span class="info-label">Reg No:</span><strong>${student.registration_no}</strong></div>
+    <div class="info-row"><span class="info-label">Father:</span>${student.father_name}</div>
+    <div class="info-row"><span class="info-label">Class:</span>${student.current_class}</div>
+    <div class="info-row"><span class="info-label">Mobile:</span>${student.mobile || '-'}</div>
+    <!-- ➕ ADD THIS NEW VALIDITY ROW BELOW MOBILE -->
+    <div class="info-row"><span class="info-label">Validity:</span><strong class="live-validity-text">${document.getElementById('cardValidityInput').value || '-'}</strong></div>
+</div>
                 <div id="${cardNodeId}" class="qrcode-area"></div>
             </div>
             <div class="card-footer">
@@ -437,7 +522,14 @@ function filterStudentCards() {
         existingNoData.remove();
     }
 }
-
+// ➕ ADD THIS FUNCTION FOR LIVE PREVIEW UPDATES
+function updateValidityLive() {
+    const freshValue = document.getElementById('cardValidityInput').value.trim();
+    const cardLabels = document.querySelectorAll('.live-validity-text');
+    cardLabels.forEach(label => {
+        label.textContent = freshValue || '-';
+    });
+}
   </script>
 </body>
 </html>

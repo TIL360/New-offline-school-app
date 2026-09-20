@@ -1,5 +1,5 @@
 {
-  "name": "islamia_model-school-sohan",
+  "name": "EDUPULSE-2026",
   "version": "1.0.0",
   "description": "School Management System (Offline) build in Electron",
   "keywords": [
@@ -17,9 +17,14 @@
   },
   "build": {
     "appId": "com.raja.pos",
+    "productName": "EDUPULSE-2026",
     "asar": true,
     "asarUnpack": [
       "**/*.node"
+    ],
+    "files": [
+      "**/*",
+      "!**/*.db-journal"
     ],
     "extraResources": [
       "school.db"
@@ -35,11 +40,26 @@
         }
       ]
     },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.education"
+    },
     "nsis": {
       "oneClick": true,
       "perMachine": true,
       "allowToChangeInstallationDirectory": false,
       "deleteAppDataOnUninstall": true
+    },
+    "dmg": {
+      "sign": false
     }
   },
   "dependencies": {

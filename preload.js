@@ -24,6 +24,24 @@ contextBridge.exposeInMainWorld('api', {
     getFilePath: (file) => {
         return webUtils.getPathForFile(file);
     },
+    // preload.js
+getAcademySubjects: () => ipcRenderer.invoke('getAcademySubjects'),
+getStudentSubjectMarks: (id) => ipcRenderer.invoke('getStudentSubjectMarks', id),
+getAllSubjectMarksBulk: (ids) => ipcRenderer.invoke('getAllSubjectMarksBulk', ids),
+    getStudentAttendanceStatus: (data) => ipcRenderer.invoke('get-student-attendance-status', data),
+getStaffAttendanceStatus: (data) => ipcRenderer.invoke('get-staff-attendance-status', data),
+    sendSmsViaPhone: (data) => ipcRenderer.invoke('send-sms-via-phone', data),
+    // Inside your contextBridge.exposeInMainWorld('api', { ... }) block:
+    // Inside your contextBridge.exposeInMainWorld('api', { ... }) block:
+    getGradingRules: () => ipcRenderer.invoke('get-grading-rules'),
+    addGradingRule: (data) => ipcRenderer.invoke('add-grading-rule', data),
+    deleteGradingRule: (id) => ipcRenderer.invoke('delete-grading-rule', id),
+    getPassingCriteria: (examId) => ipcRenderer.invoke('get-passing-criteria'),
+    savePassingCriteria: (data) => ipcRenderer.invoke('save-passing-criteria'),
+getAllSubjects: () => ipcRenderer.invoke('get-all-subjects'),
+addNewSubject: (data) => ipcRenderer.invoke('add-new-subject', data),
+deleteSubject: (id) => ipcRenderer.invoke('delete-subject', id),
+
           getAppDetails: () => ipcRenderer.invoke('get-app-details'),
     // Add this inside the contextBridge api block
 openExternalUrl: (url) => ipcRenderer.send('open-external-url', url),

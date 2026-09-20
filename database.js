@@ -69,13 +69,45 @@ const initializeDB = () => {
 db.exec(`CREATE TABLE IF NOT EXISTS student_attendance (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER,
-    date TEXT, -- Format: YYYY-MM-DD
+    class_id INTEGER,
+    date TEXT,
     status TEXT CHECK(status IN ('Present', 'Absent', 'Leave')),
     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL,
     UNIQUE(student_id, date)
 )`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_attendance_class ON student_attendance(class_id)`);
 
 // Staff Attendance Table
+db.exec(`CREATE TABLE IF NOT EXISTS grading_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    grade_name TEXT NOT NULL,         -- e.g., 'A+', 'A', 'B', 'F'
+    min_percentage REAL NOT NULL,     -- e.g., 90.0
+    max_percentage REAL NOT NULL,     -- e.g., 100.0
+    remarks TEXT                      -- e.g., 'Excellent'
+)`);
+db.exec(`CREATE TABLE IF NOT EXISTS academy_subjects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject_code TEXT UNIQUE NOT NULL, -- e.g., 'urdu', 'eng', 'pak_studies'
+    subject_display_name TEXT NOT NULL  -- e.g., 'Urdu', 'English', 'Pak Studies'
+)`);
+db.exec(`CREATE TABLE IF NOT EXISTS student_subject_marks (
+    result_id INTEGER,
+    subject_code TEXT,
+    marks_set REAL DEFAULT 100,
+    marks_obtained REAL DEFAULT 0,
+    PRIMARY KEY(result_id, subject_code)
+)`);
+
+db.exec(`CREATE TABLE IF NOT EXISTS exam_passing_criteria (
+    exam_id INTEGER PRIMARY KEY,
+    subject_pass_percentage REAL DEFAULT 40.0, -- Default subject pass line
+    overall_pass_percentage REAL DEFAULT 33.0, -- Default grand total pass line
+    max_failed_subjects_allowed INTEGER DEFAULT 1, -- Threshold before getting 'Detained'
+    FOREIGN KEY(exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE
+)`);
+
+
 db.exec(`CREATE TABLE IF NOT EXISTS staff_attendance (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     staff_id INTEGER,
@@ -132,23 +164,34 @@ FOREIGN KEY (question_id) REFERENCES question_bank(id) ON DELETE CASCADE
 
         // 4. Fee Table
         db.exec(`CREATE TABLE IF NOT EXISTS fee_tbl (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER, 
-            registration_no TEXT, current_class TEXT, 
-            monthly_fee REAL DEFAULT 0, 
-            adm_fee REAL DEFAULT 0, 
-            exam_fee REAL DEFAULT 0, 
-            lab_fee REAL DEFAULT 0, 
-            security REAL DEFAULT 0, 
-            misc_fee REAL DEFAULT 0,
-            misc_remarks TEXT,
-            collection_date TEXT,
-            total_fee REAL GENERATED ALWAYS AS (monthly_fee + adm_fee + exam_fee + lab_fee + security + misc_fee ) VIRTUAL,
-            collection REAL DEFAULT 0,
-            balance REAL GENERATED ALWAYS AS (total_fee - collection) VIRTUAL,
-            arrears REAL DEFAULT 0,
-            invoice_month TEXT, invoice_year TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(registration_no, invoice_month, invoice_year) 
-        )`);
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    student_id INTEGER, 
+    registration_no TEXT, 
+    current_class TEXT, 
+    section TEXT,
+    monthly_fee REAL DEFAULT 0, 
+    adm_fee REAL DEFAULT 0, 
+    exam_fee REAL DEFAULT 0, 
+    lab_fee REAL DEFAULT 0, 
+    reg_fee REAL DEFAULT 0,
+    annual_fund REAL DEFAULT 0,
+    stationary_fund REAL DEFAULT 0,
+    bus_charges REAL DEFAULT 0,
+    security REAL DEFAULT 0, 
+    misc_fee REAL DEFAULT 0,
+    misc_remarks TEXT,
+    collection_date TEXT,
+    total_fee REAL GENERATED ALWAYS AS (
+        monthly_fee + adm_fee + exam_fee + lab_fee + reg_fee + annual_fund + stationary_fund + bus_charges + security + misc_fee
+    ) VIRTUAL,
+    collection REAL DEFAULT 0,
+    balance REAL GENERATED ALWAYS AS (total_fee - collection) VIRTUAL,
+    arrears REAL DEFAULT 0,
+    invoice_month TEXT, 
+    invoice_year TEXT, 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(registration_no, invoice_month, invoice_year) 
+)`);
 
         // 5. Exams & Results (Fixed better-sqlite3 implementation)
        db.exec(`CREATE TABLE IF NOT EXISTS exams (
@@ -611,6 +654,7 @@ const getSalaries = (month, year) => {
     return db.prepare(`
         SELECT 
             s.*, 
+             st.cnic as cnic,
             st.designation,
             st.salary as original_base,
             st.documents_held 
@@ -983,58 +1027,99 @@ function changeUserPassword(currentPass, newPass) {
 }
 
 //certificate purpose// Add this inside database.js
-// Corrected for better-sqlite3
+
 function getStudentByReg(regNo) {
-    console.log("DB function received regNo:", regNo); // See if this is undefined
-    const student = db.prepare('SELECT * FROM students WHERE registration_no = ?').get(regNo);
-    return student;
+    const row = db.prepare('SELECT * FROM students WHERE registration_no = ?').get(String(regNo).trim());
+    if(row) row.student_id = row.id;
+    return row;
 }
+// YE LINE ADD KARO:
+const getStudentByRegNo = getStudentByReg; 
 
 // Save student attendance batch
 const saveStudentAttendance = (records, date) => {
-    const insertStmt = db.prepare(`
-        INSERT INTO student_attendance (student_id, date, status)
-        VALUES (?, ?, ?)
-        ON CONFLICT(student_id, date) DO UPDATE SET status = excluded.status
-    `);
-    const transaction = db.transaction((list) => {
-        for (const record of list) {
-            insertStmt.run(record.student_id, date, record.status);
-        }
-    });
-    transaction(records);
-    return { success: true };
-};
+  const getClassStmt = db.prepare(`SELECT id FROM classes WHERE TRIM(class_name) = TRIM(?) LIMIT 1`);
+  
+  const insertStmt = db.prepare(`
+    INSERT INTO student_attendance (student_id, class_id, date, status)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(student_id, date) DO UPDATE SET 
+      status = excluded.status,
+      class_id = excluded.class_id
+  `);
 
+  const transaction = db.transaction((list) => {
+    for (const r of list) {
+      // FORCE class_id - never allow null
+      let classId = r.class_id;
+      if (!classId) {
+        const cr = getClassStmt.get(r.current_class);
+        classId = cr ? cr.id : null;
+      }
+      // If still null, try to get from student table
+      if (!classId) {
+        const srow = db.prepare(`SELECT current_class FROM students WHERE id = ?`).get(r.student_id);
+        if (srow) {
+          const cr2 = getClassStmt.get(srow.current_class);
+          classId = cr2 ? cr2.id : null;
+        }
+      }
+      
+      console.log(`Saving student_id=${r.student_id} class_id=${classId} date=${date} status=${r.status}`);
+      insertStmt.run(r.student_id, classId, date, r.status);
+    }
+  });
+
+  transaction(records);
+  return { success: true };
+};
+function getStudentAttendanceStatus(student_id, date) {
+  const row = db.prepare(`SELECT status FROM student_attendance WHERE student_id = ? AND date = ?`).get(student_id, date);
+  return row ? row.status : null;
+}
+function getStaffAttendanceStatus(staff_id, date) {
+  const row = db.prepare(`SELECT status FROM staff_attendance WHERE staff_id = ? AND date = ?`).get(staff_id, date);
+  return row ? row.status : null;
+}
+// aur module.exports me add kar dein
 // Get student attendance (Hides anyone with a saved status today)
+// Ye rakho to Present wala student list se gayab ho jayega
 const getStudentAttendanceByClass = (className, date) => {
+  // This shows ONLY students whose attendance is NOT marked for chosen date
+  const records = db.prepare(`
+    SELECT 
+      s.id as student_id, 
+      s.student_name, 
+      s.roll_no, 
+      s.registration_no,
+      NULL as status,
+      c.id as class_id,
+      s.current_class
+    FROM students s
+    LEFT JOIN classes c ON TRIM(c.class_name) = TRIM(s.current_class)
+    LEFT JOIN student_attendance a ON a.student_id = s.id AND a.date = ?
+    WHERE TRIM(s.current_class) = TRIM(?)
+      AND LOWER(s.status) = 'active'
+      AND a.status IS NULL
+    ORDER BY CAST(s.roll_no AS INTEGER) ASC
+  `).all(date, className);
+
   return {
-    isMarked: false,
-    records: db.prepare(`
-      SELECT s.id as student_id, s.student_name, s.roll_no,
-             s.registration_no, NULL as status
-      FROM students s
-      WHERE s.current_class = ?
-        AND s.status = 'Active'
-        AND s.id NOT IN (
-          SELECT student_id FROM student_attendance WHERE date = ?
-        )
-      ORDER BY s.roll_no ASC
-    `).all(className, date)
+    isMarked: records.length === 0,
+    records: records
   };
 };
 
-// Get staff attendance (Hides anyone with a saved status today)
 const getStaffAttendanceByDate = (date) => {
   return {
     isMarked: false,
     records: db.prepare(`
       SELECT st.id as staff_id, st.name, st.designation, NULL as status
       FROM staff_tbl st
-      WHERE st.status = 'Active'
-        AND st.id NOT IN (
-          SELECT staff_id FROM staff_attendance WHERE date = ?
-        )
+      WHERE LOWER(st.status) = 'active'
+      AND st.id NOT IN (
+        SELECT staff_id FROM staff_attendance WHERE date = ? AND staff_id IS NOT NULL
+      )
       ORDER BY st.name ASC
     `).all(date)
   };
@@ -1104,18 +1189,27 @@ const getStaffMonthlyReport = (yearMonth) => {
 // getStudentMonthlyReport, getStaffMonthlyReport
 // Fetch detailed calendar day-by-day map for students
 const getStudentGridReport = (class_name, yearMonth) => {
+    const classRow = db.prepare(`SELECT id FROM classes WHERE TRIM(class_name) = TRIM(?)`).get(class_name);
+    const class_id = classRow ? classRow.id : null;
+
+    // FIX: Get students who HAVE attendance for this class in this month
+    // + plus active students currently in this class (for future days)
     const students = db.prepare(`
-        SELECT id, roll_no, student_name 
-        FROM students 
-        WHERE current_class = ? AND LOWER(status) = 'active'
-        ORDER BY roll_no ASC
-    `).all(class_name);
+        SELECT DISTINCT s.id, s.roll_no, s.student_name 
+        FROM students s
+        WHERE s.id IN (
+          SELECT student_id FROM student_attendance WHERE class_id = ? AND date LIKE ?
+          UNION
+          SELECT id FROM students WHERE TRIM(current_class) = TRIM(?) AND LOWER(status)='active'
+        )
+        ORDER BY CAST(s.roll_no AS INTEGER) ASC
+    `).all(class_id, `${yearMonth}%`, class_name);
 
     const attendance = db.prepare(`
         SELECT student_id, CAST(strftime('%d', date) AS INTEGER) as day, status 
         FROM student_attendance 
-        WHERE date LIKE ?
-    `).all(`${yearMonth}%`);
+        WHERE class_id = ? AND date LIKE ?
+    `).all(class_id, `${yearMonth}%`);
 
     return { students, attendance };
 };
@@ -1478,10 +1572,64 @@ function deleteExamCascade(data) {
         return { success: false, error: err.message };
     }
 }
-
+// ============ PROGRESS REPORT FIX ============
+const getGradingRules = () => {
+  return db.prepare(`SELECT * FROM grading_rules ORDER BY min_percentage DESC`).all();
+};
+const getPassingCriteria = (examId) => {
+  let c = db.prepare(`SELECT * FROM exam_passing_criteria WHERE exam_id = ?`).get(examId);
+  return c || { subject_pass_percentage: 40, overall_pass_percentage: 33, max_failed_subjects_allowed: 1 };
+};
+const savePassingCriteria = (examId, data) => {
+  return db.prepare(`
+    INSERT INTO exam_passing_criteria (exam_id, subject_pass_percentage, overall_pass_percentage, max_failed_subjects_allowed)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(exam_id) DO UPDATE SET subject_pass_percentage=excluded.subject_pass_percentage, overall_pass_percentage=excluded.overall_pass_percentage, max_failed_subjects_allowed=excluded.max_failed_subjects_allowed
+  `).run(examId, data.subject_pass_percentage, data.overall_pass_percentage, data.max_failed_subjects_allowed);
+};
+const getStudentProgress = (studentId) => {
+  return db.prepare(`
+    SELECT r.*, s.student_name, s.father_name, s.roll_no, s.registration_no, s.picture_path, s.section, r.class as class
+    FROM result r JOIN students s ON s.id = r.student_id
+    WHERE r.student_id = ? ORDER BY r.result_id DESC LIMIT 1
+  `).get(studentId);
+};
+const getAllStudentProgress = ({ examId, className }) => {
+  return db.prepare(`
+    SELECT r.*, s.student_name, s.father_name, s.roll_no, s.registration_no, s.picture_path, s.section, r.class as class
+    FROM result r JOIN students s ON s.id = r.student_id
+    WHERE r.exam_id = ? AND TRIM(r.class) = TRIM(?) ORDER BY r.total_obt DESC
+  `).all(examId, className);
+};
+const updateResultRemarks = (resultId, remarks) => {
+  return db.prepare(`UPDATE result SET remarks = ? WHERE result_id = ?`).run(remarks, resultId);
+};
 
 // Function to remove a specific question link from an exam paper layout template
+const getAcademySubjects = () => {
+  return db.prepare(`SELECT * FROM academy_subjects ORDER BY id ASC`).all();
+};
 
+const getStudentSubjectMarks = (resultId) => {
+  return db.prepare(`
+    SELECT ac.subject_display_name as display_name, ac.subject_code, m.marks_set, m.marks_obtained
+    FROM student_subject_marks m
+    JOIN academy_subjects ac ON ac.subject_code = m.subject_code
+    WHERE m.result_id =? AND m.marks_set > 0
+  `).all(resultId);
+};
+
+// Aur ek bulk wala taake progress report fast ho
+const getAllSubjectMarksBulk = (resultIds) => {
+  if(!resultIds.length) return [];
+  const placeholders = resultIds.map(()=>'?').join(',');
+  return db.prepare(`
+    SELECT m.result_id, ac.subject_display_name as display_name, m.marks_set, m.marks_obtained
+    FROM student_subject_marks m
+    JOIN academy_subjects ac ON ac.subject_code = m.subject_code
+    WHERE m.result_id IN (${placeholders}) AND m.marks_set > 0
+  `).all(...resultIds);
+};
 
 module.exports = {
     db, checkUser, addUser, getAllUsers, addClass, getClasses, deleteClass, updateClass, getStudentGridReport,
@@ -1497,5 +1645,7 @@ module.exports = {
     getStudentByReg,  saveStudentAttendance,deleteSingleQuestion,
     getStudentAttendanceByClass,getPaperSettings,deleteEntirePaper,
     saveStaffAttendance,uploadBulkQuestions, savePaperSettingsOnly,
-    getStaffAttendanceByDate, removeQuestionFromPaper, updateQuestionText, getQuestionById,deleteExamCascade
+    getStaffAttendanceByDate, removeQuestionFromPaper, updateQuestionText, getQuestionById,deleteExamCascade, getStudentAttendanceStatus, getStaffAttendanceStatus,
+    getAcademySubjects,getStudentSubjectMarks,getAllSubjectMarksBulk,
+    getGradingRules, getPassingCriteria, savePassingCriteria, getStudentProgress, getAllStudentProgress, getStudentByRegNo, updateResultRemarks
 };

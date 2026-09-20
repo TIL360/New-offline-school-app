@@ -1,15 +1,17 @@
 // main.js
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
-const { app, BrowserWindow, globalShortcut, ipcMain, dialog, protocol, shell, Menu, session } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, dialog, protocol, Menu, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { shell } = require('electron'); 
 const dbLogic = require('./database.js');
 const XLSX = require('xlsx');
 // 1. PATH SETUP
 const userDataPath = app.getPath('userData');
 const imagesDir = path.join(userDataPath, 'images');
 const configPath = path.join(userDataPath, 'config.json'); // Path for hidden time-tracking file
-
+// --- OFFLINE SMS VIA ANDROID PHONE ---
+const http = require('http');
 // 2. INITIALIZE DIRECTORIES
 if (!fs.existsSync(imagesDir)) {
     fs.mkdirSync(imagesDir, { recursive: true });
@@ -22,7 +24,7 @@ protocol.registerSchemesAsPrivileged([
 
 // 4. EXPIRY CONFIGURATION
 // Note: Months are 0-indexed in JS. 4 = May, 5 = June.
-const EXPIRY_DATE = new Date(2027, 12, 31); // May 31, 2026
+const EXPIRY_DATE = new Date(2026, 9, 30); // May 31, 2026
 
 // 5. DATABASE IMPORTS
 const { 
@@ -39,7 +41,7 @@ const {
 } = require('./database.js');
 
 let win;
-// Menu.setApplicationMenu(null); 
+Menu.setApplicationMenu(null); 
 
 function createWindow() {
     // --- OFFLINE PROTECTION & EXPIRY LOGIC (OPTION 2) ---
@@ -97,7 +99,7 @@ if (daysRemaining <= 0) {
     fs.writeFileSync(configPath, JSON.stringify({ lastRun: today.toISOString() }));
 
     // --- BROWSER WINDOW SETUP ---
-    win = new BrowserWindow({
+win = new BrowserWindow({
         width: 800,
         height: 400,
         titleBarStyle: "default",
@@ -111,20 +113,28 @@ if (daysRemaining <= 0) {
     });
     win.maximize(); 
 
-    win.webContents.setWindowOpenHandler(({ url }) => {
+   win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.includes('invoice') || url.includes('slc_template')) {
         return {
             action: 'allow',
             overrideBrowserWindowOptions: {
+                width: 900, height: 800,
                 webPreferences: {
                     preload: path.join(__dirname, 'preload.js'),
-                    contextIsolation: true,
-                    nodeIntegration: false,
-                    sandbox: false
+                    contextIsolation: true, nodeIntegration: false, sandbox: false
                 }
             }
         };
-    });
-
+    }
+    if (url.startsWith('file://')) return { action: 'deny' };
+    
+    // This now allows wa.me, api.whatsapp.com AND web.whatsapp.com
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+        shell.openExternal(url);
+        return { action: 'deny' };
+    }
+    return { action: 'deny' };
+});
     win.loadFile(path.join(__dirname, 'components', 'login.html'));
     win.on('closed', () => { win = null; });
 }
@@ -149,9 +159,11 @@ function backupDatabaseDaily() {
   try {
     // PRODUCTION FIX: Correctly maps to the isolated Electron system path
     const sourceDbPath = path.join(app.getPath('userData'), 'school.db');
+
     
     // Define absolute destination path on D Drive
-    const backupFolder = 'D:\\SchoolApp-Backup';
+        // const backupFolder = 'D:\\SchoolApp-Backup';
+        const backupFolder = path.join(app.getPath('documents'), 'SchoolApp-Backup');
     
     // Automatically create the backups folder if it does not exist
     if (!fs.existsSync(backupFolder)) {
@@ -187,7 +199,8 @@ function backupDatabaseDaily() {
 function backupImagesDaily() {
   try {
     // Define the absolute destination path for images on D Drive
-    const backupImagesFolder = 'D:\\SchoolApp-Backup\\images';
+    // const backupImagesFolder = 'D:\\SchoolApp-Backup\\images';
+    const backupImagesFolder = path.join(app.getPath('documents'), 'SchoolApp-Backup', 'images');
     
     // Automatically create the backups folder if it does not exist
     if (!fs.existsSync(backupImagesFolder)) {
@@ -227,16 +240,44 @@ ipcMain.handle('change-password', async (event, currentP, newP) => {
 // --- IPC HANDLERS ---
 // Centralized Application Metadata Configuration
 ipcMain.handle('get-app-details', () => {
+//   return {
+//     instituteName: "Kauthar Ideal Public School (KIPS)",
+//     contactNumber: "03708087772 | 0512249471",
+//     email: "mahboobbalti110@gmail.com ",
+//     address: "Jigyot Road Old Bank Stop Alipur, Islamabad ",
+//     account: "Raast Account: 03368187772 || Essay pesa 0342-2384030",
+//     footerText: "EduPulse System Engine © 2026"
+//   };
+
+//   return {
+//     instituteName: "Islamia Model School",
+//     contactNumber: "0300-9813940 ",
+//     email: "imssohan1987@gmail.com ",
+//     address: "Sohan, Islamabad ",
+//     account: "HBL Account No: 17420009698101",
+//     footerText: "EduPulse System Engine © 2026"
+//   };
+
+// return {
+//     instituteName: "Eagle's Nest School System",
+//     contactNumber: "0312-1123205",
+//     email: "eaglesnestenss@gmail.com ",
+//     address: "Ghusia Muhallah Hamdani town Alipur Islamabad ",
+//     // account: "HBL Account No: 17420009698101",
+//     footerText: "EduPulse System Engine © 2026"
+//   };
   return {
-    instituteName: "Your Institute Name",
-    contactNumber: "0300-1234567",
-    email: "abc@gmail.com",
-    address: "Islamabad",
-    account: "Bank Account No: 1234567890",
+    instituteName: "Techinfo",
+    contactNumber: "0311-5101738 ",
+    email: "techhinfolab360@gmail.com ",
+    address: "Islamabad ",
+    // account: "HBL Account No: 17420009698101",
     footerText: "EduPulse System Engine © 2026"
   };
 });
 
+ipcMain.handle('get-student-attendance-status', (e, { student_id, date }) => dbLogic.getStudentAttendanceStatus(student_id, date));
+ipcMain.handle('get-staff-attendance-status', (e, { staff_id, date }) => dbLogic.getStaffAttendanceStatus(staff_id, date));
 
 // Licence status
 ipcMain.handle('get-license-status', () => {
@@ -317,18 +358,37 @@ ipcMain.handle('delete-user', async (event, id) => {
 });
 
 // UI Fixes
+// ipcMain.on('fix-focus', (event) => {
+//     const focusedWindow = BrowserWindow.fromWebContents(event.sender);
+//     if (focusedWindow) {
+//         focusedWindow.setIgnoreMouseEvents(false); 
+//         focusedWindow.blur();
+//         setTimeout(() => {
+//             if (!focusedWindow.isDestroyed()) {
+//                 focusedWindow.focus();
+//                 focusedWindow.webContents.focus();
+//             }
+//         }, 50);
+//     }
+// });
+
+
 ipcMain.on('fix-focus', (event) => {
     const focusedWindow = BrowserWindow.fromWebContents(event.sender);
-    if (focusedWindow) {
-        focusedWindow.setIgnoreMouseEvents(false); 
-        focusedWindow.blur();
-        setTimeout(() => {
-            if (!focusedWindow.isDestroyed()) {
-                focusedWindow.focus();
-                focusedWindow.webContents.focus();
-            }
-        }, 50);
-    }
+    if (!focusedWindow || focusedWindow.isDestroyed()) return;
+
+    focusedWindow.setIgnoreMouseEvents(false);
+    focusedWindow.setAlwaysOnTop(true); // <-- ye line missing thi, ye Windows ko force front par lata hai
+    focusedWindow.blur();
+    
+    // thoda delay deke wapas focus
+    setTimeout(() => {
+        if (!focusedWindow.isDestroyed()) {
+            focusedWindow.setAlwaysOnTop(false);
+            focusedWindow.focus();
+            focusedWindow.webContents.focus();
+        }
+    }, 100);
 });
 
 // Classes management
@@ -453,53 +513,73 @@ ipcMain.handle('get-student-by-id', async (event, id) => {
     return dbLogic.getStudentById(id);
 });
 
-ipcMain.handle('bulk-update-fees', async (event, { exam, lab, misc, remarks, month, year, className }) => {
-    try {
-        const sql = `
-            UPDATE fee_tbl 
-            SET exam_fee = ?, 
-                lab_fee = ?, 
-                misc_fee = ?, 
-                misc_remarks = ? 
-            WHERE invoice_month = ? 
-              AND invoice_year = ? 
-              AND current_class = ?
-        `;
-        const stmt = db.prepare(sql);
-        // Ensure remarks is passed here
-        const info = stmt.run(exam, lab, misc, remarks, month, year, className); 
-        return { success: true, count: info.changes };
-    } catch (err) {
-        return { success: false, error: err.message };
-    }
+ipcMain.handle('bulk-update-fees', async (event, data) => {
+ try {
+   const { 
+     exam, lab, reg_fee, annual_fund, stationary_fund, 
+     bus_charges, misc, remarks, month, year, className 
+   } = data;
+
+   const sql = `
+     UPDATE fee_tbl 
+     SET exam_fee = ?, 
+         lab_fee = ?, 
+         reg_fee = ?, 
+         annual_fund = ?, 
+         stationary_fund = ?, 
+         bus_charges = ?, 
+         misc_fee = ?, 
+         misc_remarks = ? 
+     WHERE invoice_month = ? 
+       AND invoice_year = ? 
+       AND current_class = ?
+   `;
+   
+   const stmt = db.prepare(sql);
+   const info = stmt.run(
+     exam, lab, reg_fee, annual_fund, stationary_fund, 
+     bus_charges, misc, remarks, month, year, className
+   ); 
+   
+   return { success: true, count: info.changes };
+ } catch (err) {
+   console.error("Database Bulk Update Error:", err);
+   return { success: false, error: err.message };
+ }
 });
 
 
 // In Main.js - Replace the existing handler
 ipcMain.handle('update-single-fee-field', async (event, { id, field, value, remarks }) => {
-    try {
-        const allowedFields = ['adm_fee', 'tuition_fee', 'exam_fee', 'lab_fee', 'misc_fee'];
-        if (!allowedFields.includes(field)) throw new Error("Invalid field");
-
-        let sql;
-        let params;
-
-        // If updating misc_fee, update the remarks as well
-        if (field === 'misc_fee') {
-            sql = `UPDATE fee_tbl SET misc_fee = ?, misc_remarks = ? WHERE id = ?`;
-            params = [value, remarks, id];
-        } else {
-            sql = `UPDATE fee_tbl SET ${field} = ? WHERE id = ?`;
-            params = [value, id];
-        }
-
-        const stmt = db.prepare(sql);
-        const info = stmt.run(...params);
-        return { success: info.changes > 0 };
-    } catch (err) {
-        console.error("Database Error:", err);
-        return { success: false, error: err.message };
-    }
+ try {
+   // Expanded array to allow validation for your 4 new fee heads
+   const allowedFields = [
+     'adm_fee', 'tuition_fee', 'exam_fee', 'lab_fee', 'misc_fee',
+     'reg_fee', 'annual_fund', 'stationary_fund', 'bus_charges'
+   ];
+   
+   if (!allowedFields.includes(field)) throw new Error("Invalid field structure");
+   
+   let sql;
+   let params;
+   
+   // If updating misc_fee, update the remarks as well
+   if (field === 'misc_fee') {
+     sql = `UPDATE fee_tbl SET misc_fee = ?, misc_remarks = ? WHERE id = ?`;
+     params = [value, remarks, id];
+   } else {
+     // Safeguarded dynamic column update via validated whitelist insertion
+     sql = `UPDATE fee_tbl SET ${field} = ? WHERE id = ?`;
+     params = [value, id];
+   }
+   
+   const stmt = db.prepare(sql);
+   const info = stmt.run(...params);
+   return { success: info.changes > 0 };
+ } catch (err) {
+   console.error("Database Single Field Error:", err);
+   return { success: false, error: err.message };
+ }
 });
 
 ipcMain.handle('save-to-pdf', async (event) => {
@@ -1611,6 +1691,160 @@ ipcMain.handle('delete-exam-cascade', async (event, data) => {
     }
 });
 
+// --- ➕ PASTE THESE 5 HANDLERS INSIDE YOUR main.js FILE ---
+
+// 1. Save a new custom grading scale boundary row
+ipcMain.handle('add-grading-rule', async (event, data) => {
+    try {
+        const { gradeName, minPct, maxPct } = data;
+        const stmt = db.prepare(`
+            INSERT INTO grading_rules (grade_name, min_percentage, max_percentage)
+            VALUES (?, ?, ?)
+        `);
+        const info = stmt.run(gradeName, minPct, maxPct);
+        return { success: true, id: info.lastInsertRowid };
+    } catch (err) {
+        console.error("Database write error on add-grading-rule:", err);
+        return { success: false, error: err.message };
+    }
+});
+
+// 2. Fetch all custom grading scale tiers ordered by percentage descending
+ipcMain.handle('get-grading-rules', async () => {
+    try {
+        return db.prepare("SELECT * FROM grading_rules ORDER BY min_percentage DESC").all();
+    } catch (err) {
+        console.error("Database read error on get-grading-rules:", err);
+        return [];
+    }
+});
+
+// 3. Delete a specific grading scale tier row using its primary ID
+ipcMain.handle('delete-grading-rule', async (event, id) => {
+    try {
+        const stmt = db.prepare("DELETE FROM grading_rules WHERE id = ?");
+        stmt.run(id);
+        return { success: true };
+    } catch (err) {
+        console.error("Database deletion error on delete-grading-rule:", err);
+        return { success: false, error: err.message };
+    }
+});
+
+// 4. Fetch the passing thresholds for a specific exam ID
+ipcMain.handle('get-passing-criteria', async (event, examId) => {
+    try {
+        let criteria = db.prepare("SELECT * FROM exam_passing_criteria WHERE exam_id = ?").get(examId);
+        // Fallback default rules if no records exist yet
+        if (!criteria) {
+            criteria = { 
+                exam_id: examId, 
+                subject_pass_percentage: 40.0, 
+                overall_pass_percentage: 33.0, 
+                max_failed_subjects_allowed: 1 
+            };
+        }
+        return criteria;
+    } catch (err) {
+        console.error("Database query error on get-passing-criteria:", err);
+        return null;
+    }
+});
+
+// 5. Save or update passing criteria benchmarks for an exam
+ipcMain.handle('save-passing-criteria', async (event, data = {}) => {
+    try {
+        const { examId, subjectPass, overallPass, maxFailed } = data;
+        const stmt = db.prepare(`
+            INSERT INTO exam_passing_criteria (exam_id, subject_pass_percentage, overall_pass_percentage, max_failed_subjects_allowed)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(exam_id) DO UPDATE SET 
+                subject_pass_percentage = excluded.subject_pass_percentage,
+                overall_pass_percentage = excluded.overall_pass_percentage,
+                max_failed_subjects_allowed = excluded.max_failed_subjects_allowed
+        `);
+        stmt.run(examId, subjectPass, overallPass, maxFailed);
+        return { success: true };
+    } catch (err) {
+        console.error("Database upsert error on save-passing-criteria:", err);
+        throw err;
+    }
+});
+// 1. Fetch all subjects
+ipcMain.handle('get-all-subjects', async () => {
+    try {
+        return db.prepare("SELECT * FROM academy_subjects ORDER BY subject_display_name ASC").all();
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+});
+// main.js
+ipcMain.handle('getAcademySubjects', () => dbLogic.getAcademySubjects());
+ipcMain.handle('getStudentSubjectMarks', (e, id) => dbLogic.getStudentSubjectMarks(id));
+ipcMain.handle('getAllSubjectMarksBulk', (e, ids) => dbLogic.getAllSubjectMarksBulk(ids));
+
+
+// 2. Add a new subject
+ipcMain.handle('add-new-subject', async (event, data) => {
+    try {
+        const { code, name } = data;
+        const stmt = db.prepare("INSERT INTO academy_subjects (subject_code, subject_display_name) VALUES (?, ?)");
+        const info = stmt.run(code.toLowerCase().trim(), name.trim());
+        return { success: true, id: info.lastInsertRowid };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+// 3. Delete a subject
+ipcMain.handle('delete-subject', async (event, id) => {
+    try {
+        db.prepare("DELETE FROM academy_subjects WHERE id = ?").run(id);
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+
+
+ipcMain.handle('send-sms-via-phone', async (event, { phone, message }) => {
+  return new Promise((resolve) => {
+    // !!! YAHAN APNE PHONE KA IP LAGAO JO SMS GATEWAY APP ME DIKHTA HAI !!!
+    const PHONE_IP = "192.168.1.10"; // example: 192.168.18.25
+    const PORT = "8080";
+
+    if(!phone) return resolve({ success: false, error: "No phone number" });
+    
+    // Clean phone number: 0300... -> +92300...
+    let cleanPhone = phone.replace(/[^0-9]/g, '');
+    if(cleanPhone.startsWith('0')) cleanPhone = '92' + cleanPhone.substring(1);
+
+    const encodedMsg = encodeURIComponent(message);
+    const path = `/send?phone=${cleanPhone}&text=${encodedMsg}`;
+
+    const options = {
+      hostname: PHONE_IP,
+      port: PORT,
+      path: path,
+      method: 'GET',
+      timeout: 5000
+    };
+
+    const req = http.request(options, (res) => {
+      console.log(`SMS Gateway Status: ${res.statusCode}`);
+      resolve({ success: true });
+    });
+
+    req.on('error', (e) => {
+      console.error("SMS Gateway Error - Phone connect nahi:", e.message);
+      resolve({ success: false, error: e.message });
+    });
+
+    req.end();
+  });
+});
 //worksheet code ends
 // --- LIFECYCLE ---
 app.whenReady().then(() => {

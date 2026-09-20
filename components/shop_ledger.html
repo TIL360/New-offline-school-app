@@ -3,456 +3,132 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="../assets/css/bootstrap.min.css" rel="stylesheet" />
     <title>School Accounts Ledger</title>
     <style>
         :root {
-            --bg-color: #f4f6f9;
-            --container-bg: #ffffff;
-            --primary: #003049;
-            --primary-hover: #004b73;
-            --accent-red: #d62828;
-            --text-main: #2b2d42;
-            --text-muted: #6c757d;
-            --border-color: #dee2e6;
-            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-            --shadow-md: 0 10px 25px rgba(0,0,0,0.08);
+            --bg-color: #f4f6f9; --container-bg: #ffffff; --primary: #003049;
+            --accent-red: #d62828; --text-main: #2b2d42; --text-muted: #6c757d; --border-color: #dee2e6;
+            --school-red: #b01e1e; --shadow-sm: 0 2px 4px rgba(0,0,0,0.05); --shadow-md: 0 10px 25px rgba(0,0,0,0.08);
         }
-.btn-pdf-action:hover {
-    background-color: var(--accent-red-hover) !important;
-}
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 30px 20px;
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .top-nav {
-            width: 100%;
-            max-width: 1200px;
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .nav-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            color: var(--primary);
-            background: var(--container-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-        }
-
-        .nav-btn:hover {
-            color: white;
-            background-color: var(--primary);
-            border-color: var(--primary);
-            transform: translateY(-1px);
-        }
-
-        .ledger-container {
-            width: 100%;
-            max-width: 1200px;
-            background-color: var(--container-bg);
-            border-radius: 12px;
-            box-shadow: var(--shadow-md);
-            padding: 30px;
-            box-sizing: border-box;
-        }
-
-        .header-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--bg-color);
-        }
-
-        h2 {
-            margin: 0;
-            color: var(--primary);
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .controls-panel {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-        }
-
-        .controls-panel label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin: 0;
-        }
-
-        select {
-            padding: 8px 14px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 14px;
-            background-color: white;
-            outline: none;
-            height: 38px;
-        }
-
-        .summary-banner {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .summary-card {
-            background: #f8f9f9;
-            border: 1px solid var(--border-color);
-            padding: 18px 22px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .summary-card .card-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .summary-card .card-value {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .summary-card.fees .card-value { color: #2e7d32; }
-        .summary-card.salaries .card-value { color: var(--accent-red); }
-        .summary-card.expenses .card-value { color: #f57f17; }
-
-        .table-responsive {
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        th {
-            background-color: #f8f9f9;
-            color: var(--text-main);
-            font-weight: 600;
-            font-size: 14px;
-            padding: 14px 18px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        td {
-            padding: 14px 18px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-            color: #4a4a4a;
-            background-color: #ffffff;
-        }
-
-        tr:hover td { background-color: #fdfdfd; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-color); margin: 0; padding: 30px 20px; color: var(--text-main); display: flex; flex-direction: column; align-items: center; }
+        .top-nav { width: 100%; max-width: 1200px; display: flex; gap: 12px; margin-bottom: 20px; }
+        .nav-btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; font-size: 14px; font-weight: 600; text-decoration: none; color: var(--primary); background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; }
+        .ledger-container { width: 100%; max-width: 1200px; background: var(--container-bg); border-radius: 12px; box-shadow: var(--shadow-md); padding: 30px; }
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid var(--bg-color); }
+        h2 { margin: 0; color: var(--primary); font-size: 24px; font-weight: 700; }
+        .controls-panel { display: flex; align-items: center; gap: 15px; background: #f8f9fa; padding: 15px 20px; border-radius: 10px; border: 1px solid var(--border-color); }
+        .controls-panel label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+        select { padding: 8px 14px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; height: 38px; }
+        .summary-banner { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .summary-card { background: #f8f9f9; border: 1px solid var(--border-color); padding: 18px 22px; border-radius: 8px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm); }
+        .summary-card .card-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+        .summary-card .card-value { font-size: 20px; font-weight: 700; }
+        .summary-card.fees .card-value { color: #2e7d32; } .summary-card.salaries .card-value { color: var(--accent-red); }
+        .summary-card.expenses .card-value { color: #f57f17; } .summary-card.profit .card-value.profit-pos { color: #2e7d32; } .summary-card.profit .card-value.profit-neg { color: var(--accent-red); }
+        .table-responsive { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9f9; font-weight: 600; font-size: 14px; padding: 14px 18px; border-bottom: 2px solid var(--border-color); }
+        td { padding: 14px 18px; border-bottom: 1px solid var(--border-color); font-size: 14px; background: #fff; }
         .text-right { text-align: right; }
+        .badge { padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-fee { background: #e8f5e9; color: #2e7d32; } .badge-salary { background: #ffebee; color: #c62828; } .badge-expense { background: #fff8e1; color: #f57f17; }
+        .print-header { display: none; } .small-logo { height: 50px; margin-right: 10px; vertical-align: middle; }
+        .col-balance { display: none; }
 
-        .badge {
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
+        /* === PORTRAIT PRINT FIX - ONLY SHEET PRINTS === */
+        @media print {
+            @page { size: A4 portrait; margin: 10mm 8mm; }
+            body { background: white!important; padding: 0!important; margin: 0!important; display: block!important; }
+            .no-print { display: none!important; }
+            .ledger-container { box-shadow: none!important; padding: 0!important; max-width: 100%!important; width: 100%!important; border-radius: 0!important; }
+            .print-header { display: flex!important; align-items: center; justify-content: center; border-bottom: 2.5px solid #000; padding-bottom: 10px; margin-bottom: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-header h1 { color: var(--school-red); font-size: 26px; text-transform: uppercase; display: flex; align-items: center; margin: 0; font-weight: 800; }
+            body::before {
+                content: ""; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                width: 480px; height: 480px; background-image: url('../images/logo.png');
+                background-repeat: no-repeat; background-position: center; background-size: contain;
+                opacity: 0.07; z-index: 9999; pointer-events: none; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            }
+            #printArea { position: relative; }
+            .table-responsive { border: none!important; overflow: visible!important; }
+            .col-desc { display: none!important; } /* No Description in PDF */
+            .col-balance { display: table-cell!important; } /* Running Balance only in PDF */
+            .summary-banner { grid-template-columns: 1fr 1fr!important; gap: 10px!important; }
+            th, td { font-size: 11px!important; padding: 7px 8px!important; }
+            tr { page-break-inside: avoid; } thead { display: table-header-group; }
         }
-        .badge-fee { background-color: #e8f5e9; color: #2e7d32; }
-        .badge-salary { background-color: #ffebee; color: #c62828; }
-        .badge-expense { background-color: #fff8e1; color: #f57f17; }
-        /* Custom Header element for Print view only (hidden on screen) */
-#print-only-header {
-    display: none;
-    text-align: center;
-    margin-bottom: 25px;
-    color: #003049;
-    border-bottom: 3px double #333;
-    padding-bottom: 10px;
-}
-
-/* Print Specific Rules */
-@media print {
-    /* 1. Force Landscape orientation */
-    @page {
-        size: landscape;
-        margin: 15mm;
-    }
-
-    body {
-        background-color: #fff !important;
-        padding: 0 !important;
-    }
-
-    .ledger-container {
-        box-shadow: none !important;
-        padding: 0 !important;
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-
-    /* 2. Hide all buttons and filter control panel elements completely */
-    .top-nav, 
-    .controls-panel,
-    .btn-pdf-action,
-    h2 {
-        display: none !important;
-    }
-
-    /* 3. Display the clean printable title row */
-    #print-only-header {
-        display: block !important;
-    }
-    
-    /* Ensure tables stretch edge-to-edge clean */
-    table {
-        width: 100% !important;
-        page-break-inside: auto;
-    }
-    tr { page-break-inside: avoid; page-break-after: auto; }
-}
-
     </style>
 </head>
 <body>
 
-<div class="top-nav">
+<div class="top-nav no-print">
     <button class="nav-btn" onclick="window.history.back()">⬅️ Back</button>
     <a href="./dashboard.html" class="nav-btn">📊 Dashboard</a>
 </div>
 
 <div class="ledger-container">
-    <div class="header-section">
-        
-        <div class="controls-panel">
-    <label for="monthSelect">Period:</label>
-    <select id="monthSelect" onchange="generateSchoolLedger()">
-        <option value="January">January</option>
-        <option value="February">February</option>
-        <option value="March">March</option>
-        <option value="April">April</option>
-        <option value="May">May</option>
-        <option value="June" selected>June</option>
-        <option value="July">July</option>
-        <option value="August">August</option>
-        <option value="September">September</option>
-        <option value="October">October</option>
-        <option value="November">November</option>
-        <option value="December">December</option>
-    </select>
-    <select id="yearSelect" onchange="generateSchoolLedger()">
-        <option value="2025">2025</option>
-        <option value="2026" selected>2026</option>
-        <option value="2027">2027</option>
-    </select>
-
-    <!-- NEW: Print / Save PDF Button Entry -->
-    <button class="btn-pdf-action" onclick="window.api.saveToPdf()" style="margin-left: 10px; padding: 8px 16px; background-color: var(--accent-red); color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background-color 0.2s;">
-        🖨️ Save PDF / Print
-    </button>
-</div>
-
-    </div>
-
-    <!-- School Financial Overview Counters -->
-     <div class="ledger-container">
-    <div class="header-section">
+    <div class="header-section no-print">
         <h2>📋 School Accounts Ledger</h2>
-        <!-- Keep your controls-panel div here -->
-    </div>
-
-    <!-- NEW: Dynamic Title injected for your print layout outputs -->
-    <div id="print-only-header">
-        <h1 style="margin: 0 0 5px 0; font-size: 26px;">School Accounts Ledger</h1>
-        <h3 id="print-heading-month" style="margin: 0; font-size: 18px; font-weight: 500; color: #555;">Account Ledger for the Month of June 2026</h3>
-    </div>
-
-    <!-- Your existing summary-banner div grid matches below -->
-    <div class="summary-banner">
-
-        <div class="summary-card fees">
-            <span class="card-title">Fee Collections (+)</span>
-            <span class="card-value" id="labelTotalFees">Rs. 0.00</span>
-        </div>
-        <div class="summary-card salaries">
-            <span class="card-title">Staff Salaries Paid (-)</span>
-            <span class="card-value" id="labelTotalSalaries">Rs. 0.00</span>
-        </div>
-        <div class="summary-card expenses">
-            <span class="card-title">General Expenses (-)</span>
-            <span class="card-value" id="labelTotalExpenses">Rs. 0.00</span>
+        <div class="controls-panel">
+            <label>Period:</label>
+            <select id="monthSelect" onchange="generateSchoolLedger()">
+                <option value="January">January</option><option value="February">February</option><option value="March">March</option><option value="April">April</option><option value="May">May</option><option value="June">June</option><option value="July">July</option><option value="August">August</option><option value="September" selected>September</option><option value="October">October</option><option value="November">November</option><option value="December">December</option>
+            </select>
+            <select id="yearSelect" onchange="generateSchoolLedger()"><option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option></select>
+            <button onclick="window.print()" style="margin-left:10px;padding:8px 16px;background:var(--accent-red);color:white;border:none;border-radius:6px;font-weight:700;cursor:pointer;height:38px;">🖨️ Save PDF / Print</button>
         </div>
     </div>
 
-    <!-- Statement View Spreadsheet Table -->
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Transaction Type</th>
-                    <th>Description / Account Details</th>
-                    <th class="text-right">Revenue In (+)</th>
-                    <th class="text-right">Expense Out (-)</th>
-                </tr>
-            </thead>
-            <tbody id="schoolLedgerBody">
-                <tr>
-                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">Compiling school financial ledger records...</td>
-                </tr>
-            </tbody>
-        </table>
+    <div id="printArea">
+        <div class="print-header"><h1 class="dynamic-institute-title"><img src="../images/logo.png" class="small-logo"> TECHINFO</h1></div>
+        <div id="print-month-title" style="text-align:center; font-weight:600; margin-bottom:12px; font-size:14px;"></div>
+
+        <div class="summary-banner">
+            <div class="summary-card fees"><span class="card-title">Fee Collections (+)</span><span class="card-value" id="labelTotalFees">Rs. 0.00</span></div>
+            <div class="summary-card salaries"><span class="card-title">Staff Salaries Paid (-)</span><span class="card-value" id="labelTotalSalaries">Rs. 0.00</span></div>
+            <div class="summary-card expenses"><span class="card-title">General Expenses (-)</span><span class="card-value" id="labelTotalExpenses">Rs. 0.00</span></div>
+            <div class="summary-card profit"><span class="card-title">Profit / Loss</span><span class="card-value" id="labelProfitLoss">Rs. 0.00</span></div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ser</th><th>Date</th><th>Transaction Type</th><th class="col-desc">Description / Account Details</th><th class="text-right">Revenue In (+)</th><th class="text-right">Expense Out (-)</th><th class="text-right col-balance">Running Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="schoolLedgerBody"><tr><td colspan="7" style="text-align:center;padding:30px;">Loading...</td></tr></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    generateSchoolLedger();
-});
-
-async function generateSchoolLedger() {
-    const selectedMonth = document.getElementById('monthSelect').value; 
-    const selectedYear = document.getElementById('yearSelect').value;
-    const tbody = document.getElementById('schoolLedgerBody');
-    tbody.innerHTML = '';
-    
-    try {
-        // 1. Fetch data from your actual school tables via IPC handles
-        const feeRecords = await window.api.getFeeRecordsFilters({ month: selectedMonth, year: selectedYear }) || [];
-        const salariesHistory = await window.api.getSalaries(selectedMonth, selectedYear) || [];
-        
-        // Fetch general expenses (Fallback to empty array if no explicit filter API method exists yet)
-        let expensesHistory = [];
-        if (window.api.getExpenses) {
-            expensesHistory = await window.api.getExpenses({ month: selectedMonth, year: selectedYear }) || [];
-        }
-
-        let totalFees = 0;
-        let totalSalaries = 0;
-        let totalExpenses = 0;
-        let ledgerRows = [];
-
-        // 2. Process Student Fee Collections (Revenue In)
-        feeRecords.forEach(fee => {
-            const amount = parseFloat(fee.collection || 0);
-            if (amount > 0) {
-                totalFees += amount;
-                ledgerRows.push({
-                    date: fee.collection_date || 'N/A',
-                    badge: 'badge-fee',
-                    type: 'FEE COLLECTION',
-                    desc: `Reg No: ${fee.registration_no} | Class: ${fee.current_class || 'N/A'} - Student Fee Received from ${fee.student_name || 'Student'}`,
-                    in: `Rs. ${amount.toFixed(2)}`,
-                    out: '-'
-                });
-            }
-        });
-
-        // 3. Process Disbursed Staff Salaries (Expense Out)
-         salariesHistory.forEach(sal => {
-            if (sal.status === 'Paid') {
-                const salaryAmt = parseFloat(sal.salary || 0);
-                totalSalaries += salaryAmt;
-
-                // Dynamically convert month text to a 2-digit number for clean YYYY-MM-DD format
-                const monthMap = {
-                    January:'01', February:'02', March:'03', April:'04', May:'05', June:'06',
-                    July:'07', August:'08', September:'09', October:'10', November:'11', December:'12'
-                };
-                const monthNum = monthMap[selectedMonth] || '01';
-                const formattedSalaryDate = `${selectedYear}-${monthNum}-01`; // Defaults cleanly to the 1st of that month
-
-                ledgerRows.push({
-                    date: formattedSalaryDate, 
-                    badge: 'badge-salary',
-                    type: 'STAFF SALARY',
-                    desc: `Salary Disbursed to ${sal.name || 'Employee'} (${sal.designation || 'Staff'})`,
-                    in: '-',
-                    out: `Rs. ${salaryAmt.toFixed(2)}`
-                });
-            }
-        });
-        // 4. Process General Expenses (Expense Out)
-        expensesHistory.forEach(exp => {
-            const expAmt = parseFloat(exp.exp_amount || 0);
-            totalExpenses += expAmt;
-            ledgerRows.push({
-                date: exp.created_at ? exp.created_at.split(' ')[0] : 'N/A',
-                badge: 'badge-expense',
-                type: 'SCHOOL EXPENSE',
-                desc: exp.expence || 'General Voucher Expense',
-                in: '-',
-                out: `Rs. ${expAmt.toFixed(2)}`
-            });
-        });
-
-        // Render rows to screen
-        if (ledgerRows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">No transaction records found for ${selectedMonth} ${selectedYear}.</td></tr>`;
-        } else {
-            ledgerRows.forEach(row => {
-                appendLedgerRow(row.date, row.badge, row.type, row.desc, row.in, row.out);
-            });
-        }
-
-        // Update Account Cards
-        document.getElementById('labelTotalFees').textContent = `Rs. ${totalFees.toFixed(2)}`;
-        document.getElementById('labelTotalSalaries').textContent = `Rs. ${totalSalaries.toFixed(2)}`;
-        document.getElementById('labelTotalExpenses').textContent = `Rs. ${totalExpenses.toFixed(2)}`;
-    } catch (error) {
-        console.error("Ledger rendering error:", error);
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--accent-red); padding: 30px; font-weight: bold;">Error compiling school financial reports.</td></tr>`;
-    }
-}
-
-function appendLedgerRow(dateStr, badgeClass, type, desc, inAmount, outAmount) {
-    const tbody = document.getElementById('schoolLedgerBody');
-    const row = document.createElement('tr');
-
-    row.innerHTML = `
-        <td><strong>${dateStr}</strong></td>
-        <td><span class="badge ${badgeClass}">${type}</span></td>
-        <td>${desc}</td>
-        <td class="text-right" style="color: #2e7d32; font-weight: 700;">${inAmount}</td>
-        <td class="text-right" style="color: #c62828; font-weight: 700;">${outAmount}</td>
-    `;
-    tbody.appendChild(row);
+document.addEventListener('DOMContentLoaded',()=>{applyCentralAppDetails(); generateSchoolLedger();});
+async function applyCentralAppDetails(){try{if(window.api&&window.api.getAppDetails){const d=await window.api.getAppDetails();document.querySelectorAll('.dynamic-institute-title').forEach(el=>{el.innerHTML=`<img src="../images/logo.png" class="small-logo">${d.instituteName||'TECHINFO'}`;});}}catch(e){}}
+async function generateSchoolLedger(){
+    const month=document.getElementById('monthSelect').value; const year=document.getElementById('yearSelect').value;
+    const tbody=document.getElementById('schoolLedgerBody');
+    document.getElementById('print-month-title').textContent=`Account Ledger for the Month of ${month} ${year}`;
+    tbody.innerHTML='';
+    try{
+        const feeRecords=await window.api.getFeeRecordsFilters({month,year})||[];
+        const salariesHistory=await window.api.getSalaries(month,year)||[];
+        let expensesHistory=[]; if(window.api.getExpenses) expensesHistory=await window.api.getExpenses({month,year})||[];
+        let totalFees=0,totalSalaries=0,totalExpenses=0; let rows=[];
+        feeRecords.forEach(f=>{const a=parseFloat(f.collection||0); if(a>0){totalFees+=a; rows.push({raw:f.collection_date||`${year}-09-01`,date:f.collection_date||'N/A',badge:'badge-fee',type:'FEE COLLECTION',desc:`Reg ${f.registration_no} ${f.student_name}`,inN:a,outN:0,inS:`Rs. ${a.toFixed(2)}`,outS:'-'});}});
+        salariesHistory.forEach(s=>{if(s.status==='Paid'){const a=parseFloat(s.salary||0); totalSalaries+=a; const m={January:'01',February:'02',March:'03',April:'04',May:'05',June:'06',July:'07',August:'08',September:'09',October:'10',November:'11',December:'12'}; const fd=`${year}-${m[month]||'01'}-01`; rows.push({raw:fd,date:fd,badge:'badge-salary',type:'STAFF SALARY',desc:`${s.name}`,inN:0,outN:a,inS:'-',outS:`Rs. ${a.toFixed(2)}`});}});
+        expensesHistory.forEach(e=>{const a=parseFloat(e.exp_amount||0); totalExpenses+=a; const d=e.created_at?e.created_at.split(' ')[0]:`${year}-09-01`; rows.push({raw:d,date:d,badge:'badge-expense',type:'SCHOOL EXPENSE',desc:e.expence||'Expense',inN:0,outN:a,inS:'-',outS:`Rs. ${a.toFixed(2)}`});});
+        rows.sort((a,b)=>new Date(a.raw)-new Date(b.raw));
+        if(rows.length===0){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:30px;">No records</td></tr>`;}
+        else{let run=0; rows.forEach((r,i)=>{run+=r.inN-r.outN; const tr=document.createElement('tr'); tr.innerHTML=`<td><strong>${i+1}</strong></td><td><strong>${r.date}</strong></td><td><span class="badge ${r.badge}">${r.type}</span></td><td class="col-desc">${r.desc}</td><td class="text-right" style="color:#2e7d32;font-weight:700;">${r.inS}</td><td class="text-right" style="color:#c62828;font-weight:700;">${r.outS}</td><td class="text-right col-balance" style="font-weight:800;">Rs. ${run.toFixed(2)}</td>`; tbody.appendChild(tr);});}
+        document.getElementById('labelTotalFees').textContent=`Rs. ${totalFees.toFixed(2)}`;
+        document.getElementById('labelTotalSalaries').textContent=`Rs. ${totalSalaries.toFixed(2)}`;
+        document.getElementById('labelTotalExpenses').textContent=`Rs. ${totalExpenses.toFixed(2)}`;
+        const profit=totalFees-totalSalaries-totalExpenses; const el=document.getElementById('labelProfitLoss');
+        el.textContent=`${profit<0?'-':''}Rs. ${Math.abs(profit).toFixed(2)} ${profit>=0?'(Profit)':'(Loss)'}`; el.className=`card-value ${profit>=0?'profit-pos':'profit-neg'}`;
+    }catch(err){console.error(err); tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;color:red;padding:30px;">Error</td></tr>`;}
 }
 </script>
-
 </body>
 </html>

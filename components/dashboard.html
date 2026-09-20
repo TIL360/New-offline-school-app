@@ -238,7 +238,7 @@ License Status: <span id="license-info">Validity Period: </span>
     <div class="stat-card" id="cardStaff">
         <div class="icon-box" style="background: #e0f2fe;">👔</div>
         <div class="stat-info">
-            <small>Active Staff</small>
+            <small>Staff</small>
             <div id="statActiveStaff">0</div>
         </div>
     </div>
@@ -352,43 +352,47 @@ License Status: <span id="license-info">Validity Period: </span>
 </div>
 </div>
 <script>
-    document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-      // 1. Invoke the IPC handler exposed in preload.js
-      const details = await window.api.getAppDetails();
-      
-      // 2. Safely populate the text values into your HTML layout elements
-      if (details) {
-        document.getElementById('institute-name').innerText = details.instituteName;
-        document.getElementById('contact-number').innerText = details.contactNumber;
-        document.getElementById('email-address').innerText  = details.email;
-        document.getElementById('footer-text').innerText     = details.footerText;
-      }
+        const details = await window.api.getAppDetails();
+        if (details) {
+            const instEl = document.getElementById('institute-name');
+            const phoneEl = document.getElementById('contact-number');
+            const emailEl = document.getElementById('email-address');
+            const footerEl = document.getElementById('footer-text');
+
+            if (instEl) instEl.innerText = details.instituteName;
+            if (phoneEl) phoneEl.innerText = details.contactNumber;
+            if (emailEl) emailEl.innerText = details.email;
+            if (footerEl) footerEl.innerText = details.footerText;
+        }
     } catch (error) {
-      console.error("Failed to load application metadata details:", error);
+        console.error("Failed to load application metadata details:", error);
     }
-  });
-const SYNC_URL = 'http://localhost/website/sync_stats.php';
+});
+
+  // const SYNC_URL = 'http://localhost/website/sync_stats.php';
 
 async function syncToWebsite(stats) {
-  if (!navigator.onLine) return;
-  try {
-    await fetch(SYNC_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        students: stats.activeStudents || 0,
-        receivables: stats.receivables || 0,
-        balance: stats.balance || 0,
-        salaries: stats.salaries || 0,
-        fee_received: stats.feeReceived || 0,
-        expenses: stats.expenses || 0
-      })
-    });
-    console.log("📁 MySQL Website Synced");
-  } catch (err) {
-    console.error("📁 Sync Error:", err);
-  }
+    if (!navigator.onLine) return; 
+    try {
+        await fetch(SYNC_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                students: stats.activeStudents || 0,
+                receivables: stats.receivables || 0,
+                balance: stats.balance || 0,
+                salaries: stats.salaries || 0,
+                fee_received: stats.feeReceived || 0,
+                expenses: stats.expenses || 0
+            })
+        });
+        console.log("MySQL Website Synced");
+    } catch (err) {
+        // MOVE THIS INSIDE THE CATCH BLOCK
+        // console.warn("Sync destination unreachable (Local server offline).");
+    }
 }
 
 window.addEventListener('online', loadStats);

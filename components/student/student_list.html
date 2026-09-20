@@ -52,8 +52,37 @@
         .btn-inactive-view { background: var(--danger); color: white; }
         .table-container { background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #f8fafc; padding: 12px; text-align: left; font-size: 11px; color: #64748b; text-transform: uppercase; border-bottom: 2px solid var(--border); }
-        td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        /* NEW BEAUTIFUL HEADINGS CODE */
+th { 
+    background: #4f46e5;          /* Beautiful indigo brand color */
+    color: #ffffff;               /* Clean white text */
+    padding: 14px 12px;           /* Slightly more breathing room */
+    text-align: left; 
+    font-size: 12px; 
+    font-weight: 600;
+    letter-spacing: 0.5px;        /* Modern clean spacing */
+    text-transform: uppercase; 
+    border-bottom: 3px solid #4338ca; 
+}
+  /* Add this inside your existing <style> tag to show a pointer on hover */
+  table thead th {
+    cursor: pointer;
+    user-select: none;
+  }
+  /* Don't show pointer for columns that shouldn't sort */
+  table thead th:first-child, table thead th:last-child {
+    cursor: default;
+  }
+/* Center-aligns the 'Actions' header over all the buttons */
+th:last-child { 
+    text-align: center; 
+}
+/* Center the action buttons under the header row */
+td:last-child {
+    text-align: center;
+    white-space: nowrap;          /* Prevents buttons from wrapping into two lines */
+}
+td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd; }
         .action-btn { padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; background: white; cursor: pointer; margin-right: 2px; }
         .pagination, .report-pagination { display: flex; justify-content: center; gap: 5px; margin-top: 20px; padding-bottom: 20px; }
@@ -82,10 +111,53 @@
             thead { display: table-header-group; }
             tfoot { display: table-footer-group; }
         }
+        /* Column Toggle Panels Styling */
+.column-toggle-container { 
+    background: #fff; 
+    padding: 12px 15px; 
+    border-radius: 8px; 
+    border: 1px solid var(--border);
+    margin-bottom: 15px; 
+    display: none; 
+}
+.column-toggle-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+    gap: 10px; 
+    margin-top: 10px; 
+}
+.column-checkbox-label { 
+    font-size: 13px; 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    cursor: pointer; 
+    user-select: none; 
+    font-weight: 500;
+    color: #334155;
+}
+.btn-toggle-panel { 
+    background: #e2e8f0; 
+    color: #1e293b; 
+    font-weight: 600; 
+    border: 1px solid #cbd5e1; 
+    padding: 8px 14px; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px; 
+    margin-bottom: 12px; 
+    font-size: 13px; 
+    transition: 0.2s;
+}
+.btn-toggle-panel:hover { 
+    background: #cbd5e1; 
+}
     </style>
 </head>
 <body>
-
+<style id="columnVisibilityStyles"></style>
 <div class="page-container">
   <!-- Fully aligned Top Navigation Row -->
 <div class="top-nav" style="display: flex; justify-content: space-between; align-items: center;">
@@ -143,16 +215,43 @@
         <div class="btn-row" id="inactiveControls" style="display:none;">
             <button class="btn" style="background:#6366f1; color:white;" onclick="generateSLC()"><i class="fas fa-file-certificate"></i> School Leaving Certificate</button>
         </div>
+        
     </div>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr><th>PHOTO</th><th>REG NO</th><th>NAME</th><th>FATHER NAME</th><th>CLASS</th><th>MOBILE</th><th>FEE</th><th>ACTIONS</th></tr>
-            </thead>
-            <tbody id="studentTableBody"></tbody>
-        </table>
+<!-- Column Hide/Show Toggle Controls Drawer -->
+<button class="btn-toggle-panel" onclick="toggleColumnPanel()">
+    <i class="fas fa-cog"></i> Hide / Show Columns
+</button>
+<div id="columnToggleContainer" class="column-toggle-container">
+    <div style="font-size: 12px; color: #64748b; font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">
+        Uncheck fields to hide them from the student list view layout:
     </div>
+    <div class="column-toggle-grid" id="columnToggleGrid"></div>
+</div>
+
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Photo</th>
+<th onclick="sortTable('registration_no')">Reg No <span id="sort-icon-registration_no"></span></th>
+<th onclick="sortTable('roll_no')">Roll No <span id="sort-icon-roll_no"></span></th>
+<th onclick="sortTable('student_name')">Student Name <span id="sort-icon-student_name"></span></th>
+<th onclick="sortTable('father_name')">Father Name <span id="sort-icon-father_name"></span></th>
+<th onclick="sortTable('current_class')">Class <span id="sort-icon-current_class"></span></th>
+<th onclick="sortTable('section')">Section <span id="sort-icon-section"></span></th>
+<th onclick="sortTable('mobile')">Mobile <span id="sort-icon-mobile"></span></th>
+<th onclick="sortTable('whatsapp')">WhatsApp <span id="sort-icon-whatsapp"></span></th>
+<th onclick="sortTable('cnic_bform')">B-Form / CNIC <span id="sort-icon-cnic_bform"></span></th>
+<th onclick="sortTable('dob')">Date of Birth <span id="sort-icon-dob"></span></th>
+<th onclick="sortTable('monthly_fee')">Fee <span id="sort-icon-monthly_fee"></span></th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="studentTableBody"></tbody>
+</table>
+</div>
+
     <div id="mainPagination" class="pagination"></div>
 </div>
 
@@ -224,8 +323,70 @@ style="background:white; border:1px solid #ccc; width:100%; height:40px; padding
 </div>
 
 <script>
+
     // 🌟 Added: Global bucket to hold the application metadata details
 let appDetails = { instituteName: "School Engine", address: "" };
+
+// Add these sorting tracking variables globally
+let currentSortColumn = null;
+let currentSortDirection = 'asc'; // can be 'asc' or 'desc'
+
+// Main sort logic function
+function sortTable(property) {
+    // 1. Toggle directions if clicking the same column, otherwise default to ascending
+    if (currentSortColumn === property) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = property;
+        currentSortDirection = 'asc';
+    }
+
+    // 2. Perform the sort operations on the filtered list array
+    filteredStudents.sort((a, b) => {
+        let valA = a[property];
+        let valB = b[property];
+
+        // Handle empty or missing values gracefully
+        if (valA === undefined || valA === null) valA = '';
+        if (valB === undefined || valB === null) valB = '';
+
+        // If numeric type properties (like registration_no, roll_no, monthly_fee), parse them safely
+        if (property === 'registration_no' || property === 'roll_no' || property === 'monthly_fee') {
+            return currentSortDirection === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+        }
+
+        // String comparison fallback (alphabetical sorting)
+        valA = valA.toString().toLowerCase();
+        valB = valB.toString().toLowerCase();
+
+        if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // 3. Reset to page 1, render the updated sorted content and display correct arrow indicators
+    currentPage = 1;
+    renderTable();
+    updateSortIcons();
+}
+
+// Function to update directional arrow indicators next to text labels
+function updateSortIcons() {
+    // Clear all existing directional signs first
+    const columns = ['registration_no', 'roll_no', 'student_name', 'father_name', 'current_class', 'section', 'mobile', 'whatsapp', 'cnic_bform', 'dob', 'monthly_fee'];
+    columns.forEach(col => {
+        const iconSpan = document.getElementById(`sort-icon-${col}`);
+        if (iconSpan) iconSpan.innerHTML = '';
+    });
+
+    // Inject active arrow indicator symbol onto selected field header element 
+    if (currentSortColumn) {
+        const activeIcon = document.getElementById(`sort-icon-${currentSortColumn}`);
+        if (activeIcon) {
+            activeIcon.innerHTML = currentSortDirection === 'asc' ? ' 🔼' : ' 🔽';
+        }
+    }
+}
 
 // 🌟 Added: Function to pull details from Electron IPC main process channel
 async function loadApplicationDetails() {
@@ -249,7 +410,9 @@ async function loadApplicationDetails() {
 window.onload = async () => {
     await loadApplicationDetails();
     await loadStudents();
+    generateColumnToggles(); // Triggers checkboxes dynamically on boot structure
 };
+
 
 
     async function loadStudents() {
@@ -284,28 +447,78 @@ window.onload = async () => {
         renderTable();
     }
 
-    async function renderTable() {
-        const tbody = document.getElementById('studentTableBody');
-        tbody.innerHTML = '';
-        const start = (currentPage - 1) * rowsPerPage;
-        const items = filteredStudents.slice(start, start + rowsPerPage);
+async function renderTable() {
+    const tbody = document.getElementById('studentTableBody');
+    tbody.innerHTML = '';
+    const start = (currentPage - 1) * rowsPerPage;
+    const items = filteredStudents.slice(start, start + rowsPerPage);
+    
+    for (const s of items) {
+        const imgSrc = s.picture_path ? await window.api.getImageUrl(s.picture_path) : `https://ui-avatars.com{encodeURIComponent(s.student_name)}&background=random`;
         
-        for (const s of items) {
-            const imgSrc = s.picture_path ? await window.api.getImageUrl(s.picture_path) : `https://ui-avatars.com{encodeURIComponent(s.student_name)}&background=random`;
-            tbody.innerHTML += `<tr>
-                <td><img src="${imgSrc}" class="avatar" /></td>
-                <td><strong>${s.registration_no}</strong></td><td>${s.student_name}</td><td>${s.father_name}</td>
-                <td>${s.current_class}</td><td>${s.mobile}</td><td>${s.monthly_fee}</td>
-                <td>
-                    <button class="action-btn" title="View Fee History" onclick="viewHistory(${s.id})">👁️</button>
-                    <button class="action-btn" title="Edit" onclick="editStudent(${s.id})">✏️</button>
-                    <button class="action-btn" title="Generate Invoice" onclick="generateFee(${s.id})">💰</button>
-                    <button class="action-btn" style="color:red" title="Delete" onclick="deleteStudent(${s.id})">🗑️</button>
-                </td>
-            </tr>`;
-        }
-        renderMainPagination();
+        tbody.innerHTML += `<tr>
+            <td><img src="${imgSrc}" class="avatar" /></td>
+            <td><strong>${s.registration_no || '-'}</strong></td>
+            <td>${s.roll_no || '-'}</td>
+            <td>${s.student_name || '-'}</td>
+            <td>${s.father_name || '-'}</td>
+            <td>${s.current_class || '-'}</td>
+            <td>${s.section || '-'}</td>
+            <td>${s.mobile || '-'}</td>
+            <td>${s.whatsapp || '-'}</td>
+            <td>${s.cnic_bform || '-'}</td>
+            <td>${s.dob || '-'}</td>
+            <td>${s.monthly_fee || '0'}</td>
+            <td>
+                <button class="action-btn" title="View Fee History" onclick="viewHistory(${s.id})">👁️</button>
+                <button class="action-btn" title="Edit" onclick="editStudent(${s.id})">✏️</button>
+                <button class="action-btn" title="Generate Invoice" onclick="generateFee(${s.id})">💰</button>
+                <button class="action-btn" style="color:red" title="Delete" onclick="deleteStudent(${s.id})">🗑️</button>
+            </td>
+        </tr>`;
     }
+    renderMainPagination();
+    // Re-verify layouts after mapping items to the active page window container
+    updateColumnVisibility();
+}
+/* Function to Dynamically Extract and Setup Column Selector Checkboxes */
+function generateColumnToggles() {
+    const headers = document.querySelectorAll("table thead th");
+    const grid = document.getElementById("columnToggleGrid");
+    grid.innerHTML = "";
+    
+    headers.forEach((th, index) => {
+        const columnName = th.innerText.trim();
+        // Keep essential fields permanently locked on screen
+        if (columnName === "Photo" || columnName === "Reg No" || columnName === "Student Name" || columnName === "Actions") return;
+        
+        const label = document.createElement("label");
+        label.className = "column-checkbox-label";
+        label.innerHTML = `<input type="checkbox" checked data-index="${index + 1}" onchange="updateColumnVisibility()"> ${columnName}`;
+        grid.appendChild(label);
+    });
+}
+
+/* Function to Open/Close the Hide/Show Panel Drawer Workspace */
+function toggleColumnPanel() {
+    const panel = document.getElementById("columnToggleContainer");
+    panel.style.display = (panel.style.display === "block") ? "none" : "block";
+}
+
+/* Function to Update CSS Visibility Rules Dynamically on Layout Frame */
+function updateColumnVisibility() {
+    const checkboxes = document.querySelectorAll("#columnToggleGrid input[type='checkbox']");
+    const styleElement = document.getElementById("columnVisibilityStyles");
+    let cssRules = "";
+    
+    checkboxes.forEach(cb => {
+        if (!cb.checked) {
+            const colIndex = cb.getAttribute("data-index");
+            cssRules += `table th:nth-child(${colIndex}), table td:nth-child(${colIndex}) { display: none !important; }\n`;
+        }
+    });
+    styleElement.innerHTML = cssRules;
+}
 
     function renderMainPagination() {
         const container = document.getElementById('mainPagination');

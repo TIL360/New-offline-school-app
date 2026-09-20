@@ -119,7 +119,7 @@
             color: var(--primary);
             box-shadow: var(--shadow-sm);
         }
-
+        
         /* Controls Form Panel Alignment Grid */
         .controls {
             display: grid;
@@ -293,25 +293,20 @@
     <!-- Responsive Responsive Form Controls Configuration Panel Grid -->
         <!-- Beautiful & Explicitly Positioned Controls Panel Grid -->
     <div class="controls">
-        <div class="control-group">
-            <label for="attendance-date">Select Date</label>
-            <input type="date" id="attendance-date">
-        </div>
-        
-        <div class="control-group">
-            <label for="card-scanner">Scan Card Here</label>
-            <input type="text" id="card-scanner" placeholder="Waiting for badge scan..." autocomplete="off" style="border: 2px solid #f39c12; background-color: #fffdf9;">
-        </div>
-
-        <div class="control-group" id="class-select-container">
-            <label for="class-dropdown">Select Class</label>
-            <select id="class-dropdown">
-                <option value="">-- Choose Class --</option>
-            </select>
-        </div>
-
-        <button class="btn" onclick="loadAttendanceList()">🔍 Load Records</button>
+    <div class="control-group">
+        <label>SELECT DATE</label>
+        <input type="date" id="attendance-date">
     </div>
+    <div class="control-group" style="flex:2">
+        <label>SCAN CARD HERE (Student OR Staff)</label>
+        <input type="text" id="card-scanner" placeholder="Scan 1,2,3 or EMP-1..." autocomplete="off" autofocus>
+    </div>
+    <div class="control-group" id="class-select-container">
+        <label>SELECT CLASS</label>
+        <select id="class-dropdown"><option>-- Choose Class --</option></select>
+    </div>
+    <button class="btn" onclick="loadAttendanceList()">🔍 Load Records</button>
+</div>
 
 
     <!-- Data Presentation Table List Spreadsheet Sheet -->
@@ -334,278 +329,158 @@
     </div>
 </div>
 
-
 <script>
     let currentTab = 'student';
 
-// 1. Initial configuration load on startup
-window.addEventListener('DOMContentLoaded', async () => {
-    // Correctly sets the input to the local current date string (YYYY-MM-DD)
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    document.getElementById('attendance-date').value = `${yyyy}-${mm}-${dd}`;
+    function showPopup(regNo, name, date, type) {
+        const old = document.getElementById('temp-success-msg');
+        if (old) old.remove();
+        const div = document.createElement('div');
+        div.id = 'temp-success-msg';
+        div.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999;';
+        let icon = type === 'already' ? '⚠️' : '✅';
+        let title = type === 'already' ? 'Already Marked!' : 'Attendance Marked!';
+        let color = type === 'already' ? '#f39c12' : '#2ec4b6';
+        let statusText = type === 'already' ? 'Already Present Today' : 'Present';
+        div.innerHTML = `<div style="background:white;padding:35px 40px;border-radius:16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.3);min-width:380px;"><div style="font-size:50px;">${icon}</div><div style="font-size:20px;font-weight:700;color:#003049;margin:10px 0 5px;">${title}</div><div style="font-size:14px;color:#555;line-height:1.6;">Attendance of <b style="color:#003049;">Rg No ${regNo}</b>, <b style="color:#003049;">${name}</b> is <b style="color:${color};">${statusText}</b></div><div style="margin-top:12px;font-size:12px;background:#f4f6f9;padding:6px 12px;border-radius:20px;display:inline-block;color:#6c757d;">📅 ${date}</div></div>`;
+        div.onclick = () => div.remove();
+        document.body.appendChild(div);
+        setTimeout(() => { if(div) div.remove(); }, 2000);
+    }
 
-    // Boot class dropdown parameters from database
+    function focusScanner(event) {
+        const scanner = document.getElementById('card-scanner');
+        if (!scanner) return;
+        if (event && event.target) {
+            const tag = event.target.tagName.toLowerCase();
+            if (['select', 'option', 'input', 'button', 'a'].includes(tag)) return;
+        }
+        scanner.focus();
+    }
+
+window.addEventListener('DOMContentLoaded', async () => {
+    const today = new Date();
+    document.getElementById('attendance-date').value = today.toISOString().split('T')[0];
     try {
         const classes = await window.api.getClasses();
         const dropdown = document.getElementById('class-dropdown');
         if (classes && dropdown) {
             classes.forEach(cls => {
                 const opt = document.createElement('option');
-                opt.value = cls.class_name;
-                opt.textContent = cls.class_name;
+                opt.value = cls.class_name; opt.textContent = cls.class_name;
                 dropdown.appendChild(opt);
             });
         }
-    } catch (err) {
-        console.error("Failed to boot dropdown configuration setup:", err);
-    }
+    } catch (err) { console.error(err); }
 
-    // SAFE SCANNER ATTACHMENT: Element is guaranteed to exist now
     const scannerInput = document.getElementById('card-scanner');
     if (scannerInput) {
-        scannerInput.addEventListener('keydown', async function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault(); // Prevent page refresh triggers
-                
-                const scannedValue = this.value.trim().toUpperCase();
-                if (!scannedValue) return;
+    scannerInput.addEventListener('keydown', async function(e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    let val = this.value.trim().toUpperCase();
+    if (!val) return;
+    const date = document.getElementById('attendance-date').value;
+    this.value = '';
 
-                const date = document.getElementById('attendance-date').value;
-                let targetId = null;
-
-                try {
-                    // Pull pre-filtered listings straight from backend APIs
-                    if (currentTab === 'student') {
-                        const className = document.getElementById('class-dropdown').value;
-                        if (!className) {
-                            alert("Please select a class before scanning a student card.");
-                            this.value = '';
-                            focusScanner();
-                            return;
-                        }
-
-                        const response = await window.api.getStudentAttendance({ className, date });
-                        const students = response.records || [];
-                        const match = students.find(s => String(s.registration_no).toUpperCase() === scannedValue);
-                        if (match) targetId = match.student_id;
-
-                    } else {
-                        // Staff Tab
-                        const response = await window.api.getStaffAttendance({ date });
-                        const staffList = response.records || [];
-                        const match = staffList.find(st => `EMP-${st.staff_id}`.toUpperCase() === scannedValue);
-                        if (match) targetId = match.staff_id;
-                    }
-
-                    // If match is found, commit save instantly to backend
-                    if (targetId) {
-                        let responseResult;
-                        if (currentTab === 'student') {
-                            responseResult = await window.api.saveStudentAttendance({
-                                records: [{ student_id: targetId, status: 'Present' }],
-                                date
-                            });
-                        } else {
-                            responseResult = await window.api.saveStaffAttendance({
-                                records: [{ staff_id: targetId, status: 'Present' }],
-                                date
-                            });
-                        }
-
-                        if (responseResult && responseResult.success) {
-                            // Silently reload UI table spreadsheet updates if open
-                            loadAttendanceList();
-                        } else {
-                            alert("Database Error: " + responseResult.error);
-                        }
-                    } else {
-                        alert(`ID "${scannedValue}" not found or already marked for today.`);
-                    }
-
-                } catch (error) {
-                    console.error(error);
-                    alert("An error occurred while automatically processing the card scan.");
-                }
-
-                // Reset field layout seamlessly for subsequent badge scanning runs
-                this.value = '';
-                focusScanner();
+    // AUTO DETECT
+    let isStaff = val.startsWith('EMP-');
+    
+    try {
+        if (isStaff) {
+            let staffId = parseInt(val.replace('EMP-',''));
+            let status = await window.api.getStaffAttendanceStatus({ staff_id: staffId, date });
+            if (status === 'Present') {
+                showPopup(val, `Staff ${staffId}`, date, 'already');
+            } else {
+                await window.api.saveStaffAttendance({ records: [{ staff_id: staffId, status: 'Present' }], date });
+                showPopup(val, `Staff ${staffId}`, date, 'success');
             }
-        });
+        } else {
+            // Student
+            const student = await window.api.getStudentByRegNo(val);
+            if(!student) return alert('Student not found');
+            let sId = student.student_id;
+            let status = await window.api.getStudentAttendanceStatus({ student_id: sId, date });
+            if (status === 'Present') {
+                showPopup(student.registration_no, student.student_name, date, 'already');
+            } else {
+                await window.api.saveStudentAttendance({ records: [{ student_id: sId, status: 'Present' }], date });
+                showPopup(student.registration_no, student.student_name, date, 'success');
+            }
+        }
+    } catch(err){ console.error(err); }
+});
     }
-
-    // Initialize layout scanning targets
     focusScanner();
     document.addEventListener('click', (e) => focusScanner(e));
 });
 
-// 2. Tab switching logic
 function switchTab(tabName) {
     currentTab = tabName;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    
-    // Safety check for active event targets
-    if (event && event.target) {
-        event.target.classList.add('active');
-    }
-    
+    if (event && event.target) event.target.classList.add('active');
     const classContainer = document.getElementById('class-select-container');
-    if (tabName === 'staff') {
-        if (classContainer) classContainer.style.display = 'none';
-    } else {
-        if (classContainer) classContainer.style.display = 'block';
-    }
-    
-    document.getElementById('table-body').innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">Please configure lookup fields above and execute record sync queries.</td></tr>`;
+    if (classContainer) classContainer.style.display = tabName === 'staff' ? 'none' : 'block';
+    document.getElementById('table-body').innerHTML = `<tr><td colspan="4" style="text-align:center;padding:30px;">Please select class...</td></tr>`;
     document.getElementById('save-btn').style.display = 'none';
-    
     setTimeout(focusScanner, 50);
 }
 
-// 3. Load lists out from backend tables manually
 async function loadAttendanceList() {
     const date = document.getElementById('attendance-date').value;
     const headersTr = document.getElementById('table-headers');
     const bodyTbody = document.getElementById('table-body');
-    
-    if (!date) {
-        alert("Please pick a date first.");
-        return;
-    }
-    
-    bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">Syncing rows...</td></tr>`;
-    
+    if (!date) { alert("Please pick a date first."); return; }
+    bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;">Syncing rows...</td></tr>`;
     if (currentTab === 'student') {
         const className = document.getElementById('class-dropdown').value;
-        if (!className) {
-            bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">Please select date/class details above and click load.</td></tr>`;
-            return;
-        }
-        
-        headersTr.innerHTML = `<th>Reg No</th><th>Roll No</th><th>Student Name</th><th>Status Tracking Mark Options</th>`;
-        
+        if (!className) return;
+        headersTr.innerHTML = `<th>Reg No</th><th>Roll No</th><th>Student Name</th><th>Status</th>`;
         try {
             const response = await window.api.getStudentAttendance({ className, date });
             const students = response.records || [];
-            
-            if (students.length === 0) {
-                bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red; padding: 20px;">No active students found in this class.</td></tr>`;
-                document.getElementById('save-btn').style.display = 'none';
-                return;
-            }
-            
             bodyTbody.innerHTML = '';
             students.forEach(s => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${s.registration_no}</td>
-                    <td>${s.roll_no}</td>
-                    <td><b>${s.student_name}</b></td>
-                    <td>
-                        <div class="status-options" data-id="${s.student_id}">
-                            <label class="status-label"><input type="radio" name="status-${s.student_id}" value="Present" ${s.status === 'Present' ? 'checked' : ''}> Present</label>
-                            <label class="status-label"><input type="radio" name="status-${s.student_id}" value="Absent" ${s.status === 'Absent' ? 'checked' : ''}> Absent</label>
-                            <label class="status-label"><input type="radio" name="status-${s.student_id}" value="Leave" ${s.status === 'Leave' ? 'checked' : ''}> Leave</label>
-                        </div>
-                    </td>`;
+                tr.innerHTML = `<td>${s.registration_no}</td><td>${s.roll_no}</td><td><b>${s.student_name}</b></td><td><div class="status-options" data-id="${s.student_id}"><label><input type="radio" name="status-${s.student_id}" value="Present" ${s.status === 'Present' ? 'checked' : ''}> Present</label><label><input type="radio" name="status-${s.student_id}" value="Absent" ${s.status === 'Absent' ? 'checked' : ''}> Absent</label><label><input type="radio" name="status-${s.student_id}" value="Leave" ${s.status === 'Leave' ? 'checked' : ''}> Leave</label></div></td>`;
                 bodyTbody.appendChild(tr);
             });
             document.getElementById('save-btn').style.display = 'inline-block';
-        } catch (err) {
-            console.error(err);
-        }
+        } catch (err) { console.error(err); }
     } else {
-        // Staff Tab Load Configuration
-        headersTr.innerHTML = `<th>ID Map Code</th><th>Staff Designation Title</th><th>Full Employee Name Details</th><th>Status Tracking Mark Options</th>`;
-        
+        headersTr.innerHTML = `<th>ID</th><th>Designation</th><th>Name</th><th>Status</th>`;
         try {
             const response = await window.api.getStaffAttendance({ date });
             const staffList = response.records || [];
-            
-            if (staffList.length === 0) {
-                bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: red; padding: 20px;">No active employees found.</td></tr>`;
-                document.getElementById('save-btn').style.display = 'none';
-                return;
-            }
-            
             bodyTbody.innerHTML = '';
             staffList.forEach(st => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>EMP-${st.staff_id}</td>
-                    <td><i>${st.designation}</i></td>
-                    <td><b>${st.name}</b></td>
-                    <td>
-                        <div class="status-options" data-id="${st.staff_id}">
-                            <label class="status-label"><input type="radio" name="status-${st.staff_id}" value="Present" ${st.status === 'Present' ? 'checked' : ''}> Present</label>
-                            <label class="status-label"><input type="radio" name="status-${st.staff_id}" value="Absent" ${st.status === 'Absent' ? 'checked' : ''}> Absent</label>
-                            <label class="status-label"><input type="radio" name="status-${st.staff_id}" value="Leave" ${st.status === 'Leave' ? 'checked' : ''}> Leave</label>
-`;
-bodyTbody.appendChild(tr);
-});
-document.getElementById('save-btn').style.display = 'inline-block';
-} catch (err) {
-console.error(err);
+                tr.innerHTML = `<td>EMP-${st.staff_id}</td><td><i>${st.designation}</i></td><td><b>${st.name}</b></td><td><div class="status-options" data-id="${st.staff_id}"><label><input type="radio" name="status-${st.staff_id}" value="Present" ${st.status === 'Present' ? 'checked' : ''}> Present</label><label><input type="radio" name="status-${st.staff_id}" value="Absent" ${st.status === 'Absent' ? 'checked' : ''}> Absent</label><label><input type="radio" name="status-${st.staff_id}" value="Leave" ${st.status === 'Leave' ? 'checked' : ''}> Leave</label></div></td>`;
+                bodyTbody.appendChild(tr);
+            });
+            document.getElementById('save-btn').style.display = 'inline-block';
+        } catch (err) { console.error(err); }
+    }
 }
-}
-}
-// 4. Save manually marked profile rows block
+
 async function saveAttendanceRecords() {
-const date = document.getElementById('attendance-date').value;
-const records =[];
-const optionsContainers = document.querySelectorAll('.status-options');
-optionsContainers.forEach(container => {
-const idKey = container.getAttribute('data-id');
-const checkedRadio = container.querySelector(`input[name="status-${idKey}"]:checked`);
-
-if (checkedRadio) {
-const statusSelection = checkedRadio.value;
-if (currentTab === 'student') {
-records.push({ student_id: parseInt(idKey), status: statusSelection });
-} else {
-records.push({ staff_id: parseInt(idKey), status: statusSelection });
+    const date = document.getElementById('attendance-date').value;
+    const records =[];
+    document.querySelectorAll('.status-options').forEach(container => {
+        const idKey = container.getAttribute('data-id');
+        const checkedRadio = container.querySelector(`input[name="status-${idKey}"]:checked`);
+        if (checkedRadio) {
+            if (currentTab === 'student') records.push({ student_id: parseInt(idKey), status: checkedRadio.value });
+            else records.push({ staff_id: parseInt(idKey), status: checkedRadio.value });
+        }
+    });
+    if (records.length === 0) { alert("Please mark at least one!"); return; }
+    try {
+        let res = currentTab === 'student' ? await window.api.saveStudentAttendance({ records, date }) : await window.api.saveStaffAttendance({ records, date });
+        if (res && res.success) { alert(`Success! Saved for ${date}.`); loadAttendanceList(); }
+    } catch (e) { console.error(e); }
 }
-}
-});
-if (records.length === 0) {
-alert("Please mark at least one person's status before saving!");
-return;
-}
-try {
-let responseResult;
-if (currentTab === 'student') {
-responseResult = await window.api.saveStudentAttendance({ records, date });
-} else {
-responseResult = await window.api.saveStaffAttendance({ records, date });
-}
-if (responseResult && responseResult.success) {
-alert(`Success! Marked records saved safely for ${date}.`);
-loadAttendanceList();
-} else {
-alert("Error: " + responseResult.error);
-}
-} catch (error) {
-console.error(error);
-alert("An error occurred while saving records data.");
-}
-}
-// 5. Smart focus scanner handling
-function focusScanner(event) {
-const scanner = document.getElementById('card-scanner');
-if (!scanner) return;
-if (event && event.target) {
-const tag = event.target.tagName.toLowerCase();
-if (tag === 'select' || tag === 'option' || tag === 'input' || tag === 'button' || tag === 'a') {
-return;
-}
-}
-scanner.focus();
-}
-
-
 </script>
 </body>
 </html>

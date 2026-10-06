@@ -15,51 +15,25 @@
     th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
     th { background-color: #f8f9fa; }
     .small-logo { height: 50px; margin-right: 12px; }
-
-    #reportModal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+    #reportModal, #confirmModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
     .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto; position: relative; }
-    
+    .confirm-box { background: white; margin: 15% auto; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .btn-edit { background:#3498db; color:white; padding:5px 10px; border-radius:4px; margin-right:5px; }
+    .btn-delete { background:#e74c3c; color:white; padding:5px 10px; border-radius:4px; }
+    .btn-cancel { background:#95a5a6; }
     #reportData { position: relative; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    /* Watermark INSIDE reportData so it prints */
-    #reportData::before {
-        content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 450px; height: 450px; background-image: url('../../images/logo.png');
-        background-repeat: no-repeat; background-position: center; background-size: contain;
-        opacity: 0.08; z-index: 0; pointer-events: none;
-    }
+    #reportData::before { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; background-image: url('../../images/logo.png'); background-repeat: no-repeat; background-position: center; background-size: contain; opacity: 0.08; z-index: 0; pointer-events: none; }
     #reportData * { position: relative; z-index: 1; }
     .school-header-pdf { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 8px; }
     .school-header-pdf h1 { margin: 0; color: var(--school-red); font-size: 26px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; }
-
     .refresh-btn { background: white; color: black; border: 1px solid #ddd; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
-
-    /* FIXED PRINT CSS - This was the bug */
    @media print {
-    body { background: white !important; margin: 0 !important; padding: 0 !important; }
-    .refresh-btn, .card { display: none !important; }
-    #reportModal { 
-        display: block !important; 
-        position: static !important; 
-        width: 100% !important; 
-        height: auto !important;
-        background: white !important; 
-    }
-    .modal-content { 
-        box-shadow: none !important; 
-        margin: 0 !important; 
-        padding: 10mm !important; 
-        width: 100% !important; 
-        max-width: 100% !important;
-        max-height: none !important; 
-        overflow: visible !important; 
-        border: none !important; 
-        border-radius: 0 !important;
-        box-sizing: border-box !important;
-    }
-    #reportData { width: 100% !important; }
-    #reportData table { width: 100% !important; table-layout: fixed !important; }
-    #reportData th:last-child, #reportData td:last-child { text-align: right !important; word-wrap: break-word !important; }
-    .no-print { display: none !important; }
+    body { background: white!important; margin: 0!important; padding: 0!important; }
+    .refresh-btn,.card { display: none!important; }
+    #reportModal { display: block!important; position: static!important; width: 100%!important; height: auto!important; background: white!important; }
+    .modal-content { box-shadow: none!important; margin: 0!important; padding: 10mm!important; width: 100%!important; max-width: 100%!important; max-height: none!important; overflow: visible!important; border: none!important; border-radius: 0!important; }
+    #reportData { width: 100%!important; }
+    .no-print { display: none!important; }
     @page { size: A4; margin: 10mm; }
 }
 </style>
@@ -72,9 +46,12 @@
         <h2>+ Add New Expense</h2>
         <div id="successMessage" style="display: none; color: #2ecc71; font-weight: bold; margin-bottom: 15px; text-align: center;">✓ Expense Saved Successfully!</div>
         <form id="expenseForm">
-            <div class="form-group"><label>Expense Detail</label><input type="text" id="expenseName" required></div>
-            <div class="form-group"><label>Amount</label><input type="number" id="expenseAmount" required></div>
-            <button type="submit" style="width: 100%;">Save Expense</button>
+            <div class="form-group"><label>Expense Detail</label><input type="text" id="expenseName" required autocomplete="off"></div>
+            <div class="form-group"><label>Amount</label><input type="number" id="expenseAmount" required autocomplete="off"></div>
+            <div style="display:flex; gap:10px;">
+                <button type="submit" style="flex:1;" id="submitBtn">Save Expense</button>
+                <button type="button" id="cancelBtn" class="btn-cancel" style="display:none;" onclick="cancelEdit()">Cancel</button>
+            </div>
         </form>
     </div>
 
@@ -87,12 +64,27 @@
         </div>
     </div>
 
-    <div class="card">
-        <h2>Recent Expenses</h2>
-        <table><thead><tr><th>Description</th><th>Date</th><th>Period</th><th style="text-align:right;">Amount</th></tr></thead><tbody id="expenseTableBody"></tbody></table>
+<div class="card">
+    <h2>Recent Expenses</h2>
+    <table>
+        <thead><tr><th>Description</th><th>Date</th><th>Period</th><th style="text-align:right;">Amount</th><th style="text-align:center;">Action</th></tr></thead>
+        <tbody id="expenseTableBody"></tbody>
+    </table>
+</div>
+
+    <!-- Custom Confirm Modal - NO native confirm() -->
+    <div id="confirmModal">
+        <div class="confirm-box">
+            <div style="font-size:40px;">⚠️</div>
+            <h3 style="margin:10px 0;">Are you sure?</h3>
+            <p id="confirmText" style="color:#666;">Are you sure to delete this expense?</p>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+                <button onclick="confirmYes()" style="background:#e74c3c; min-width:80px;">Yes, Delete</button>
+                <button onclick="confirmNo()" style="background:#95a5a6; min-width:80px;">Cancel</button>
+            </div>
+        </div>
     </div>
 
-    <!-- PDF ONLY HEADER -->
     <div id="reportModal">
         <div class="modal-content">
             <div class="no-print" style="display:flex; justify-content: space-between; margin-bottom:20px;">
@@ -113,45 +105,120 @@
         </div>
     </div>
 
-    <script>
-        async function applyCentralAppDetails(){ 
-            try{ 
-                if(window.api && window.api.getAppDetails){ 
-                    const d=await window.api.getAppDetails(); 
-                    document.querySelectorAll('.dynamic-institute-title').forEach(el=>el.innerHTML=`<img src="../../images/logo.png" class="small-logo">${d.instituteName}`); 
-                    document.querySelectorAll('.dynamic-institute-details').forEach(el=>el.innerText=`Address: ${d.address || 'Islamabad'} || Contact: ${d.contactNumber || ''}`); 
-                    document.querySelectorAll('.dynamic-institute-email').forEach(el=>el.innerText=`E-mail: ${d.email || ''}`); 
-                } 
-            }catch(e){} 
-        }
-        document.addEventListener('DOMContentLoaded', async () => {
-            await applyCentralAppDetails();
-            await populateFilters(); await loadExpenses();
-        });
-        async function populateFilters() {
-            const filters = await window.api.getExpenseFilters();
-            document.getElementById('filterMonth').innerHTML = '<option value="">Select Month</option>' + filters.months.map(m => `<option value="${m.exp_month}">${m.exp_month}</option>`).join('');
-            document.getElementById('filterYear').innerHTML = '<option value="">Select Year</option>' + filters.years.map(y => `<option value="${y.exp_year}">${y.exp_year}</option>`).join('');
-        }
-        async function loadExpenses() {
-            const rows = await window.api.getExpenses({ month: '', year: '' });
-            document.getElementById('expenseTableBody').innerHTML = rows.map(item => `<tr><td>${item.expence}</td><td>${item.created_at}</td><td>${item.exp_month} ${item.exp_year}</td><td style="text-align:right;">${parseFloat(item.exp_amount).toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center;">No data</td></tr>';
-        }
-        document.getElementById('expenseForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const result = await window.api.addExpense({ expense: document.getElementById('expenseName').value, amount: document.getElementById('expenseAmount').value });
-            if (result.success) { e.target.reset(); document.getElementById('successMessage').style.display='block'; setTimeout(()=>document.getElementById('successMessage').style.display='none',3000); await populateFilters(); await loadExpenses(); }
-        });
-        async function openReport() {
-            const month = document.getElementById('filterMonth').value; const year = document.getElementById('filterYear').value;
-            if (!month || !year) { alert("Select Month & Year!"); return; }
-            const rows = await window.api.getExpenses({ month, year }); let total = 0;
-            document.getElementById('reportPeriod').innerText = `Period: ${month} ${year}`;
-            document.getElementById('modalTableBody').innerHTML = rows.map(item => { const amt = parseFloat(item.exp_amount||0); total+=amt; return `<tr><td>${item.expence}</td><td>${item.created_at}</td><td style="text-align:right;">${amt.toLocaleString()}</td></tr>`; }).join('');
-            document.getElementById('modalTotalAmount').innerText = `Total: ${total.toLocaleString()}`;
-            document.getElementById('reportModal').style.display = "block";
-        }
-        function closeModal() { document.getElementById('reportModal').style.display = "none"; }
-    </script>
+<script>
+    let editingId = null;
+    let pendingDeleteId = null;
+
+async function applyCentralAppDetails(){ 
+    try{ 
+        if(window.api && window.api.getAppDetails){ 
+            const d=await window.api.getAppDetails(); 
+            document.querySelectorAll('.dynamic-institute-title').forEach(el=>el.innerHTML=`<img src="../../images/logo.png" class="small-logo">${d.instituteName}`); 
+            document.querySelectorAll('.dynamic-institute-details').forEach(el=>el.innerText=`Address: ${d.address || 'Islamabad'} || Contact: ${d.contactNumber || ''}`); 
+            document.querySelectorAll('.dynamic-institute-email').forEach(el=>el.innerText=`E-mail: ${d.email || ''}`); 
+        } 
+    }catch(e){} 
+}
+document.addEventListener('DOMContentLoaded', async () => {
+    await applyCentralAppDetails();
+    await populateFilters(); await loadExpenses();
+});
+
+async function populateFilters() {
+    const filters = await window.api.getExpenseFilters();
+    document.getElementById('filterMonth').innerHTML = '<option value="">Select Month</option>' + filters.months.map(m => `<option value="${m.exp_month}">${m.exp_month}</option>`).join('');
+    document.getElementById('filterYear').innerHTML = '<option value="">Select Year</option>' + filters.years.map(y => `<option value="${y.exp_year}">${y.exp_year}</option>`).join('');
+}
+
+async function loadExpenses() {
+    const rows = await window.api.getExpenses({ month: '', year: '' });
+    document.getElementById('expenseTableBody').innerHTML = rows.map(item =>
+    `<tr>
+        <td>${item.expence}</td>
+        <td>${item.created_at}</td>
+        <td>${item.exp_month} ${item.exp_year}</td>
+        <td style="text-align:right;">${parseFloat(item.exp_amount).toLocaleString()}</td>
+        <td style="text-align:center;">
+            <button class="btn-edit" onclick="startEdit(${item.id}, '${String(item.expence).replace(/'/g, "\\'")}', '${item.exp_amount}')">✏️ Edit</button>
+            <button class="btn-delete" onclick="removeExpense(${item.id})">🗑️ Delete</button>
+        </td>
+    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;">No data</td></tr>';
+}
+
+document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const expense = document.getElementById('expenseName').value.trim();
+    const amount = document.getElementById('expenseAmount').value;
+    let result;
+    const isEditing = editingId!== null;
+    const oldId = editingId;
+    if(isEditing){ result = await window.api.updateExpense({ id: oldId, expense, amount }); }
+    else { result = await window.api.addExpense({ expense, amount }); }
+    if (result && result.success) {
+        document.getElementById('successMessage').innerText = isEditing? '✓ Updated!' : '✓ Expense Saved Successfully!';
+        document.getElementById('successMessage').style.display='block';
+        cancelEdit();
+        setTimeout(()=>document.getElementById('successMessage').style.display='none',3000);
+        await populateFilters(); await loadExpenses();
+        // fix focus after save
+        setTimeout(()=>{ document.getElementById('expenseName').focus(); }, 100);
+    } else { alert("Failed: " + (result?.error || "Unknown error")); }
+});
+
+function startEdit(id, name, amount){
+    editingId = id;
+    document.getElementById('expenseName').value = name;
+    document.getElementById('expenseAmount').value = amount;
+    document.getElementById('submitBtn').innerText = 'Update Expense';
+    document.getElementById('cancelBtn').style.display = 'inline-block';
+    document.getElementById('expenseName').focus();
+}
+function cancelEdit(){
+    editingId = null;
+    document.getElementById('expenseForm').reset();
+    document.getElementById('submitBtn').innerText = 'Save Expense';
+    document.getElementById('cancelBtn').style.display = 'none';
+}
+
+// --- NEW CUSTOM CONFIRM - NO MORE Alt+Tab BUG ---
+function removeExpense(id){
+    pendingDeleteId = id;
+    document.getElementById('confirmModal').style.display = 'block';
+    // keep focus inside app, not native dialog
+}
+
+function confirmNo(){
+    pendingDeleteId = null;
+    document.getElementById('confirmModal').style.display = 'none';
+    document.getElementById('expenseName').focus();
+}
+
+async function confirmYes(){
+    const id = pendingDeleteId;
+    document.getElementById('confirmModal').style.display = 'none';
+    pendingDeleteId = null;
+    if(editingId === id) cancelEdit();
+    const res = await window.api.deleteExpense(id);
+    if(res && res.success){
+        await loadExpenses();
+        // IMPORTANT: regain focus to window and input
+        window.focus();
+        setTimeout(()=>{ document.getElementById('expenseName').focus(); }, 50);
+    } else { alert("Delete failed: " + (res?.error || "")); }
+}
+
+async function openReport() {
+    const month = document.getElementById('filterMonth').value;
+    const year = document.getElementById('filterYear').value;
+    if (!month ||!year) { alert("Select Month & Year!"); return; }
+    const rows = await window.api.getExpenses({ month, year });
+    let total = 0;
+    document.getElementById('reportPeriod').innerText = `Period: ${month} ${year}`;
+    document.getElementById('modalTableBody').innerHTML = rows.map(item => { const amt = parseFloat(item.exp_amount||0); total+=amt; return `<tr><td>${item.expence}</td><td>${item.created_at}</td><td style="text-align:right;">${amt.toLocaleString()}</td></tr>`; }).join('');
+    document.getElementById('modalTotalAmount').innerText = `Total: ${total.toLocaleString()}`;
+    document.getElementById('reportModal').style.display = "block";
+}
+function closeModal() { document.getElementById('reportModal').style.display = "none"; }
+</script>
 </body>
 </html>

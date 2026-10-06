@@ -18,6 +18,7 @@
             border: 1px solid #999;
             position: relative;
         }
+        /* CUT LINES */
         .cut-line-v { position: absolute; top: 3mm; bottom: 3mm; width: 0; border-left: 1px dashed #000; z-index: 10; }
         .cut-line-v::before { content: "✂"; position: absolute; top: -6px; left: -8px; background: white; font-size: 12px; }
         .cut-line-v.c1 { left: 25%; } .cut-line-v.c2 { left: 50%; } .cut-line-v.c3 { left: 75%; }
@@ -33,29 +34,8 @@
             height: 100%;
             box-sizing: border-box;
             overflow: hidden;
-            background: white;
         }
         .copy-section:last-child { border-right: none; }
-
-
-.copy-section::before {
-    content: "";
-    position: absolute;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 110px;
-    height: 110px;
-    background-image: url('../../images/logo.png');
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-    opacity: 0.09;
-    z-index: 0;
-    pointer-events: none;
-}
-
-        .copy-content { position: relative; z-index: 1; display:flex; flex-direction:column; height:100%; }
 
         .header { text-align: center; border-bottom: 2px solid #2c3e50; margin-bottom: 5px; padding-bottom: 5px; }
         .school-name { font-size: 14px; font-weight: 800; margin: 2px 0; text-transform: uppercase; }
@@ -74,7 +54,7 @@
         .fine-row { color: #c0392b; font-weight: 600; }
 
         .footer { margin-top: auto; display: flex; justify-content: space-between; padding-top: 10px; }
-        .sig-line { border-top: 1.3px solid #000; width: 62px; text-align: center; font-size: 9px; padding-top: 3px; font-weight: 700; }
+        .sig-line { border-top: 1.3px solid #000; width: 62px; text-align: center; font-size: 9px; padding-top: 3px; font-weight: 700; } /* increased font */
 
         .copyright {
             display: flex; justify-content: space-between;
@@ -86,13 +66,13 @@
         .btn-print { padding: 9px 22px; cursor: pointer; font-weight: bold; border-radius: 5px; border:none; background:#27ae60; color:white; }
         .btn-close { background: #e74c3c; border: none; padding: 9px 22px; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
         .small-logo { height: 18px; vertical-align: middle; margin-right: 4px; }
+        .watermark { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 75%; opacity: 0.09; z-index: 0; pointer-events: none; }
         .note-box { font-size:7.5px; border:1px solid #bbb; padding:3px; margin-top:5px; text-align:center; font-weight:600; }
 
         @media print {
             body { background: white; }
             .no-print { display: none; }
             .page-wrapper { margin: 0; border: none; padding: 3mm; width: 297mm; height: 205mm; }
-            .copy-section::before { opacity: 0.08 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             @page { size: landscape; margin: 2mm; }
         }
     </style>
@@ -115,10 +95,11 @@ async function init(){
     container.innerHTML='';
     for(let i=0;i<all.length;i+=2){
         const chunk=all.slice(i,i+2), page=document.createElement('div'); page.className='page-wrapper';
+        // cut lines
         page.innerHTML=`<div class="cut-line-v c1"></div><div class="cut-line-v c2"></div><div class="cut-line-v c3"></div>`;
         let h=''; 
         chunk.forEach(d=>{ ['OFFICE COPY','STUDENT COPY'].forEach(t=> h+=build(d,t)); });
-        if(chunk.length===1){ h+=`<div class="copy-section"><div class="copy-content" style="justify-content:center; align-items:center; width:100%; color:#bbb;">Empty</div></div><div class="copy-section"><div class="copy-content" style="justify-content:center; align-items:center; width:100%; color:#bbb;">Empty</div></div>`; }
+        if(chunk.length===1){ h+=`<div class="copy-section" style="justify-content:center; align-items:center; color:#bbb;">Empty</div><div class="copy-section" style="justify-content:center; align-items:center; color:#bbb;">Empty</div>`; }
         page.innerHTML+=h; container.appendChild(page);
     }
 }
@@ -126,7 +107,7 @@ function build(data, type){
     const m=Number(data.monthly_fee)||0,a=Number(data.adm_fee)||0,ex=Number(data.exam_fee)||0,l=Number(data.lab_fee)||0,mi=Number(data.misc_fee)||0,ar=Number(data.arrears)||0,rg=Number(data.reg_fee)||0,an=Number(data.annual_fund)||0,st=Number(data.stationary_fund)||0,b=Number(data.bus_charges)||0;
     const cur=m+a+ex+l+mi+rg+an+st+b, net=cur+ar, fine=200, aft=net+fine, mr=data.misc_remarks||'';
     return `<div class="copy-section">
-    <div class="copy-content">
+          <!-- <img src="../../images/logo.png" class="watermark"> --> 
     <div style="display:flex; justify-content:space-between; align-items:center;"><span class="badge">${type}</span><span class="inv-no">#${data.id}</span></div>
     <div class="header">
         <p class="school-name"><img src="../../images/logo.png" class="small-logo">${appDetails.instituteName}</p>
@@ -158,7 +139,6 @@ function build(data, type){
     <div class="note-box">Please pay by 10th to avoid fine. Thank you!</div>
     <div class="footer"><div class="sig-line">Parent</div><div class="sig-line">Cashier / Principal</div></div>
     <div class="copyright"><span>© Techinfolab. All Rights Reserved.</span><span>Designed by: Raja Bilal || 0311-5101738</span></div>
-    </div>
     </div>`;
 }
 window.addEventListener('DOMContentLoaded',init);

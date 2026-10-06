@@ -1,35 +1,53 @@
 {
-  "name": "EDUPULSE-2026",
+  "name": "edupulse-2026",
   "version": "1.0.0",
-  "description": "School Management System (Offline) build in Electron",
-  "keywords": [
-    "Electon",
-    "App"
-  ],
-  "license": "ISC",
-  "author": "Raja Bilal",
-  "type": "commonjs",
+  "description": "School Management System Offline built in Electron",
   "main": "main.js",
+  "type": "commonjs",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder",
+    "dev": "electron .",
+    "build": "electron-builder --win --x64",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
+  "keywords": [
+    "electron",
+    "school",
+    "offline"
+  ],
+  "author": "Raja Bilal",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "better-sqlite3": "^12.6.2",
+    "qrcode": "^1.5.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
+    "electron": "^40.8.0",
+    "electron-builder": "^26.8.1",
+    "nodemon": "^3.1.14"
+  },
   "build": {
-    "appId": "com.raja.pos",
+    "appId": "com.kips.schoolapp",
     "productName": "EDUPULSE-2026",
+    "icon": "images/icons/logo.ico",
+    "artifactName": "${productName} Setup ${version} ${arch}.${ext}",
     "asar": true,
     "asarUnpack": [
       "**/*.node"
     ],
     "files": [
       "**/*",
-      "!**/*.db-journal"
+      "!**/*.db-journal",
+      "!node_modules/.cache"
     ],
     "extraResources": [
       "school.db"
     ],
     "win": {
+      "icon": "images/icons/logo.ico",
       "target": [
         {
           "target": "nsis",
@@ -40,38 +58,12 @@
         }
       ]
     },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "category": "public.app-category.education"
-    },
     "nsis": {
-      "oneClick": true,
-      "perMachine": true,
-      "allowToChangeInstallationDirectory": false,
-      "deleteAppDataOnUninstall": true
-    },
-    "dmg": {
-      "sign": false
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
-  },
-  "dependencies": {
-    "better-sqlite3": "^12.6.2",
-    "nodemon": "^3.1.14",
-    "qrcode": "^1.5.4",
-    "xlsx": "^0.18.5"
-  },
-  "devDependencies": {
-    "@electron/rebuild": "^4.2.0",
-    "electron": "^40.8.0",
-    "electron-builder": "^26.8.1",
-    "electron-rebuild": "^3.2.9"
   }
 }

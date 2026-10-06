@@ -23,7 +23,15 @@ contextBridge.exposeInMainWorld('api', {
     // ADD THIS NEW FUNCTION
     getFilePath: (file) => {
         return webUtils.getPathForFile(file);
-    },
+    },// in preload.js contextBridge
+  pushMasters: () => ipcRenderer.invoke('push-all-masters'),
+  pushCloudMarks: (data) => ipcRenderer.invoke('push-cloud-marks', data),
+pullCloudMarks: (data) => ipcRenderer.invoke('pull-cloud-marks', data),
+    // Append these rules inside your existing exposeInMainWorld 'api' section:
+getTimeTable: (classId) => ipcRenderer.invoke('get-timetable', classId),
+saveTimeTableSlot: (data) => ipcRenderer.invoke('save-timetable-slot', data),
+deleteTimeTableSlot: (id) => ipcRenderer.invoke('delete-timetable-slot', id),
+updateIndividualFullFees: (data) => ipcRenderer.invoke('updateIndividualFullFees', data),
     // preload.js
 getAcademySubjects: () => ipcRenderer.invoke('getAcademySubjects'),
 getStudentSubjectMarks: (id) => ipcRenderer.invoke('getStudentSubjectMarks', id),
@@ -191,10 +199,11 @@ recalculatePositions: (data) => ipcRenderer.invoke('recalculate-positions', data
 // Inside preload.js
 getAllStudentProgress: (filters) => ipcRenderer.invoke('get-all-student-progress', filters),
 //expenses
- getExpenses: (filters) => ipcRenderer.invoke('get-expenses', filters),
-    addExpense: (data) => ipcRenderer.invoke('add-expense', data),
-    getExpenseFilters: () => ipcRenderer.invoke('get-expense-filters'),
-    deleteExpense: (id) => ipcRenderer.invoke('delete-expense', id),
+getExpenses: (filters) => ipcRenderer.invoke('get-expenses', filters),
+addExpense: (data) => ipcRenderer.invoke('add-expense', data),
+updateExpense: (data) => ipcRenderer.invoke('update-expense', data),
+getExpenseFilters: () => ipcRenderer.invoke('get-expense-filters'),
+deleteExpense: (id) => ipcRenderer.invoke('delete-expense', id),
     //datesheet
   // Inside contextBridge.exposeInMainWorld('api', { ... })
 addDateSheet: (data) => ipcRenderer.invoke('add-datesheet', data),
@@ -208,7 +217,6 @@ deleteDateSheet: (id) => ipcRenderer.invoke('delete-datesheet', id),
 getStudentProgress: (id) => ipcRenderer.invoke('get-student-progress', id),
 bulkUpdateFees: (data) => ipcRenderer.invoke('bulk-update-fees', data),
 // Inside your contextBridge.exposeInMainWorld('api', { ... })
-updateSingleFeeField: (data) => ipcRenderer.invoke('update-single-fee-field', data),
   // Inside your preload.js
 saveToPdf: () => ipcRenderer.invoke('save-to-pdf'), 
 

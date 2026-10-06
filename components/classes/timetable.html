@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    :root {
+    --primary-blue: #003049;
+    --accent-red: #bd081c;
+    --bg-gray: #f8fafc;
+}
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f1f5f9;
+    padding: 25px;
+    margin: 0;
+    color: #1e293b;
+}
+.dashboard-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    max-width: 100%;
+    margin: 0 auto;
+    position: relative;
+}
+.control-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    margin-bottom: 25px;
+    background: var(--bg-gray);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #475569;
+}
+select, input {
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+}
+.btn {
+    padding: 10px 20px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    border: none;
+    transition: 0.2s;
+}
+.btn-add {
+    background: var(--primary-blue);
+    color: white;
+}
+.timetable-container {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+}
+th, td {
+    border: 1px solid #e2e8f0;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 12px;
+}
+th {
+    background: var(--primary-blue);
+    color: white;
+    text-transform: uppercase;
+    font-size: 11px;
+}
+.day-header {
+    background: #cbd5e1;
+    font-weight: bold;
+    text-align: left;
+    padding-left: 10px;
+    color: var(--primary-blue);
+}
+.slot-card {
+    background: #e0f2fe;
+    border-left: 4px solid #0284c7;
+    padding: 6px;
+    border-radius: 4px;
+    position: relative;
+    text-align: left;
+}
+.break-card {
+    background: #fef3c7 !important;
+    border-left: 4px solid #d97706 !important;
+}
+.break-card .slot-subject {
+    color: #b45309 !important;
+}
+.slot-subject {
+    font-weight: bold;
+    color: #0369a1;
+}
+.slot-time {
+    font-size: 11px;
+    color: #64748b;
+}
+.btn-del-slot {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    background: transparent;
+    color: var(--accent-red);
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+.print-header { display: none; }
+
+@media print {
+    .control-row, .btn-del-slot, .no-print { display: none !important; }
+    body { background: white; padding: 0; }
+    th { background: #f2f2f2 !important; color: black !important; border: 1px solid black !important; }
+    td { border: 1px solid black !important; }
+    .print-header {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .print-school-info { text-align: center; flex-grow: 1; }
+    .print-school-name { font-size: 24px; font-weight: bold; margin: 0; }
+    .dashboard-card::before {
+        content: "SCHOOL TIMETABLE";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        font-size: 60px;
+        color: rgba(0, 0, 0, 0.03) !important;
+        font-weight: bold;
+        z-index: -1;
+    }
+}
+
+  </style>
+</head>
+<body>
+<div class="dashboard-card">
+    <!-- Visible during print actions -->
+    <div class="print-header">
+        <div style="width: 60px; font-weight: bold; border: 1px solid #000; padding: 5px; text-align:center;">LOGO</div>
+        <div class="print-school-info">
+            <h1 class="print-school-name" id="printSchoolTitle">School Name</h1>
+            <p style="margin: 5px 0 0 0; font-size: 12px;">Official Academic Timetable Plan Matrix</p>
+        </div>
+        <div style="width: 60px;"></div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin:0; color: var(--primary-blue);">School Timetable Scheduler</h2>
+        <div>
+            <button type="button" class="btn no-print" onclick="window.print()" style="background:#475569; color:white; margin-right: 10px;">Print Layout</button>
+            <button class="btn no-print" style="background: #6366f1; color:white;" onclick="window.location.href='../student/student_list.html'">Student Portal</button>
+        </div>
+    </div>
+
+    <!-- Interface Controls Panel -->
+    <form id="timetableForm" class="control-row">
+        <div class="form-group">
+            <label>Select Target Class</label>
+            <select id="selectClass" required onchange="loadTimetableMatrix()">
+                <option value="">Loading Classes...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Day of Week</label>
+            <select id="selectDay" required>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Time Slot / Period</label>
+            <!-- Changing the sequence order here will automatically re-arrange the table layout below -->
+            <select id="selectPeriod" required onchange="handlePeriodChange()">
+                <option value="Period 1">Period 1</option>
+                <option value="Period 2">Period 2</option>
+                <option value="Period 3">Period 3</option>
+                <option value="Period 4">Period 4</option>
+                <option value="Break">Break</option> <!-- To put after 5 periods, simply move this line below Period 5 -->
+                <option value="Period 5">Period 5</option>
+                <option value="Period 6">Period 6</option>
+                <option value="Period 7">Period 7</option>
+                <option value="Period 8">Period 8</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Assign Subject</label>
+            <select id="selectSubject" required>
+                <option value="">Loading Pool...</option>
+            </select>
+        </div>
+        <div class="form-group" style="flex: 0.5;">
+            <label>Start Time</label>
+            <input type="text" id="startTime" placeholder="08:00 AM" required>
+        </div>
+        <div class="form-group" style="flex: 0.5;">
+            <label>End Time</label>
+            <input type="text" id="endTime" placeholder="08:45 AM" required>
+        </div>
+        <button type="submit" class="btn btn-add">+ Assign Slot</button>
+    </form>
+
+    <!-- Dynamic Timetable View Matrix -->
+    <div class="timetable-container">
+    <table>
+        <thead>
+            <!-- This row updates automatically based on the dropdown order below -->
+            <tr id="timetableHeaderRow"></tr> 
+        </thead>
+        <tbody id="timetableBody">
+            <tr>
+                <td colspan="11" style="color:gray; padding: 20px; font-style: italic;">Loading schedule records...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+</div>
+
+<script>
+    const daysArray = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+let periodsArray = [];
+let cachedSubjects = [];
+
+// 1. AUTOMATION: Scans the form dropdown options and builds table headers dynamically
+function automaticallyBuildHeaders() {
+    const periodSelect = document.getElementById('selectPeriod');
+    if (!periodSelect) return;
+    
+    // Read current order directly from the dropdown elements
+    periodsArray = Array.from(periodSelect.options).map(option => option.value);
+    
+    const headerRow = document.getElementById('timetableHeaderRow');
+    if (!headerRow) return;
+
+    let headerHtml = `<th style="width: 10%; text-align: left; padding-left:10px;">Day</th>`;
+    
+    periodsArray.forEach(period => {
+        if (period === 'Break') {
+            headerHtml += `<th style="background: #d97706; color: white;">Break</th>`;
+        } else {
+            headerHtml += `<th>${period}</th>`;
+        }
+    });
+    
+    headerRow.innerHTML = headerHtml;
+}
+
+// 2. AUTOMATION: Blocks subject selection and auto-fills "BREAK Time" when Break is chosen
+function handlePeriodChange() {
+    const periodVal = document.getElementById('selectPeriod').value;
+    const subjectSelect = document.getElementById('selectSubject');
+    
+    if (!subjectSelect) return;
+
+    if (periodVal === 'Break') {
+        subjectSelect.innerHTML = `<option value="BREAK Time" selected>BREAK Time</option>`;
+        subjectSelect.disabled = true;
+        
+        // Optional: Auto-fill default Break hours if empty
+        document.getElementById('startTime').value = "11:45 AM";
+        document.getElementById('endTime').value = "12:15 PM";
+    } else {
+        subjectSelect.disabled = false;
+        document.getElementById('startTime').value = "";
+        document.getElementById('endTime').value = "";
+        repopulateSubjects();
+    }
+}
+
+// Helper to fill subject dropdown from database cache
+function repopulateSubjects() {
+    const subDropdown = document.getElementById('selectSubject');
+    if (!subDropdown) return;
+    
+    if (cachedSubjects.length > 0) {
+        subDropdown.innerHTML = '<option value="">-- Choose Subject --</option>';
+        cachedSubjects.forEach(s => {
+            subDropdown.add(new Option(s.subject_display_name, s.subject_display_name));
+        });
+    }
+}
+
+// 3. STARTUP RUNNER: Runs automatically as soon as the app window opens
+document.addEventListener('DOMContentLoaded', async () => {
+    // Instantly map out the table view matrix columns
+    automaticallyBuildHeaders();
+
+    // Fetch school metadata details for print layouts
+    try {
+        const details = await window.api.getAppDetails();
+        if (details && details.instituteName) {
+            document.getElementById('printSchoolTitle').innerText = details.instituteName;
+        }
+    } catch (e) { console.warn("App details could not be parsed:", e); }
+
+    // Fetch Subjects pool into memory cache
+    try {
+        cachedSubjects = await window.api.getAllSubjects();
+        repopulateSubjects();
+    } catch (err) { console.error("Subject database channel down:", err); }
+
+    // Populate Target Classes dropdown menu and perform target auto-load matrix fetch
+    try {
+        const dropdownRes = await window.api.getDropdownData();
+        const classDropdown = document.getElementById('selectClass');
+        
+        if (dropdownRes && dropdownRes.success && dropdownRes.classes.length > 0) {
+            classDropdown.innerHTML = '';
+            dropdownRes.classes.forEach(c => {
+                classDropdown.add(new Option(c.class_name, c.id));
+            });
+            
+            // AUTO-FETCH FIRST ACTIVE ROW ENTRY IMEDIATELY
+            classDropdown.selectedIndex = 0;
+            loadTimetableMatrix();
+        } else {
+            document.getElementById('timetableBody').innerHTML = '<tr><td colspan="12" style="color:gray; padding: 20px;">No active classes found in system setup.</td></tr>';
+        }
+    } catch (err) { console.error("Class menu setup crashed:", err); }
+});
+
+// 4. MATRIX CALCULATOR: Fetches grid layout slots from back-end database channel
+async function loadTimetableMatrix() {
+    const classId = document.getElementById('selectClass').value;
+    const tbody = document.getElementById('timetableBody');
+    if (!tbody) return;
+    if (!classId) {
+        tbody.innerHTML = '<tr><td colspan="12" style="color:gray; padding: 20px; font-style: italic;">Please choose an active class from the dropdown menu...</td></tr>';
+        return;
+    }
+
+    try {
+        const response = await window.api.getTimeTable(parseInt(classId));
+        if (!response || !response.success) {
+            tbody.innerHTML = '<tr><td colspan="12" style="color:red; padding:20px;">Failed to fetch database data records.</td></tr>';
+            return;
+        }
+
+        // Build data coordinate map mapping dictionary [Day][Period Name]
+        const dataMatrix = {};
+        response.data.forEach(slot => {
+            if (!dataMatrix[slot.day_name]) dataMatrix[slot.day_name] = {};
+            dataMatrix[slot.day_name][slot.period_name] = slot;
+        });
+
+        // Loop through mapped arrays columns systematically
+        tbody.innerHTML = daysArray.map(day => {
+            let rowHtml = `<tr><td class="day-header">${day}</td>`;
+            
+            periodsArray.forEach(period => {
+                const slotItem = dataMatrix[day] ? dataMatrix[day][period] : null;
+                rowHtml += '<td>';
+                if (slotItem) {
+                    const isBreak = slotItem.period_name === 'Break';
+                    rowHtml += `
+                        <div class="slot-card ${isBreak ? 'break-card' : ''}">
+                            <button type="button" class="btn-del-slot" onclick="removeSlot(${slotItem.id})">x</button>
+                            <div class="slot-subject">${slotItem.subject_name}</div>
+                            <div class="slot-time">${slotItem.start_time} - ${slotItem.end_time}</div>
+                        </div>`;
+                } else {
+                    rowHtml += '<span style="color:#cbd5e1;">---</span>';
+                }
+                rowHtml += '</td>';
+            });
+            return rowHtml + '</tr>';
+        }).join('');
+    } catch (e) {
+        console.error("IPC Matrix engine exception error:", e);
+        tbody.innerHTML = '<tr><td colspan="12" style="color:red; padding:20px;">System runtime mapping crash occurred.</td></tr>';
+    }
+}
+
+// 5. INPUT SUBMISSION MANAGEMENT
+document.getElementById('timetableForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const classId = document.getElementById('selectClass').value;
+    if (!classId) return alert("Please select a target class first.");
+    
+    const subjectSelect = document.getElementById('selectSubject');
+    const isCurrentlyDisabled = subjectSelect.disabled;
+    subjectSelect.disabled = false; // Temporarily unlock to capture data string safely
+
+    const payload = {
+        class_id: parseInt(classId),
+        day_name: document.getElementById('selectDay').value,
+        period_name: document.getElementById('selectPeriod').value,
+        subject_name: subjectSelect.value,
+        start_time: document.getElementById('startTime').value.trim(),
+        end_time: document.getElementById('endTime').value.trim()
+    };
+    
+    // Restore disabled lock safely if dealing with break periods
+    subjectSelect.disabled = isCurrentlyDisabled;
+
+    try {
+        const res = await window.api.saveTimeTableSlot(payload);
+        if (res && res.success) {
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+            // Reset to Period 1 selection defaults
+            document.getElementById('selectPeriod').selectedIndex = 0;
+            handlePeriodChange();
+            
+            // Reload grid instantly
+            loadTimetableMatrix();
+        } else {
+            alert("Database Submission Failed: " + (res.error || "Conflict detected."));
+        }
+    } catch (err) {
+        alert("IPC Communication error occurred while saving slot entry.");
+    }
+});
+
+// 6. DELETION CHANNEL LOGIC MECHANICS
+async function removeSlot(id) {
+    if (!confirm("Are you sure you want to remove this time slot?")) return;
+    
+    try {
+        const res = await window.api.deleteTimeTableSlot(id);
+        if (res && res.success) {
+            loadTimetableMatrix(); // Refresh grid layout context window display interface area
+        } else {
+            alert("Database Error: " + (res.error || "Could not execute data removal process."));
+        }
+    } catch (err) {
+        console.error("IPC Failure exception thrown:", err);
+        alert("Communication Error: The backend delete channel link is broken or missing in main.js.");
+    }
+}
+</script>
+
+</script>
+
+</body>
+</html>

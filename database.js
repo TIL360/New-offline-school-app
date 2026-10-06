@@ -76,6 +76,16 @@ db.exec(`CREATE TABLE IF NOT EXISTS student_attendance (
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL,
     UNIQUE(student_id, date)
 )`);
+db.exec(`CREATE TABLE IF NOT EXISTS school_timetable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_id INTEGER NOT NULL,
+        day_name TEXT NOT NULL,       -- Monday, Tuesday, etc.
+        period_name TEXT NOT NULL,    -- Period 1, Period 2, etc.
+        subject_name TEXT,            -- Dynamic matching string
+        start_time TEXT,              -- e.g., '08:00 AM'
+        end_time TEXT,                -- e.g., '08:45 AM'
+        UNIQUE(class_id, day_name, period_name) ON CONFLICT REPLACE
+    )`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_attendance_class ON student_attendance(class_id)`);
 
 // Staff Attendance Table
@@ -91,22 +101,17 @@ db.exec(`CREATE TABLE IF NOT EXISTS academy_subjects (
     subject_code TEXT UNIQUE NOT NULL, -- e.g., 'urdu', 'eng', 'pak_studies'
     subject_display_name TEXT NOT NULL  -- e.g., 'Urdu', 'English', 'Pak Studies'
 )`);
-db.exec(`CREATE TABLE IF NOT EXISTS student_subject_marks (
-    result_id INTEGER,
+// --- DYNAMIC SUBJECT SYSTEM ---
+
+// 1. Stores total marks per exam + class + subject (your Step 3)
+db.exec(`
+CREATE TABLE IF NOT EXISTS exam_subject_settings (
+    exam_id INTEGER,
+    class TEXT,
     subject_code TEXT,
-    marks_set REAL DEFAULT 100,
-    marks_obtained REAL DEFAULT 0,
-    PRIMARY KEY(result_id, subject_code)
+    total_marks REAL DEFAULT 0,
+    PRIMARY KEY (exam_id, class, subject_code)
 )`);
-
-db.exec(`CREATE TABLE IF NOT EXISTS exam_passing_criteria (
-    exam_id INTEGER PRIMARY KEY,
-    subject_pass_percentage REAL DEFAULT 40.0, -- Default subject pass line
-    overall_pass_percentage REAL DEFAULT 33.0, -- Default grand total pass line
-    max_failed_subjects_allowed INTEGER DEFAULT 1, -- Threshold before getting 'Detained'
-    FOREIGN KEY(exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE
-)`);
-
 
 db.exec(`CREATE TABLE IF NOT EXISTS staff_attendance (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -116,6 +121,55 @@ db.exec(`CREATE TABLE IF NOT EXISTS staff_attendance (
     FOREIGN KEY (staff_id) REFERENCES staff_tbl(id) ON DELETE CASCADE,
     UNIQUE(staff_id, date)
 )`);
+// 2. Stores obtained marks per student per subject
+db.exec(`
+CREATE TABLE IF NOT EXISTS student_subject_marks (
+    result_id INTEGER,
+    exam_id INTEGER,
+    student_id INTEGER,
+    class TEXT,
+    subject_code TEXT,
+    marks_set REAL DEFAULT 100,
+    marks_obtained REAL DEFAULT 0,
+    PRIMARY KEY(result_id, subject_code)
+)`);
+
+// Migration for old database - add columns if they don't exist
+try { db.exec("ALTER TABLE student_subject_marks ADD COLUMN exam_id INTEGER"); } catch(e){}
+try { db.exec("ALTER TABLE student_subject_marks ADD COLUMN student_id INTEGER"); } catch(e){}
+try { db.exec("ALTER TABLE student_subject_marks ADD COLUMN class TEXT"); } catch(e){}
+try { db.exec("ALTER TABLE student_subject_marks ADD COLUMN marks_set REAL DEFAULT 100"); } catch(e){}
+try { db.exec("ALTER TABLE student_subject_marks ADD COLUMN marks_obtained REAL DEFAULT 0"); } catch(e){}
+// Clean old wrong columns if you created them
+try { db.exec("ALTER TABLE student_subject_marks ADD COLUMN setmarks REAL DEFAULT 0"); } catch(e){}
+try { db.exec("ALTER TABLE student_subject_marks ADD COLUMN obt REAL DEFAULT 0"); } catch(e){}
+db.exec(`CREATE TABLE IF NOT EXISTS exam_passing_criteria (
+    exam_id INTEGER PRIMARY KEY,
+    subject_pass_percentage REAL DEFAULT 40.0, -- Default subject pass line
+    overall_pass_percentage REAL DEFAULT 33.0, -- Default grand total pass line
+    max_failed_subjects_allowed INTEGER DEFAULT 1, -- Threshold before getting 'Detained'
+    FOREIGN KEY(exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE
+)`);
+
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS staff (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    cnic TEXT,
+    contact TEXT,
+    designation TEXT,
+    doj TEXT,
+    salary REAL,
+    allowance REAL,
+    status TEXT,
+    documents_held TEXT,
+    photo TEXT
+)`);
+
+// For old data - add column if not exists
+try { db.exec("ALTER TABLE staff ADD COLUMN photo TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE staff ADD COLUMN documents_held TEXT"); } catch(e) {}
 // 1. Run this at the top of database.js setup to ensure the table exists
 // Ensure the new exam configuration settings table exists
 // Find this block in Database.js and update it:
@@ -236,31 +290,6 @@ db.prepare(`
     student_id INTEGER,
     class TEXT,
     
-    -- Existing Subjects --
-    urdu_setmarks INTEGER DEFAULT 100, urdu_obt REAL DEFAULT 0,
-    eng_setmarks INTEGER DEFAULT 100, eng_obt REAL DEFAULT 0,
-    math_setmarks INTEGER DEFAULT 100, math_obt REAL DEFAULT 0,
-    sst_setmarks INTEGER DEFAULT 100, sst_obt REAL DEFAULT 0,
-    islamiat_setmarks INTEGER DEFAULT 100, islamiat_obt REAL DEFAULT 0,
-    science_setmarks INTEGER DEFAULT 100, science_obt REAL DEFAULT 0,
-    physics_setmarks INTEGER DEFAULT 100, physics_obt REAL DEFAULT 0,
-    chemistry_setmarks INTEGER DEFAULT 100, chemistry_obt REAL DEFAULT 0,
-    biology_setmarks INTEGER DEFAULT 100, biology_obt REAL DEFAULT 0,
-    computer_setmarks INTEGER DEFAULT 100, computer_obt REAL DEFAULT 0,
-    drawing_setmarks INTEGER DEFAULT 100, drawing_obt REAL DEFAULT 0,
-    geography_setmarks INTEGER DEFAULT 100, geography_obt REAL DEFAULT 0,
-
-    -- ADD THESE NEW SUBJECT COLUMNS HERE --
-    pak_studies_setmarks INTEGER DEFAULT 100, pak_studies_obt REAL DEFAULT 0,
-    islamic_studies_setmarks INTEGER DEFAULT 100, islamic_studies_obt REAL DEFAULT 0,
-    tarjama_quran_setmarks INTEGER DEFAULT 100, tarjama_quran_obt REAL DEFAULT 0,
-    gk_setmarks INTEGER DEFAULT 100, gk_obt REAL DEFAULT 0,
-    functional_math_setmarks INTEGER DEFAULT 100, functional_math_obt REAL DEFAULT 0,
-    islamiat_compulsory_setmarks INTEGER DEFAULT 100, islamiat_compulsory_obt REAL DEFAULT 0,
-    social_studies_setmarks INTEGER DEFAULT 100, social_studies_obt REAL DEFAULT 0,
-    home_economics_setmarks INTEGER DEFAULT 100, home_economics_obt REAL DEFAULT 0,
-    civics_setmarks INTEGER DEFAULT 100, civics_obt REAL DEFAULT 0,
-    general_science_setmarks INTEGER DEFAULT 100, general_science_obt REAL DEFAULT 0,
 
     total_setmarks INTEGER DEFAULT 2200,
     total_obt REAL DEFAULT 0,
@@ -347,8 +376,45 @@ db.exec(`
             db.prepare('INSERT INTO users (username, password, usertype) VALUES (?, ?, ?)').run('Admin', 'admin123', 'Admin');
         }
 
+            // --- AUTO ADD NEW SUBJECT COLUMNS DYNAMICALLY ---
+        const ensureResultColumns = () => {
+            try {
+                const existingCols = db.prepare("PRAGMA table_info(result)").all().map(c => c.name);
+                const subjects = db.prepare("SELECT subject_code FROM academy_subjects").all();
+                subjects.forEach(sub => {
+                    const code = String(sub.subject_code).toLowerCase().trim();
+                    const setCol = `${code}_setmarks`;
+                    const obtCol = `${code}_obt`;
+                    if (!existingCols.includes(setCol)) {
+                        db.exec(`ALTER TABLE result ADD COLUMN ${setCol} INTEGER DEFAULT 0`);
+                        console.log(`Added column: ${setCol}`);
+                    }
+                    if (!existingCols.includes(obtCol)) {
+                        db.exec(`ALTER TABLE result ADD COLUMN ${obtCol} REAL DEFAULT 0`);
+                        console.log(`Added column: ${obtCol}`);
+                    }
+                });
+            } catch(e){ console.log("Dynamic column check:", e.message); }
+        };
+        ensureResultColumns();
+
     } catch (err) { console.error("DB Init Error:", err); }
 };
+
+// ALSO RUN IT ON APP START AFTER init
+initializeDB();
+try {
+    // Re-run to catch subjects added later
+    const cols = db.prepare("PRAGMA table_info(result)").all().map(c=>c.name);
+    const subs = db.prepare("SELECT subject_code FROM academy_subjects").all();
+    subs.forEach(sub=>{
+        const code = String(sub.subject_code).toLowerCase().trim();
+        if(!cols.includes(`${code}_setmarks`)){
+            db.exec(`ALTER TABLE result ADD COLUMN ${code}_setmarks INTEGER DEFAULT 0`);
+            db.exec(`ALTER TABLE result ADD COLUMN ${code}_obt REAL DEFAULT 0`);
+        }
+    });
+} catch(e){};
 
 initializeDB();
 
@@ -478,8 +544,7 @@ const generateFee = (studentId, month, year) => {
 
 
 const generateBulkFees = (month, year) => {
-    // 1. Fetch active students without an invoice for this month
-    // We SUM(balance) to get the total debt from all previous records
+    // 1. Fetch active students WITHOUT invoice + monthly_fee > 0
     const missingStudents = db.prepare(`
         SELECT 
             s.id, 
@@ -493,6 +558,7 @@ const generateBulkFees = (month, year) => {
             ), 0) AS total_arrears
         FROM students s
         WHERE LOWER(s.status) = 'active' 
+        AND COALESCE(s.monthly_fee, 0) > 0
         AND s.id NOT IN (
             SELECT student_id FROM fee_tbl 
             WHERE LOWER(invoice_month) = LOWER(?) AND invoice_year = ?
@@ -500,10 +566,9 @@ const generateBulkFees = (month, year) => {
     `).all(month, year);
 
     if (missingStudents.length === 0) {
-        return { success: false, message: `Invoices for ${month} ${year} already generated.` };
+        return { success: false, message: `No eligible students found. Either invoices for ${month} ${year} already generated or all active students have monthly_fee = 0.` };
     }
 
-    // 2. Prepare Insert statement
     const insertStmt = db.prepare(`
         INSERT INTO fee_tbl (
             student_id, registration_no, current_class, 
@@ -511,7 +576,6 @@ const generateBulkFees = (month, year) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, 0)
     `);
 
-    // 3. Execute as a transaction for speed and safety
     const transaction = db.transaction((students) => {
         for (const s of students) {
             insertStmt.run(
@@ -519,7 +583,7 @@ const generateBulkFees = (month, year) => {
                 s.registration_no, 
                 s.current_class, 
                 s.monthly_fee, 
-                s.total_arrears, // Correctly pulls the sum of past balances
+                s.total_arrears,
                 month, 
                 year
             );
@@ -557,21 +621,26 @@ function getUniqueInvoiceMonths() { return db.prepare('SELECT DISTINCT invoice_m
 function getUniqueInvoiceYears() { return db.prepare('SELECT DISTINCT invoice_year FROM fee_tbl ORDER BY invoice_year DESC').all(); }
 function getClassesFee() { return db.prepare('SELECT class_name FROM classes ORDER BY class_name ASC').all(); }
 
+// 1. Make sure table has photo column - run this once at top where you create tables
+try { db.exec("ALTER TABLE staff_tbl ADD COLUMN photo TEXT"); } catch(e) {}
+try { db.exec("ALTER TABLE staff_tbl ADD COLUMN documents_held TEXT"); } catch(e) {}
+
 const getStaff = () => db.prepare("SELECT * FROM staff_tbl ORDER BY id DESC").all();
+
 const insertStaff = (data) => 
   db.prepare(`
-    INSERT INTO staff_tbl (name, cnic, contact, designation, doj, salary, allowance, status, documents_held) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(data.name, data.cnic, data.contact, data.designation, data.doj, data.salary, data.allowance, data.status, data.documents_held);
+    INSERT INTO staff_tbl (name, cnic, contact, designation, doj, salary, allowance, status, documents_held, photo) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(data.name, data.cnic, data.contact, data.designation, data.doj, data.salary, data.allowance, data.status, data.documents_held, data.photo || null);
 
 const updateStaff = (id, data) => 
   db.prepare(`
     UPDATE staff_tbl 
-    SET name=?, cnic=?, contact=?, designation=?, doj=?, salary=?, allowance=?, status=?, documents_held=? 
+    SET name=?, cnic=?, contact=?, designation=?, doj=?, salary=?, allowance=?, status=?, documents_held=?, photo=? 
     WHERE id=?
-  `).run(data.name, data.cnic, data.contact, data.designation, data.doj, data.salary, data.allowance, data.status, data.documents_held, id);
+  `).run(data.name, data.cnic, data.contact, data.designation, data.doj, data.salary, data.allowance, data.status, data.documents_held, data.photo || null, id);
 
-const deleteStaff = (id) => db.prepare("DELETE FROM staff_tbl WHERE id = ?").run(id);
+  const deleteStaff = (id) => db.prepare("DELETE FROM staff_tbl WHERE id = ?").run(id);
 
 /**
  * Initiates salary records for all 'Active' staff members for a specific month/year.
@@ -1111,20 +1180,43 @@ const getStudentAttendanceByClass = (className, date) => {
 };
 
 const getStaffAttendanceByDate = (date) => {
-  return {
-    isMarked: false,
-    records: db.prepare(`
-      SELECT st.id as staff_id, st.name, st.designation, NULL as status
+  try {
+    const records = db.prepare(`
+      SELECT 
+        st.id as staff_id, 
+        st.name, 
+        COALESCE(st.designation, 'Staff') as designation,
+        COALESCE(a.status, 'Absent') as status
       FROM staff_tbl st
-      WHERE LOWER(st.status) = 'active'
-      AND st.id NOT IN (
-        SELECT staff_id FROM staff_attendance WHERE date = ? AND staff_id IS NOT NULL
-      )
+      LEFT JOIN staff_attendance a ON a.staff_id = st.id AND a.date = ?
+      WHERE LOWER(TRIM(st.status)) = 'active'
       ORDER BY st.name ASC
-    `).all(date)
-  };
-};
+    `).all(date);
 
+    console.log(`Staff found for ${date}:`, records.length);
+    return { isMarked: false, records };
+  } catch (err) {
+    console.error("getStaffAttendanceByDate error:", err.message);
+    // fallback if table name is 'staff' not 'staff_tbl'
+    try {
+      const records = db.prepare(`
+        SELECT 
+          st.id as staff_id, 
+          st.name, 
+          COALESCE(st.designation, 'Staff') as designation,
+          COALESCE(a.status, 'Absent') as status
+        FROM staff st
+        LEFT JOIN staff_attendance a ON a.staff_id = st.id AND a.date = ?
+        WHERE LOWER(TRIM(st.status)) = 'active'
+        ORDER BY st.name ASC
+      `).all(date);
+      return { isMarked: false, records };
+    } catch(e2) {
+      console.error("Fallback error:", e2.message);
+      return { isMarked: false, records: [], error: e2.message };
+    }
+  }
+};
 
 
 
@@ -1631,6 +1723,81 @@ const getAllSubjectMarksBulk = (resultIds) => {
   `).all(...resultIds);
 };
 
+// 1. Fetch the Timetable Matrix by Class ID
+// 1. Fetch the Timetable Matrix by Class ID
+// 1. Fetch the Timetable Matrix by Class ID (Renamed and simplified for main.js)
+function getTimeTableByClass(classId) {
+    try {
+        const query = `
+            SELECT * FROM school_timetable 
+            WHERE class_id = ? 
+            ORDER BY day_name, period_name
+        `;
+        // Directly return the rows array so main.js can wrap it correctly
+        return db.prepare(query).all(classId);
+    } catch (err) {
+        console.error("SQL Error in getTimeTableByClass:", err);
+        throw err; // Throws the error to be caught by the try-catch block in main.js
+    }
+}
+
+// 2. Save / Insert a New Time Slot Reference
+function saveTimeTableSlot(data) {
+    try {
+        const stmt = db.prepare(`
+            INSERT INTO school_timetable (class_id, day_name, period_name, subject_name, start_time, end_time)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        stmt.run(
+            data.class_id, 
+            data.day_name, 
+            data.period_name, 
+            data.subject_name, 
+            data.start_time, 
+            data.end_time
+        );
+        return { success: true };
+    } catch (err) {
+        console.error("SQL Error in saveTimeTableSlot:", err);
+        return { success: false, error: err.message };
+    }
+}
+
+// 3. Delete an Existing Time Slot
+function deleteTimeTableSlot(id) {
+    try {
+        const stmt = db.prepare(`DELETE FROM school_timetable WHERE id = ?`);
+        const info = stmt.run(id);
+        return { success: true, changes: info.changes };
+    } catch (err) {
+        console.error("SQL Error in deleteTimeTableSlot:", err);
+        return { success: false, error: err.message };
+    }
+}
+
+// DELETE
+const deleteExpense = (id) => {
+  try {
+    return db.prepare("DELETE FROM exp_tbl WHERE id = ?").run(id);
+  } catch (err) {
+    console.error("deleteExpense error:", err.message);
+    return { changes: 0 };
+  }
+};
+
+// UPDATE
+const updateExpense = (id, expense, amount) => {
+  try {
+    return db.prepare("UPDATE exp_tbl SET expence = ?, exp_amount = ? WHERE id = ?").run(expense, amount, id);
+  } catch (err) {
+    console.error("updateExpense error:", err.message);
+    return { changes: 0 };
+  }
+};
+
+
+
+
 module.exports = {
     db, checkUser, addUser, getAllUsers, addClass, getClasses, deleteClass, updateClass, getStudentGridReport,
     getStaffGridReport,addQuestionToPaper,getPaperQuestions,addQuestion,getQuestions,
@@ -1643,7 +1810,10 @@ module.exports = {
     getFeeReportByStatus, getDateWiseReport, deleteFeeRecordsByStudent, deleteResultsByStudent,
     addDateSheetPaper, getDateSheetRecords, updateDateSheetPaper, deleteDateSheetPaper, changeUserPassword,
     getStudentByReg,  saveStudentAttendance,deleteSingleQuestion,
-    getStudentAttendanceByClass,getPaperSettings,deleteEntirePaper,
+    getStudentAttendanceByClass,getPaperSettings,deleteEntirePaper,  getTimeTableByClass,
+    saveTimeTableSlot,deleteExpense,
+  updateExpense,
+    deleteTimeTableSlot,
     saveStaffAttendance,uploadBulkQuestions, savePaperSettingsOnly,
     getStaffAttendanceByDate, removeQuestionFromPaper, updateQuestionText, getQuestionById,deleteExamCascade, getStudentAttendanceStatus, getStaffAttendanceStatus,
     getAcademySubjects,getStudentSubjectMarks,getAllSubjectMarksBulk,

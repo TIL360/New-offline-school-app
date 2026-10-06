@@ -7,39 +7,42 @@
     <style>
         :root { --primary: #2c3e50; --accent: #3498db; --bg: #f4f7f6; --white: #ffffff; --success: #27ae60; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-        
-        .back-link { text-decoration: none; color: var(--accent); font-weight: bold; margin-bottom: 15px; display: inline-block; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+       .back-link { text-decoration: none; color: var(--accent); font-weight: bold; margin-bottom: 15px; display: inline-block; }
+       .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         h2 { color: var(--primary); margin: 0; }
-
-        /* Form Container */
-        .staff-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
-        .card { background: var(--white); padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 12px; font-weight: bold; color: #666; margin-bottom: 5px; text-transform: uppercase; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        
-        .btn-save { width: 100%; background: var(--success); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .btn-save:hover { background: #219150; }
-
-        /* Table Styling */
+       .staff-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+       .card { background: var(--white); padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+       .form-group { margin-bottom: 15px; }
+       .form-group label { display: block; font-size: 12px; font-weight: bold; color: #666; margin-bottom: 5px; text-transform: uppercase; }
+       .form-group input,.form-group select,.form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+       .btn-save { width: 100%; background: var(--success); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+       .btn-save:hover { background: #219150; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
         th { background: var(--primary); color: white; padding: 12px; text-align: left; font-size: 0.8rem; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        .status-pill { padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
-        .active { background: #d4edda; color: #155724; }
-        .inactive { background: #f8d7da; color: #721c24; }
-
-        .btn-action { border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; margin-right: 3px; }
-        .edit { background: #3498db; color: white; }
-        .delete { background: var(--danger); color: white; }
+       .status-pill { padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+       .active { background: #d4edda; color: #155724; }
+       .inactive { background: #f8d7da; color: #721c24; }
+       .btn-action { border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; margin-right: 3px; }
+       .edit { background: #3498db; color: white; }
+       .delete { background: var(--danger); color: white; }
+       .photo-box { display:flex; flex-direction:column; align-items:center; margin-bottom:15px; border:2px dashed #ddd; padding:15px; border-radius:8px; background:#fafafa; }
+       .photo-preview { width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); background:#eee; margin-bottom:10px; }
+       .photo-box input { font-size:12px; }
+       .table-photo { width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid #ddd; vertical-align:middle; margin-right:8px; }
+        /* CUSTOM MODALS - FIXES INPUT LOCK */
+       .custom-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:10000; align-items:center; justify-content:center; }
+       .custom-modal.show { display:flex; }
+       .custom-box { background:white; width:380px; border-radius:10px; overflow:hidden; box-shadow:0 15px 40px rgba(0,0,0,0.3); }
+       .custom-head { padding:12px 16px; font-weight:700; border-bottom:1px solid #eee; display:flex; justify-content:space-between; }
+       .custom-body { padding:20px 16px; font-size:14px; line-height:1.6; }
+       .custom-foot { padding:10px 16px; background:#f8f9ff; display:flex; justify-content:flex-end; gap:10px; }
+       .custom-foot button { padding:6px 14px; border-radius:6px; border:1px solid #ddd; cursor:pointer; font-weight:600; }
+       .btn-del { background:var(--danger)!important; color:white!important; border-color:var(--danger)!important; }
+       .btn-ok { background:var(--primary)!important; color:white!important; border-color:var(--primary)!important; }
     </style>
 </head>
 <body>
-<!-- 
-    <a href="../dashboard.html" class="back-link">← Back to Dashboard</a> -->
-    
     <div class="header">
     <h2>Staff Management</h2>
     <div>
@@ -49,330 +52,235 @@
         <button onclick="openSalaryModal()" style="background: #e67e22; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px;">💰 Initiate Salary</button>
         <span id="staffStats" style="font-weight: bold; color: var(--primary);">Total Staff: <span id="countText">0</span></span>
     </div>
-</div> 
+</div>
 
     <div class="staff-grid">
-        <!-- Add/Edit Section -->
         <div class="card">
             <h3 style="margin-top:0">Add New Staff</h3>
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="staffName" placeholder="Enter full name">
+            <div class="photo-box">
+                <img id="staffPhotoPreview" class="photo-preview" src="../../images/logo.png" />
+                <input type="file" id="staffPhoto" accept="image/*" onchange="previewPhoto(event)">
+                <small style="color:#888; margin-top:5px;">Click to upload staff picture</small>
             </div>
-            <div class="form-group">
-                <label>CNIC / ID Number</label>
-                <input type="text" id="staffCnic" placeholder="xxxxx-xxxxxxx-x">
-            </div>
-            <div class="form-group">
-                <label>Contact Number</label>
-                <input type="text" id="staffContact" placeholder="03xx-xxxxxxx">
-            </div>
+            <div class="form-group"><label>Full Name</label><input type="text" id="staffName" placeholder="Enter full name"></div>
+            <div class="form-group"><label>CNIC / ID Number</label><input type="text" id="staffCnic" placeholder="xxxxx-xxxxxxx-x"></div>
+            <div class="form-group"><label>Contact Number</label><input type="text" id="staffContact" placeholder="03xx-xxxxxxx"></div>
             <div style="display: flex; gap: 10px;">
-                <div class="form-group" style="flex:1">
-                    <label>Designation</label>
-                    <input type="text" id="staffRole" placeholder="e.g. Teacher">
-                </div>
-                <div class="form-group" style="flex:1">
-                    <label>Status</label>
-                    <select id="staffStatus">
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
+                <div class="form-group" style="flex:1"><label>Designation</label><input type="text" id="staffRole" placeholder="e.g. Teacher"></div>
+                <div class="form-group" style="flex:1"><label>Status</label><select id="staffStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
             </div>
-            <div class="form-group">
-                <label>Date of Appointment</label>
-                <input type="date" id="staffDoj">
-            </div>
+            <div class="form-group"><label>Date of Appointment</label><input type="date" id="staffDoj"></div>
             <div style="display: flex; gap: 10px;">
-                <div class="form-group" style="flex:1">
-                    <label>Basic Salary</label>
-                    <input type="number" id="staffSalary" placeholder="0">
-                </div>
-                <div class="form-group" style="flex:1">
-                    <label>Allowances</label>
-                    <input type="number" id="staffAllowance" placeholder="0">
-                </div>
+                <div class="form-group" style="flex:1"><label>Basic Salary</label><input type="number" id="staffSalary" placeholder="0"></div>
+                <div class="form-group" style="flex:1"><label>Allowances</label><input type="number" id="staffAllowance" placeholder="0"></div>
             </div>
-            <!-- Inside your 'Add New Staff' Form Layout -->
-<div class="row">
-    <div class="col-12">
-        <label for="staffDocumentsHeld">DOCUMENTS Deposited </label>
-        <textarea id="staffDocumentsHeld" class="form-control" placeholder="e.g., Original Matric Degree, B.Ed Certificate, Contract Agreement" rows="2"></textarea>
-    </div>
-</div>
-
+            <div class="row"><div class="col-12"><label for="staffDocumentsHeld" style="display:block; font-size:12px; font-weight:bold; color:#666; margin-bottom:5px;">DOCUMENTS Deposited </label><textarea id="staffDocumentsHeld" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;" placeholder="e.g., Original Matric Degree, B.Ed Certificate" rows="2"></textarea></div></div>
             <button class="btn-save" onclick="saveStaff()">Add Staff Member</button>
         </div>
-
-        <!-- Staff List Section -->
         <div class="card" style="overflow-x: auto; padding: 0;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name & Designation</th>
-                        <th>CNIC</th>
-                        <th>Contact</th>
-                        <th>Salary Details</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="staffTableBody">
-                    <!-- Data will be loaded here -->
-                </tbody>
-            </table>
+            <table><thead><tr><th>Name & Designation</th><th>CNIC</th><th>Contact</th><th>Salary Details</th><th>Status</th><th>Actions</th></tr></thead><tbody id="staffTableBody"></tbody></table>
         </div>
     </div>
 
-    <!-- Simple Salary Modal -->
 <div id="salaryModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
-    <div class="card" style="width: 300px;">
-        <h3>Initiate Salary</h3>
-        <div class="form-group">
-            <label>Month</label>
-            <select id="salMonth" class="nice-select" style="width: 100%;">
-                <option value="January">January</option><option value="February">February</option>
-                <option value="March">March</option><option value="April">April</option>
-                <option value="May">May</option><option value="June">June</option>
-                <option value="July">July</option><option value="August">August</option>
-                <option value="September">September</option><option value="October">October</option>
-                <option value="November">November</option><option value="December">December</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Year</label>
-            <input type="number" id="salYear" value="2026">
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <button onclick="processSalary()" class="btn-save">Generate</button>
-            <button onclick="closeSalaryModal()" style="background:#95a5a6;" class="btn-save">Cancel</button>
-        </div>
-    </div>
+    <div class="card" style="width: 300px;"><h3>Initiate Salary</h3><div class="form-group"><label>Month</label><select id="salMonth" style="width: 100%;"><option value="January">January</option><option value="February">February</option><option value="March">March</option><option value="April">April</option><option value="May">May</option><option value="June">June</option><option value="July">July</option><option value="August">August</option><option value="September">September</option><option value="October">October</option><option value="November">November</option><option value="December">December</option></select></div><div class="form-group"><label>Year</label><input type="number" id="salYear" value="2026"></div><div style="display: flex; gap: 10px;"><button onclick="processSalary()" class="btn-save">Generate</button><button onclick="closeSalaryModal()" style="background:#95a5a6;" class="btn-save">Cancel</button></div></div>
 </div>
+
+<!-- ALERT MODAL -->
+<div id="alertModal" class="custom-modal"><div class="custom-box"><div class="custom-head">Staff Management <span style="cursor:pointer" onclick="closeAlert()">×</span></div><div class="custom-body" id="alertMsg">Message</div><div class="custom-foot"><button class="btn-ok" onclick="closeAlert()">OK</button></div></div></div>
+
+<!-- DELETE MODAL -->
+<div id="deleteModal" class="custom-modal"><div class="custom-box"><div class="custom-head">Delete Staff <span style="cursor:pointer" onclick="closeDelete()">×</span></div><div class="custom-body">Are you sure you want to remove this staff permanently?</div><div class="custom-foot"><button class="btn-del" onclick="confirmDelete()">Delete</button><button onclick="closeDelete()">Cancel</button></div></div></div>
+
 <script>
     let editMode = false;
     let currentEditId = null;
+    let currentPhotoBase64 = "";
+    let pendingDeleteId = null;
+    let isSaving = false;
+    const FALLBACK = '../../images/logo.png';
+    let staffMap = {}; // <-- FIX: use ID map instead of JSON in onclick
 
-    // Run automatically when the window loads
-   document.addEventListener('DOMContentLoaded', () => {
-    loadStaff();
-
-    function releaseFocusLock() {
-        if (window.authAPI && typeof window.authAPI.send === 'function') {
-            window.authAPI.send('fix-focus');
-        }
+    function showAlert(msg){
+      document.getElementById('alertMsg').innerText = msg;
+      document.getElementById('alertModal').classList.add('show');
+    }
+    function closeAlert(){
+      document.getElementById('alertModal').classList.remove('show');
+      window.focus();
+      if(window.authAPI) window.authAPI.send('fix-focus');
+    }
+    function openDeleteModal(id){
+      pendingDeleteId = id;
+      document.getElementById('deleteModal').classList.add('show');
+    }
+    function closeDelete(){
+      document.getElementById('deleteModal').classList.remove('show');
+      pendingDeleteId=null;
+      window.focus();
+      if(window.authAPI) window.authAPI.send('fix-focus');
+    }
+    async function confirmDelete(){
+      const id = pendingDeleteId;
+      closeDelete();
+      if(!id) return;
+      try {
+        await window.api.deleteStaff(id);
+        await loadStaff();
+      } catch(err){ console.error(err); showAlert(err.message); }
+      window.focus();
     }
 
-    // 1. SELECT dropdown ka glitch fix (Status wala)
-    document.body.addEventListener('change', (event) => {
-        if (event.target.tagName === 'SELECT') {
-            event.target.blur();
-            releaseFocusLock();
-        }
+    document.addEventListener('DOMContentLoaded', () => {
+        window.focus();
+        loadStaff();
+        document.body.addEventListener('change', (e)=>{
+          if(e.target.tagName==='SELECT'){ e.target.blur(); window.focus(); if(window.authAPI) window.authAPI.send('fix-focus'); }
+        });
     });
 
-    // 2. alert / confirm ka global fix
-    const _alert = window.alert;
-    window.alert = function(msg) {
-        _alert(msg);
-        releaseFocusLock();
-        setTimeout(() => {
-            const nameInput = document.getElementById('fullName') || document.querySelector('input[placeholder="Enter full name"]');
-            if (nameInput) nameInput.focus();
-        }, 200);
-    };
+    function previewPhoto(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('staffPhotoPreview').src = e.target.result;
+            currentPhotoBase64 = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
 
-    const _confirm = window.confirm;
-    window.confirm = function(msg) {
-        const res = _confirm(msg);
-        releaseFocusLock();
-        return res;
-    };
-});
-
-    // --- READ: Fetch staff array from backend and draw table rows ---
     async function loadStaff() {
         try {
-            // Invokes the IPC handler connected to getStaff() in database.js
             const staff = await window.api.getStaff();
+            staffMap = {}; // reset map
             const tableBody = document.getElementById('staffTableBody');
             tableBody.innerHTML = '';
-            
             staff.forEach(s => {
-                // Safely convert the object to a string attribute so it handles spaces/quotes cleanly
-                const staffData = JSON.stringify(s).replace(/"/g, '&quot;');
-                
+                staffMap[s.id] = s; // store for edit
+                let photo = s.photoDisplay || s.photo || FALLBACK;
+                if(!photo.startsWith('data:') &&!photo.startsWith('../../') &&!photo.startsWith('file:')){
+                  photo = s.photoDisplay && s.photoDisplay.startsWith('data:')? s.photoDisplay : FALLBACK;
+                }
+
                 tableBody.innerHTML += `
                     <tr>
-                        <td><strong>${s.name}</strong><br><small class="text-muted">${s.designation}</small></td>
-                        <td>${s.cnic}</td>
-                        <td>${s.contact}</td>
+                        <td><img src="${photo}" class="table-photo" onerror="this.src='${FALLBACK}'"><strong>${s.name}</strong><br><small style="margin-left:48px;">${s.designation || ''}</small></td>
+                        <td>${s.cnic || ''}</td>
+                        <td>${s.contact || ''}</td>
+                        <td><small>Bas: ${s.salary || 0}</small><br><small>All: ${s.allowance || 0}</small></td>
+                        <td><span class="status-pill ${(s.status||'active').toLowerCase()}">${s.status || 'Active'}</span></td>
                         <td>
-                            <small>Bas: ${s.salary}</small><br>
-                            <small>All: ${s.allowance}</small>
-                        </td>
-                        <td><span class="status-pill ${s.status.toLowerCase()}">${s.status}</span></td>
-                        <td>
-                            <button class="btn-action edit" onclick="startEdit('${staffData}')">✎ Edit</button>
+                            <button class="btn-action edit" onclick="startEditById(${s.id})">✎ Edit</button>
                             <button class="btn-action delete" onclick="removeStaff(${s.id})">✖ Delete</button>
                         </td>
                     </tr>`;
             });
-            
-            // Updates the counter label at the top right of the dashboard view
-            const countLabel = document.getElementById('countText');
-            if (countLabel) countLabel.innerText = staff.length;
-            
-        } catch (error) {
-            console.error("Critical error rendering staff view data grid:", error);
-        }
+            document.getElementById('countText').innerText = staff.length;
+        } catch (error) { console.error("Error loading staff:", error); }
     }
 
-    // --- EDIT: Populates all form input elements when clicking "Edit" ---
-    function startEdit(staffJson) {
-        const staff = JSON.parse(staffJson);
-        editMode = true;
-        currentEditId = staff.id;
-
-        // Populate standard input elements matching Page 1 layout names
-        document.getElementById('staffName').value = staff.name || '';
-        document.getElementById('staffCnic').value = staff.cnic || '';
-        document.getElementById('staffContact').value = staff.contact || '';
-        document.getElementById('staffRole').value = staff.designation || '';
-        document.getElementById('staffDoj').value = staff.doj || '';
-        document.getElementById('staffSalary').value = staff.salary || 0;
-        document.getElementById('staffAllowance').value = staff.allowance || 0;
-        document.getElementById('staffStatus').value = staff.status || 'Active';
-        
-        // 🌟 Fix: Safely load documents held, checking for null values
-        const docField = document.getElementById('staffDocumentsHeld');
-        if (docField) {
-            docField.value = staff.documents_held || '';
-        }
-
-        // Alter form submission button appearance to signal update tracking
-        const btn = document.querySelector('.btn-save');
-        if (btn) {
-            btn.innerText = "Update Staff Member";
-            btn.style.backgroundColor = "#0288d1"; // Swaps to visual context action blue
-        }
-        
-        // Smooth scroll back to form layout for immediate viewing
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // --- SAVE: Decides whether to send an update query or fresh record insert ---
-    async function saveStaff() {
-        const docField = document.getElementById('staffDocumentsHeld');
-        
-        const data = {
-            name: document.getElementById('staffName').value.trim(),
-            cnic: document.getElementById('staffCnic').value.trim(),
-            contact: document.getElementById('staffContact').value.trim(),
-            designation: document.getElementById('staffRole').value.trim(),
-            doj: document.getElementById('staffDoj').value,
-            salary: parseFloat(document.getElementById('staffSalary').value) || 0,
-            allowance: parseFloat(document.getElementById('staffAllowance').value) || 0,
-            status: document.getElementById('staffStatus').value,
-            documents_held: docField ? docField.value.trim() : ''
-        };
-
-        // Basic verification sanity validation block
-        if (!data.name || !data.cnic) {
-            alert("Validation Error: Please fill in the Full Name and CNIC code parameters.");
-            return;
-        }
-
-        try {
-            // Inside your saveStaff() function in staff.html
-if (editMode) {
-    // Modifies existing table entry rows
-    await window.api.updateStaff(currentEditId, data);
-    alert("Staff record updated successfully!");
-} else {
-    // 🌟 CHANGE THIS ROW TO MATCH YOUR PRELOAD BRIDGING NAME
-    await window.api.addStaff(data); 
-    alert("New staff member registered successfully!");
+function startEditById(id){
+    const staff = staffMap[id];
+    if(!staff) return;
+    currentEditId = staff.id;
+    editMode = true;
+    currentPhotoBase64 = staff.photo || "";
+    document.getElementById('staffName').value = staff.name || '';
+    document.getElementById('staffCnic').value = staff.cnic || '';
+    document.getElementById('staffContact').value = staff.contact || '';
+    document.getElementById('staffRole').value = staff.designation || '';
+    document.getElementById('staffDoj').value = staff.doj || '';
+    document.getElementById('staffSalary').value = staff.salary || 0;
+    document.getElementById('staffAllowance').value = staff.allowance || 0;
+    document.getElementById('staffStatus').value = staff.status || 'Active';
+    const docField = document.getElementById('staffDocumentsHeld');
+    if (docField) docField.value = staff.documents_held || '';
+    const preview = document.getElementById('staffPhotoPreview');
+    preview.src = staff.photoDisplay || staff.photo || FALLBACK;
+    preview.onerror = ()=>{ preview.src = FALLBACK; };
+    const btn = document.querySelector('.btn-save');
+    if (btn) { btn.innerText = "Update Staff Member"; btn.style.backgroundColor = "#0288d1"; }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-            
-            clearForm();
-            await loadStaff(); // Re-render target data changes rows synchronously
-        } catch (err) {
-            console.error("Database tracking transmission crash:", err);
-            alert("Operation failed: " + err.message);
+async function saveStaff() {
+    if(isSaving) return; // <-- FIX: prevent double click
+    const docField = document.getElementById('staffDocumentsHeld');
+    const nameEl = document.getElementById('staffName');
+    const cnicEl = document.getElementById('staffCnic');
+    
+    const data = {
+        name: nameEl.value.trim(),
+        cnic: cnicEl.value.trim(),
+        contact: document.getElementById('staffContact').value.trim(),
+        designation: document.getElementById('staffRole').value.trim(),
+        doj: document.getElementById('staffDoj').value,
+        salary: parseFloat(document.getElementById('staffSalary').value) || 0,
+        allowance: parseFloat(document.getElementById('staffAllowance').value) || 0,
+        status: document.getElementById('staffStatus').value,
+        documents_held: docField? docField.value.trim() : '',
+        photo: currentPhotoBase64
+    };
+    if (!data.name ||!data.cnic) { showAlert("Validation Error: Please fill in the Full Name and CNIC"); return; }
+    
+    isSaving = true;
+    const btn = document.querySelector('.btn-save');
+    const oldText = btn.innerText;
+    btn.innerText = "Saving...";
+    btn.disabled = true;
+
+    try {
+        if (editMode) {
+            if (!currentEditId) { showAlert("Error: Missing target ID"); return; }
+            await window.api.updateStaff(currentEditId, data);
+            showAlert("Staff record updated successfully!");
+        } else {
+            await window.api.addStaff(data);
+            showAlert("New staff member registered successfully!");
         }
+        clearForm();
+        await loadStaff();
+    } catch (err) { console.error(err); showAlert("Operation failed: " + err.message); }
+    finally {
+        isSaving = false;
+        btn.innerText = oldText;
+        btn.disabled = false;
     }
+}
 
-    // --- DELETE: Cascading database row destruction command ---
-    async function removeStaff(id) {
-        if (confirm("Warning: Are you completely sure you want to remove this staff profile permanently?")) {
-            try {
-                await window.api.deleteStaff(id);
-                await loadStaff();
-            } catch (err) {
-                console.error("Error deleting entry:", err);
-            }
-        }
-    }
+function removeStaff(id){ openDeleteModal(id); }
 
-    // --- RESET: Clears form states completely ---
-    function clearForm() {
-        editMode = false;
-        currentEditId = null;
-        
-        // Explicitly clear each input element by ID so everything clears perfectly
-        document.getElementById('staffName').value = '';
-        document.getElementById('staffCnic').value = '';
-        document.getElementById('staffContact').value = '';
-        document.getElementById('staffRole').value = '';
-        document.getElementById('staffDoj').value = '';
-        document.getElementById('staffSalary').value = '';
-        document.getElementById('staffAllowance').value = '';
-        document.getElementById('staffStatus').value = 'Active';
-        
-        // 🌟 Fix: Explicitly reset textarea element tracking values
-        const docField = document.getElementById('staffDocumentsHeld');
-        if (docField) {
-            docField.value = '';
-        }
-        
-        // Return save panel submission button state style configuration to normal green
-        const btn = document.querySelector('.btn-save');
-        if (btn) {
-            btn.innerText = "Add Staff Member";
-            btn.style.backgroundColor = ""; // Clear explicit element override colors
-        }
-    }
-
-    // --- MODAL UTILITIES: Handles your monthly salary triggers ---
-    function openSalaryModal() {
-        document.getElementById('salaryModal').style.display = 'flex';
-    }
-
-    function closeSalaryModal() {
-        document.getElementById('salaryModal').style.display = 'none';
-    }
-
-    async function processSalary() {
-        const month = document.getElementById('salMonth').value;
-        const year = document.getElementById('salYear').value;
-
-        try {
-            const result = await window.api.initiateSalary(month, year);
-            if (result.success) {
-                alert(`Success: ${result.count} active staff monthly data slots mapped.`);
-                closeSalaryModal();
-            } else {
-                alert(result.message);
-            }
-        } catch (err) {
-            alert("Execution Error: " + err.message);
-        }
-    }
+function clearForm() {
+    editMode = false; currentEditId = null; currentPhotoBase64 = "";
+    document.getElementById('staffName').value = '';
+    document.getElementById('staffCnic').value = '';
+    document.getElementById('staffContact').value = '';
+    document.getElementById('staffRole').value = '';
+    document.getElementById('staffDoj').value = '';
+    document.getElementById('staffSalary').value = '';
+    document.getElementById('staffAllowance').value = '';
+    document.getElementById('staffStatus').value = 'Active';
+    document.getElementById('staffPhoto').value = '';
+    document.getElementById('staffPhotoPreview').src = FALLBACK;
+    const docField = document.getElementById('staffDocumentsHeld');
+    if (docField) docField.value = '';
+    const btn = document.querySelector('.btn-save');
+    if (btn) { btn.innerText = "Add Staff Member"; btn.style.backgroundColor = ""; }
+}
+function openSalaryModal() { document.getElementById('salaryModal').style.display = 'flex'; }
+function closeSalaryModal() { document.getElementById('salaryModal').style.display = 'none'; window.focus(); if(window.authAPI) window.authAPI.send('fix-focus'); }
+async function processSalary() {
+    const month = document.getElementById('salMonth').value;
+    const year = document.getElementById('salYear').value;
+    try {
+        const result = await window.api.initiateSalary(month, year);
+        if (result.success) { showAlert(`Success: ${result.count} staff salary slots mapped.`); closeSalaryModal(); }
+        else { showAlert(result.message); }
+    } catch (err) { showAlert("Error: " + err.message); }
+}
+document.getElementById('alertModal').addEventListener('click', e=>{ if(e.target.id==='alertModal') closeAlert(); });
+document.getElementById('deleteModal').addEventListener('click', e=>{ if(e.target.id==='deleteModal') closeDelete(); });
 </script>
-
-
 </body>
 </html>

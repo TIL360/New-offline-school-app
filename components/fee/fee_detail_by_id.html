@@ -113,104 +113,70 @@
 
 async function loadHistory() {
     try {
-        // 1. Fetch data from backend
         const response = await window.api.getStudentFeeHistory(studentId);
-        
         if (!response || response.history.length === 0) {
             document.getElementById('stuName').innerText = "No Records Found";
             return;
         }
 
-        // 2. Set Header Info & Photo Logic
         const student = response.student;
         document.getElementById('stuName').innerText = student.student_name || "Student Name";
         document.getElementById('stuFather').innerText = student.father_name ? `Father Name: ${student.father_name}` : "S/O: N/A";
-
-// ADDED: Display Current Class details securely on screen
-document.getElementById('stuClass').innerText = student.current_class ? `Class: ${student.current_class}` : "Class: N/A";document.getElementById('stuReg').innerText = "Reg No: " + (student.registration_no || "N/A");
+        document.getElementById('stuClass').innerText = student.current_class ? `Class: ${student.current_class}` : "Class: N/A";
+        document.getElementById('stuReg').innerText = "Reg No: " + (student.registration_no || "N/A");
         
-        // Handle Passport Photo Placement
         const imgElement = document.getElementById('stuPhoto');
         if (imgElement) {
-            // Confirm the field parameter exists and carries data values
             if (student.picture_path && student.picture_path.trim() !== "") {
                 const imgSrc = await window.api.getImageUrl(student.picture_path);
-                if (imgSrc) {
-                    imgElement.src = imgSrc;
-                } else {
-                    imgElement.src = "../../assets/img/default-avatar.png";
-                }
+                imgElement.src = imgSrc || "../../assets/img/default-avatar.png";
             } else {
                 imgElement.src = "../../assets/img/default-avatar.png";
             }
             imgElement.style.display = 'block';
         }
 
-      // Fix: Get the balance of the latest invoice directly to prevent double-counting arrears
-let totalOutstanding = 0;
-if (response.history.length > 0) {
-  // Target the last index of the array
-  const latest = response.history[response.history.length - 1]; 
-  
-  const latestPayable = (parseFloat(latest.total_fee) || 0) +
-                        (parseFloat(latest.arrears) || 0);
-  const latestPaid = parseFloat(latest.collection) || 0;
-  totalOutstanding = latestPayable - latestPaid;
-}
+        // CORRECT OUTSTANDING LOGIC - Sort by date and take truly latest invoice
+        let sortedHistory = [...response.history].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+        let latest = sortedHistory[sortedHistory.length - 1];
+        let latestPayable = (parseFloat(latest.total_fee) || 0) + (parseFloat(latest.arrears) || 0);
+        let latestPaid = parseFloat(latest.collection) || 0;
+        let totalOutstanding = latestPayable - latestPaid;
 
-const tbody = document.getElementById('feeHistoryBody');
-// 3. Build Table Rows
-tbody.innerHTML = [...response.history].reverse().map(f => {
-    const baseFee = parseFloat(f.total_fee) || 0;
-    const arrearsVal = parseFloat(f.arrears) || 0;
-    const totalPayable = baseFee + arrearsVal;
-    const paidAmount = parseFloat(f.collection) || 0;
-    const balance = totalPayable - paidAmount;
-// REMOVED: totalOutstanding += balance; <-- This line was causing the double counting bug
+        const tbody = document.getElementById('feeHistoryBody');
+        // Show newest first
+        tbody.innerHTML = [...sortedHistory].reverse().map(f => {
+            const baseFee = parseFloat(f.total_fee) || 0;
+            const arrearsVal = parseFloat(f.arrears) || 0;
+            const totalPayable = baseFee + arrearsVal;
+            const paidAmount = parseFloat(f.collection) || 0;
+            const balance = totalPayable - paidAmount;
 
-// Determine strict contextual status metrics
-let statusLabel = '';
-    let statusClass = '';
-    if (balance <= 0) {
-        statusLabel = 'PAID';
-        statusClass = 'paid';
-    } else if (paidAmount > 0) {
-        statusLabel = 'PARTIALLY PAID';
-        statusClass = 'partial'; 
-    } else {
-        statusLabel = 'PENDING';
-        statusClass = 'unpaid'; 
-    }
-    return `
-    <tr>
-    <td>
-    <a href="invoice2.html?id=${f.id}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: bold;">
-    ${f.invoice_month} ${f.invoice_year}
-    </a>
-    </td>
-    <td>${new Date(f.created_at).toLocaleDateString()}</td>
-    <td>Rs. ${baseFee.toLocaleString()}</td>
-    <td>Rs. ${arrearsVal.toLocaleString()}</td>
-    <td style="font-weight:600; color:#475569;">Rs. ${totalPayable.toLocaleString()}</td>
-    <td>Rs. ${paidAmount.toLocaleString()}</td>
-    <td style="font-weight:bold; color: ${balance > 0 ? '#dc2626' : '#16a34a'}">
-    Rs. ${balance.toLocaleString()}
-    </td>
-    <td><span class="status ${statusClass}">${statusLabel}</span></td>
-    </tr>
-    `;
-}).join('');
+            let statusLabel = balance <= 0 ? 'PAID' : (paidAmount > 0 ? 'PARTIALLY PAID' : 'PENDING');
+            let statusClass = balance <= 0 ? 'paid' : (paidAmount > 0 ? 'partial' : 'unpaid');
 
+            return `
+            <tr>
+            <td><a href="invoice2.html?id=${f.id}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: bold;">${f.invoice_month} ${f.invoice_year}</a></td>
+            <td>${new Date(f.created_at).toLocaleDateString()}</td>
+            <td>Rs. ${f.monthly_fee}</td>
+            <td>Rs. ${arrearsVal.toLocaleString()}</td>
+            <td style="font-weight:600;">Rs. ${totalPayable.toLocaleString()}</td>
+            <td>Rs. ${paidAmount.toLocaleString()}</td>
+            <td style="font-weight:bold; color: ${balance > 0 ? '#dc2626' : '#16a34a'}">Rs. ${balance.toLocaleString()}</td>
+            <td><span class="status ${statusClass}">${statusLabel}</span></td>
+            </tr>
+            `;
+        }).join('');
 
-        // 4. Update Outstanding Total
         document.getElementById('totalBalance').innerText = `Rs. ${totalOutstanding.toLocaleString()}`;
+        document.getElementById('totalBalance').style.color = totalOutstanding > 0 ? '#dc2626' : '#16a34a';
 
     } catch (err) {
         console.error("Failed to load history:", err);
         document.getElementById('stuName').innerText = "Error Loading Data";
     }
 }
-
     loadHistory();
 </script>
 

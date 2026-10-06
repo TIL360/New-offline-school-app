@@ -384,30 +384,12 @@ background-color: var(--primary-hover);
 
 <script>
     // Helper to normalize subject custom code names to match your exact SQLite database column prefixes
-function getNormalizedKeyForSaving(code) {
-    const cleanCode = String(code).toLowerCase().trim();
-    if (cleanCode === 'english' || cleanCode === 'eng') return 'eng';
-    if (cleanCode === 'maths' || cleanCode === 'math') return 'math';
-    if (cleanCode === 'islamiat' || cleanCode === 'isl') return 'islamiat';
-    if (cleanCode === 'science' || cleanCode === 'sci') return 'science';
-    if (cleanCode === 'physics' || cleanCode === 'phy') return 'physics';
-    if (cleanCode === 'chemistry' || cleanCode === 'chem') return 'chemistry';
-    if (cleanCode === 'biology' || cleanCode === 'bio') return 'biology';
-    if (cleanCode === 'computer' || cleanCode === 'comp') return 'computer';
-    if (cleanCode === 'drawing' || cleanCode === 'draw') return 'drawing';
-    if (cleanCode === 'geography' || cleanCode === 'geog') return 'geography';
-    if (cleanCode === 'pak studies' || cleanCode === 'pakst') return 'pak_studies';
-    if (cleanCode === 'islamic studies' || cleanCode === 'islamic_studies') return 'islamic_studies';
-    if (cleanCode === 'tarjama tul quran' || cleanCode === 'tarjama_quran' || cleanCode === 'quran') return 'tarjama_quran';
-    if (cleanCode === 'general knowledge' || cleanCode === 'gk') return 'gk';
-    if (cleanCode === 'functional maths' || cleanCode === 'functional_math') return 'functional_math';
-    if (cleanCode === 'islamiyat comp.' || cleanCode === 'islamiat_compulsory') return 'islamiat_compulsory';
-    if (cleanCode === 'social study' || cleanCode === 'social_studies') return 'social_studies';
-    if (cleanCode === 'home economics' || cleanCode === 'home_economics') return 'home_economics';
-    if (cleanCode === 'general science' || cleanCode === 'general_science') return 'general_science';
-    return cleanCode;
+function getNormalizedKey(code) {
+    return String(code).toLowerCase().trim().replace(/[^a-z0-9]+/g, '_');
 }
-
+function getNormalizedKeyForSaving(code) {
+    return String(code).toLowerCase().trim().replace(/[^a-z0-9]+/g, '_');
+}
 // Single consolidated page initialization routine
 window.addEventListener('DOMContentLoaded', async () => {
     loadDropdowns();

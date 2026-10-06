@@ -6,78 +6,37 @@
     <style>
         :root { --primary-blue: #2e08b6; --bg-gray: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: #e0e0e0; margin: 0; padding: 20px; }
-        
-        /* UI Header - Filter Section */
-        .filter-card { 
-            background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: flex-end; 
-        }
-        .filter-group { flex: 1; }
+       .filter-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; gap: 15px; align-items: flex-end; }
+       .filter-group { flex: 1; }
         label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; }
         select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        
-        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
-        .btn-print { background: var(--primary-blue); }
-        .btn-edit-row { 
-            background: #ff9800; color: white; border: none; padding: 4px 8px; 
-            border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; 
-        }
-
-        /* Report Paper Styling */
-        .report-paper { 
-            background: white; width: 297mm; min-height: 210mm; padding: 10mm; 
-            margin: auto; box-shadow: 0 0 20px rgba(0,0,0,0.2); box-sizing: border-box; 
-        }
-        .header-title { text-align: center; font-size: 24px; font-weight: bold; text-decoration: underline; margin-bottom: 15px; }
-        .info-section { margin-bottom: 10px; line-height: 1.4; font-weight: bold; }
-        
-        /* Table Structure */
+       .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+       .btn-print { background: var(--primary-blue); }
+       .btn-edit-row { background: #ff9800; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; }
+       .modal-input-group input:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 2px rgba(46, 8, 182, 0.15); background: #f8f7ff; }
+       .modal-mark-input { transition: all 0.15s ease; }
+       .report-paper { background: white; width: 297mm; min-height: 210mm; padding: 10mm; margin: auto; box-shadow: 0 0 20px rgba(0,0,0,0.2); box-sizing: border-box; }
+       .header-title { text-align: center; font-size: 24px; font-weight: bold; text-decoration: underline; margin-bottom: 15px; }
+       .info-section { margin-bottom: 10px; line-height: 1.4; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; table-layout: auto; }
-        th, td { border: 1px solid #000; padding: 4px 2px; }
+        th, td { border: 1px solid #000; padding: 4px 2px; min-width: 65px; }
         th { background: #f2f2f2; }
-        .name-col { width: 160px; text-align: left; padding-left: 5px; }
-
-        /* Modal Styling for Editing */
-        .modal-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; 
-        }
-        .modal-content { 
-            background: white; padding: 20px; border-radius: 10px; width: 550px; 
-            box-shadow: 0 5px 25px rgba(0,0,0,0.3); 
-        }
-        .modal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px; }
-        .modal-input-group label { font-size: 11px; color: #555; display: block; margin-bottom: 3px; }
-        .modal-input-group input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
-
-        /* LANDSCAPE PRINT LOGIC */
+       .name-col { width: 160px; text-align: left; padding-left: 5px; }
+       .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+       .modal-content { background: white; padding: 20px; border-radius: 10px; width: 550px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); }
+       .modal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px; }
+       .modal-input-group label { font-size: 11px; color: #555; display: block; margin-bottom: 3px; }
+       .modal-input-group input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
         @page { size: landscape; margin: 10mm; }
-        /* Print Settings */
-@media print {
-    /* Hide the Filter Bar (Back/Exam/Class/Print buttons) */
-    .filter-card, .btn-print-hide {
-        display: none !important;
-    }
-
-    /* Hide the Action column in the table */
-    th:nth-last-child(1), 
-    td:nth-last-child(1) {
-        display: none !important;
-    }
-
-    /* Ensure table takes full width on paper */
-    table {
-        width: 100% !important;
-        border-collapse: collapse;
-    }
-}
+        @media print {
+           .filter-card,.btn-print-hide { display: none!important; }
+            th:nth-last-child(1), td:nth-last-child(1) { display: none!important; }
+            table { width: 100%!important; border-collapse: collapse; }
+        }
     </style>
 </head>
 <body>
-    
-    
-    <!-- Top Navigation & Filters -->
-       <div class="filter-card">
+      <div class="filter-card">
   <div class="filter-group">
     <label>Select Exam</label>
     <select id="selectExam"><option value="">-- Choose Exam --</option></select>
@@ -86,39 +45,31 @@
     <label>Select Class</label>
     <select id="selectClass"><option value="">-- Choose Class --</option></select>
   </div>
+  <button id="btnPush" style="background:#28a745; color:white; padding:10px 15px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">⬆️ Push Results to Cloud</button>
+  <button id="btnPull" style="background:#ff9800; color:white; padding:10px 15px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">🔄 Pull Teacher Marks</button>
   <button class="btn btn-print" onclick="window.print()">Print Report</button>
-  <!-- New Progress Reports Button -->
-  <button class="btn btn-print" onclick="navigateToProgressReports()">Progress Reports</button>
   <button class="btn btn-print" onclick="window.location.href='./result_entry.html'">Back</button>
 </div>
 
-
-    <!-- The Result Report (Printable Area) -->
     <div class="report-paper">
         <div class="header-title">Class Wise Result - <span id="displayExam">...</span></div>
         <div class="info-section">
             Class Name: <span id="displayClass">...</span><br>
             Section: <span id="displaySection">A</span>
         </div>
-
         <table>
             <thead>
-                <!-- These IDs are critical for the script to work -->
                 <tr id="mainHeaderRow"></tr>
                 <tr id="totalMarksRow"></tr>
             </thead>
-            <tbody id="resultBody">
-                <!-- Data injected here -->
-            </tbody>
+            <tbody id="resultBody"></tbody>
         </table>
-
         <div style="margin-top: 20px; display: flex; justify-content: space-between; font-weight: bold; font-size: 12px;">
             <div id="printDate"></div>
             <div>Page 1 of 1</div>
         </div>
     </div>
 
-    <!-- Edit Marks Modal -->
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
             <h3 id="modalStudentName" style="margin-top:0; color:var(--primary-blue); border-bottom: 2px solid #eee; padding-bottom:10px;">Update Marks</h3>
@@ -131,10 +82,11 @@
     </div>
 
 <script>
-    let currentData = [];
+let currentData = [];
 let activeStudentIndex = null;
 let cachedGradingRules = [];
 let subjectsList = [];
+let masterActiveSubjectCodes = [];
 
 function getNormalizedKey(code) {
     const cleanCode = String(code).toLowerCase().trim();
@@ -155,28 +107,19 @@ function getNormalizedKey(code) {
 window.addEventListener('DOMContentLoaded', async () => {
     const dateEl = document.getElementById('printDate');
     if (dateEl) dateEl.innerText = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
     try {
         if (window.api && typeof window.api.getGradingRules === 'function') {
             cachedGradingRules = await window.api.getGradingRules();
         }
-
-        // FIX 1: Support both API names
         let dbSubjects = [];
         if (window.api.getAllSubjects) dbSubjects = await window.api.getAllSubjects();
         else if (window.api.getAcademySubjects) dbSubjects = await window.api.getAcademySubjects();
-
+        masterActiveSubjectCodes = dbSubjects.map(sub => String(sub.subject_code).toLowerCase().trim());
         subjectsList = dbSubjects.map(sub => {
             const norm = getNormalizedKey(sub.subject_code);
-            return {
-                id: sub.subject_display_name,
-                set: `${norm}_setmarks`,
-                obt: `${norm}_obt`,
-                code: sub.subject_code
-            };
+            return { id: sub.subject_display_name, set: `${norm}_setmarks`, obt: `${norm}_obt`, code: sub.subject_code };
         });
     } catch (err) { console.error(err); }
-
     const res = await window.api.getDropdownData();
     if (res && res.success) {
         const examSelect = document.getElementById('selectExam');
@@ -193,11 +136,13 @@ function getGrade(score, max) {
     if (!max || max === 0) return '-';
     const p = (score / max) * 100;
     if (cachedGradingRules && cachedGradingRules.length > 0) {
-        const matchedRule = cachedGradingRules.find(r => p >= r.min_percentage && p <= r.max_percentage);
+        const matchedRule = cachedGradingRules.find(r => p >= parseFloat(r.min_percentage) && p <= parseFloat(r.max_percentage));
         if (matchedRule) return matchedRule.grade_name;
+        const sortedRules = [...cachedGradingRules].sort((a, b) => b.min_percentage - a.min_percentage);
+        const dynamicFallback = sortedRules.find(r => p >= parseFloat(r.min_percentage));
+        if (dynamicFallback) return dynamicFallback.grade_name;
     }
-    if (p >= 90) return 'A+'; if (p >= 80) return 'A'; if (p >= 70) return 'B+';
-    if (p >= 60) return 'B'; if (p >= 50) return 'C'; if (p >= 40) return 'D'; return 'F';
+    return "Add Grades in Table";
 }
 
 async function fetchReport() {
@@ -207,50 +152,37 @@ async function fetchReport() {
     document.getElementById('displayExam').innerText = document.getElementById('selectExam').options[document.getElementById('selectExam').selectedIndex].text;
     document.getElementById('displayClass').innerText = className;
     const response = await window.api.getReportData({ examId, className });
-    if (response.success) { currentData = response.data; renderTable(); }
+    if (response.success) {
+        currentData = response.data;
+        response.subjects = response.subjects.filter(s =>
+            masterActiveSubjectCodes.includes(String(s.subject_code).toLowerCase().trim()) && parseFloat(s.total_marks) > 0
+        );
+        subjectsList = response.subjects.map(s => ({
+            id: s.subject_code.toUpperCase(),
+            set: `${s.subject_code}_setmarks`,
+            obt: `${s.subject_code}_obt`,
+            code: s.subject_code
+        }));
+        renderTable();
+    }
 }
-
 function renderTable() {
     const body = document.getElementById('resultBody');
     const headerRow = document.getElementById('mainHeaderRow');
     const totalRow = document.getElementById('totalMarksRow');
     body.innerHTML = "";
     if (!currentData || currentData.length===0) { body.innerHTML=`<tr><td colspan="20" style="text-align:center; padding:20px;">No records found.</td></tr>`; return; }
-
     const firstStudent = currentData[0];
-    // FINAL LOGIC: Only subjects where Total > 0
-    const activeSubs = subjectsList.filter(sub => {
-        const maxMarks = parseFloat(firstStudent[sub.set]) || 0;
-        return maxMarks > 0;
-    });
-
-    headerRow.innerHTML = `
-        <th rowspan="2">Reg No</th><th rowspan="2" class="name-col">Name</th>
-        ${activeSubs.map(sub => `<th>${sub.id}</th>`).join('')}
-        <th rowspan="2">Obt</th><th rowspan="2">Total</th><th rowspan="2">%age</th><th rowspan="2">Grade</th><th rowspan="2">Pos</th><th rowspan="2">Result</th>
-        <th rowspan="2" class="btn-print-hide">Action</th>
-    `;
+    const activeSubs = subjectsList.filter(sub => { const maxMarks = parseFloat(firstStudent[sub.set]) || 0; return maxMarks > 0; });
+    headerRow.innerHTML = `<th rowspan="2">Reg No</th><th rowspan="2" class="name-col">Name</th>${activeSubs.map(sub => `<th>${sub.id}</th>`).join('')}<th rowspan="2">Obt</th><th rowspan="2">Total</th><th rowspan="2">%age</th><th rowspan="2">Grade</th><th rowspan="2">Pos</th><th rowspan="2">Result</th><th rowspan="2" class="btn-print-hide">Action</th>`;
     totalRow.innerHTML = `${activeSubs.map(sub => `<th>${firstStudent[sub.set] || 0}</th>`).join('')}`;
-
     currentData.forEach((row, index) => {
-        // FIX 2: Recalculate total based on ACTIVE subjects only
         let dynamicTotal = 0, dynamicObt = 0;
         activeSubs.forEach(sub=>{ dynamicTotal += parseFloat(row[sub.set])||0; dynamicObt += parseFloat(row[sub.obt])||0; });
-
         const pct = dynamicTotal>0? (dynamicObt/dynamicTotal)*100 : 0;
         const grade = getGrade(dynamicObt, dynamicTotal);
-
         const tr=document.createElement('tr');
-        tr.innerHTML=`
-            <td>${row.registration_no||'-'}</td>
-            <td class="name-col"><a href="#" onclick="openSingleReport('${row.student_id}')" style="color: blue; cursor: pointer; text-decoration: none;">${row.student_name}</a></td>
-            ${activeSubs.map(sub => `<td>${row[sub.obt]??0}</td>`).join('')}
-            <td style="font-weight:bold">${dynamicObt}</td><td>${dynamicTotal}</td><td>${pct.toFixed(0)}%</td>
-            <td style="font-weight:bold; color:var(--primary-blue);">${grade}</td>
-            <td>${row.position||'-'}</td><td>${row.result_status||'-'}</td>
-            <td class="btn-print-hide"><button class="btn-edit-row" onclick="openModal(${index})">Edit</button>
-            <button onclick="sendWhatsApp(${index})" style="background:#25D366; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold; margin-left:5px;">WhatsApp</button></td>
-        `;
+        tr.innerHTML=`<td>${row.registration_no||'-'}</td><td class="name-col"><a href="#" onclick="openSingleReport('${row.student_id}')" style="color: blue; cursor: pointer; text-decoration: none;">${row.student_name}</a></td>${activeSubs.map(sub => `<td>${row[sub.obt]??0}</td>`).join('')}<td style="font-weight:bold">${dynamicObt}</td><td>${dynamicTotal}</td><td>${pct.toFixed(0)}%</td><td style="font-weight:bold; color:var(--primary-blue);">${grade}</td><td>${row.position||'-'}</td><td>${row.result_status||'-'}</td><td class="btn-print-hide"><button class="btn-edit-row" onclick="openModal(${index})">Edit</button><button onclick="sendWhatsApp(${index})" style="background:#25D366; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold; margin-left:5px;">WhatsApp</button></td>`;
         body.appendChild(tr);
     });
 }
@@ -258,15 +190,31 @@ function openModal(index) {
     activeStudentIndex = index;
     const student = currentData[index];
     document.getElementById('modalStudentName').innerText = `Update Marks: ${student.student_name}`;
-    const container = document.getElementById('modalInputContainer'); container.innerHTML = "";
+    const container = document.getElementById('modalInputContainer');
+    container.innerHTML = "";
     subjectsList.forEach(sub => {
         if (parseFloat(student[sub.set]) > 0) {
-            container.innerHTML += `<div class="modal-input-group"><label>${sub.id} (Max: ${student[sub.set]})</label><input type="number" id="modal_${sub.obt}" value="${student[sub.obt] || 0}" max="${student[sub.set]}" min="0"></div>`;
+            container.innerHTML += `<div class="modal-input-group"><label>${sub.id} (Max: ${student[sub.set]})</label><input type="number" class="modal-mark-input" id="modal_${sub.obt}" value="${student[sub.obt] || 0}" max="${student[sub.set]}" min="0"></div>`;
         }
     });
     document.getElementById('editModal').style.display = 'flex';
+    setTimeout(() => {
+        const firstInput = container.querySelector('input');
+        if(firstInput){ firstInput.focus(); firstInput.select(); }
+    }, 100);
+    container.querySelectorAll('input').forEach((input, idx, allInputs) => {
+        input.addEventListener('focus', () => input.select());
+        input.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter'){
+                e.preventDefault();
+                const next = allInputs[idx+1];
+                if(next){ next.focus(); next.select(); } else { saveModalMarks(); }
+            }
+            if(e.key === 'Escape'){ closeModal(); }
+        });
+    });
 }
-function closeModal() { document.getElementById('editModal').style.display = 'none'; }
+function closeModal() { document.getElementById('editModal').style.display = 'none'; activeStudentIndex = null; }
 async function saveModalMarks() {
     const student = currentData[activeStudentIndex];
     const examId = document.getElementById('selectExam').value;
@@ -274,11 +222,6 @@ async function saveModalMarks() {
     subjectsList.forEach(sub => { const input=document.getElementById(`modal_${sub.obt}`); if(input) student[sub.obt]=parseFloat(input.value)||0; });
     const res = await window.api.updateStudentMarks(student);
     if (res.success) { await window.api.recalculatePositions({ examId, className }); closeModal(); fetchReport(); } else alert("Save failed: " + res.error);
-}
-function navigateToProgressReports() {
-    const examId = document.getElementById('selectExam').value; const className = document.getElementById('selectClass').value;
-    if (!examId ||!className) return alert("Please select both Exam and Class first!");
-    window.location.href = `progress_reports.html?examId=${examId}&className=${className}`;
 }
 function openSingleReport(studentId) {
     const examId = document.getElementById('selectExam').value;
@@ -289,46 +232,80 @@ function sendWhatsApp(index) {
     const student = currentData[index];
     const examName = document.getElementById('displayExam').innerText;
     const className = document.getElementById('displayClass').innerText;
-
     let phone = student.whatsapp || student.father_phone || student.phone || student.contact || '';
     if (!phone || phone.length < 7) {
         phone = prompt(`Phone not found for ${student.student_name}. Enter WhatsApp number (e.g. 0312xxxxxxx):`);
         if (!phone) return;
     }
-
     let cleanPhone = String(phone).replace(/[^0-9]/g, "");
     if (cleanPhone.startsWith("0")) cleanPhone = "92" + cleanPhone.substring(1);
     if (cleanPhone.length === 10) cleanPhone = "92" + cleanPhone;
-
-    // Calculate totals from active subjects only
     let dynamicTotal=0, dynamicObt=0;
     const firstSubs = subjectsList.filter(s=> (parseFloat(currentData[0][s.set])||0) > 0);
     firstSubs.forEach(s=>{ dynamicTotal+=parseFloat(student[s.set])||0; dynamicObt+=parseFloat(student[s.obt])||0; });
     const pct = dynamicTotal>0? (dynamicObt/dynamicTotal)*100 : 0;
     const grade = getGrade(dynamicObt, dynamicTotal);
-
-    // Properly formatted message
-    const message =
-`Assalam-o-Alaikum!
-
-Result of *${student.student_name}*
-Exam: *${examName}*
-Class: *${className}*
-
-Obtained: *${dynamicObt} / ${dynamicTotal}*
-Percentage: *${pct.toFixed(0)}%*
-Grade: *${grade}*
-Position: *${student.position || '-'}*
-Result: *${student.result_status || '-'}*
-
-Regards,
-Eagle's Nest School System`;
-
-    // Use web.whatsapp.com to skip that Download page
-const url = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-window.authAPI.send('open-external-link', url);
+    const message = `Assalam-o-Alaikum!\n\nResult of *${student.student_name}*\nExam: *${examName}*\nClass: *${className}*\n\nObtained: *${dynamicObt} / ${dynamicTotal}*\nPercentage: *${pct.toFixed(0)}%*\nGrade: *${grade}*\nPosition: *${student.position || '-'}*\nResult: *${student.result_status || '-'}*\n\nRegards,\nEagle's Nest School System`;
+    const url = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+    window.authAPI.send('open-external-link', url);
 }
-</script>
 
+// === FIXED PUSH BUTTON - NOW GETS EXAM + CLASS INSIDE HANDLER ===
+document.getElementById('btnPush').onclick = async () => {
+  const btn = document.getElementById('btnPush');
+  const exam_id = document.getElementById('selectExam').value;
+  const className = document.getElementById('selectClass').value;
+
+  if(!exam_id ||!className){
+    alert("Please select Exam and Class first!");
+    return;
+  }
+
+  btn.innerText = "⏳ Pushing...";
+  btn.disabled = true;
+  try {
+    console.log("Pushing for", exam_id, className);
+    const res = await window.api.pushCloudMarks({ exam_id: exam_id, className: className });
+    console.log("Push result:", res);
+    if(res.success) {
+      alert(`✅ Pushed ${res.count} results to cloud for ${res.school || ''}!\nExam: ${exam_id} Class: ${className}`);
+    } else {
+      alert("Push Failed: " + (res.error || 'Check terminal for full error'));
+    }
+  } catch(e){
+    alert("Push Failed: " + e.message);
+    console.error(e);
+  }
+  btn.innerText = "⬆️ Push Results to Cloud";
+  btn.disabled = false;
+};
+
+// === FIXED PULL BUTTON ===
+document.getElementById('btnPull').onclick = async () => {
+  const btn = document.getElementById('btnPull');
+  const exam_id = document.getElementById('selectExam').value;
+  const className = document.getElementById('selectClass').value;
+  if(!exam_id ||!className){
+    alert("Please select Exam and Class first!");
+    return;
+  }
+  btn.innerText = "⏳ Pulling...";
+  btn.disabled = true;
+  try {
+    const res = await window.api.pullCloudMarks({ exam_id: exam_id, className: className });
+    console.log("Pull result:", res);
+    if(res.success){
+      alert(`✅ Pulled ${res.count} teacher marks!`);
+      fetchReport();
+    } else {
+      alert("Pull Failed: " + (res.error || 'Unknown'));
+    }
+  } catch(e){
+    alert("Pull Failed: " + e.message);
+  }
+  btn.innerText = "🔄 Pull Teacher Marks";
+  btn.disabled = false;
+};
+</script>
 </body>
 </html>

@@ -28,7 +28,7 @@
         .copy-section {
             border: 1.5px dashed #555;
             padding: 10px;
-            font-size: 10.5px;
+            font-size: 14px;
             display: flex;
             flex-direction: column;
             position: relative;
@@ -37,7 +37,7 @@
         /* Header Styling */
         .header { text-align: center; border-bottom: 2px solid #2c3e50; margin-bottom: 8px; padding-bottom: 5px; }
         .school-name { font-size: 20px; font-weight: bold; margin: 0; text-transform: uppercase; }
-        .copy-label { background: #eee; padding: 2px 6px; font-weight: bold; float: right; border-radius: 3px; font-size: 9px; }
+        .copy-label { background: #eee; padding: 2px 6px; font-weight: bold; float: right; border-radius: 3px; font-size: 12px; }
         
         .info-table, .fee-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
         .info-table td { padding: 2px 0; }
@@ -53,7 +53,7 @@
 .invoice-copyright {
   display: flex;
   justify-content: space-between;
-  font-size: 7.5px;
+  font-size: 8px;
   color: #666;
   border-top: 1px solid #eee;
   padding-top: 3px;
@@ -71,18 +71,17 @@
             vertical-align: middle;
             margin-right: 8px;
         }
-           /* Watermark Logo Styling */
+      
         .watermark {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%; /* Adjust size to match the image */
-            opacity: 0.12; /* Faint enough for readability */
+            width: 80%; 
+            opacity: 0.12; 
             z-index: 0;
             pointer-events: none;
-        }
-
+         }  
 
         /* Print Specifics */
         @media print {
@@ -204,15 +203,17 @@ function renderStudentPage(data, container) {
 
     page.innerHTML = copies.map(title => `
         <div class="copy-section">
-            <img src="../../images/logo.png" class="watermark">
-            <span class="copy-label">${title}</span>
+                                  <!-- <img src="../../images/logo.png" class="watermark"> -->
+                                 <span class="copy-label">${title}</span>
             <div class="header">
                 <p class="school-name">
                     <img src="../../images/logo.png" class="small-logo">
                     <span>${appDetails.instituteName}</span>
                 </p>
-                <p style="margin: 2px; font-size: 9px;">Address: <span>${appDetails.address}</span> | Phone: <span>${appDetails.contactNumber}</span></p>
-                <p style="margin: 2px; font-size:9px;">E-mail: <span>${appDetails.email}</span> || <span>${appDetails.account}</span></p>
+                <p style="margin: 2px; font-size: 12px;">Address: <span>${appDetails.address}</span> | Phone: <span>${appDetails.contactNumber}</span></p>
+                <p style="margin: 12px; font-size:12px;">
+                    <span>Email: ${appDetails.email}</span>
+                     || <span>${appDetails.account}</span></p>
             </div>
             <table class="info-table">
                 <tr>

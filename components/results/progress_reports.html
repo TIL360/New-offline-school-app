@@ -106,28 +106,28 @@ let passingCriteria = { subject_pass_percentage: 40.0, overall_pass_percentage: 
 let subjectsList = [];
 
 function getNormalizedKey(code){
-    const c = String(code).toLowerCase().trim();
-    if(c==='english'||c==='eng') return 'eng';
-    if(c==='maths'||c==='math') return 'math';
-    if(c==='islamiat'||c==='isl') return 'islamiat';
-    if(c==='science'||c==='sci') return 'science';
-    if(c==='physics'||c==='phy') return 'physics';
-    if(c==='chemistry'||c==='chem') return 'chemistry';
-    if(c==='biology'||c==='bio') return 'biology';
-    if(c==='computer'||c==='comp') return 'computer';
-    if(c==='drawing'||c==='draw') return 'drawing';
-    if(c==='geography'||c==='geog') return 'geography';
-    if(c==='pak studies'||c==='pakst') return 'pak_studies';
-    return c;
+    return String(code).toLowerCase().trim().replace(/[^a-z0-9]+/g,'_');
 }
-
 async function applyCentralAppDetails(){ try{ if(window.api && window.api.getAppDetails){ const d=await window.api.getAppDetails(); document.querySelectorAll('.dynamic-institute-title').forEach(el=>el.innerHTML=`<img src="../../images/logo.png" class="small-logo">${d.instituteName}`); document.querySelectorAll('.dynamic-institute-details').forEach(el=>el.innerText=`Address: Islamabad || Contact: ${d.contactNumber}`); document.querySelectorAll('.dynamic-institute-email').forEach(el=>el.innerText=`E-mail: ${d.email}`);} }catch(e){} }
 async function startExport(){ await window.api.saveToPdf(); }
 
 function getGrade(score, max){
-    if(!max) return '-'; const p=(score/max)*100;
-    if(gradingRules && gradingRules.length>0){ const r=gradingRules.find(x=>p>=x.min_percentage && p<=x.max_percentage); if(r) return r.grade_name; }
-    if(p>=90) return 'A+'; if(p>=80) return 'A'; if(p>=70) return 'B+'; if(p>=60) return 'B'; if(p>=50) return 'C'; if(p>=40) return 'D'; return 'F';
+    if(!max || max === 0) return '-'; 
+    const p = (score / max) * 100;
+    
+    // 🌟 Check if dynamic configurations exist in the local SQLite memory registry array
+    if(gradingRules && gradingRules.length > 0){ 
+        const r = gradingRules.find(x => p >= parseFloat(x.min_percentage) && p <= parseFloat(x.max_percentage)); 
+        if(r) return r.grade_name; 
+        
+        // 🔄 Fallback: Find closest tier matching percentage sequence if precision bounds overlap
+        const sortedRules = [...gradingRules].sort((a, b) => b.min_percentage - a.min_percentage);
+        const dynamicFallback = sortedRules.find(x => p >= parseFloat(x.min_percentage));
+        if (dynamicFallback) return dynamicFallback.grade_name;
+    }
+    
+    // 🚨 If the global configurations dashboard module contains no tiers, output clear explicit text label
+    return "Add Grade in Table";
 }
 
 async function loadReports(){

@@ -10,11 +10,85 @@ const XLSX = require('xlsx');
 const userDataPath = app.getPath('userData');
 const imagesDir = path.join(userDataPath, 'images');
 const configPath = path.join(userDataPath, 'config.json'); // Path for hidden time-tracking file
-// --- OFFLINE SMS VIA ANDROID PHONE ---
+const { supabase, SCHOOL_CODE, pushSubjectsOnline, pushExamsOnline, pushExamSettingsOnline, pushExamStudentsOnline, pushOfflineUsersToCloud, pushDynamicResultsOnline, pushStaffOnline, pullTeacherMarksOnline } = require('./supabase.js');
 const http = require('http');
 // 2. INITIALIZE DIRECTORIES
 if (!fs.existsSync(imagesDir)) {
     fs.mkdirSync(imagesDir, { recursive: true });
+}
+const staffImagesDir = path.join(imagesDir, 'staff');
+if (!fs.existsSync(staffImagesDir)) {
+    fs.mkdirSync(staffImagesDir, { recursive: true });
+}
+const BACKUP_STAFF_D = 'D:\\SchoolApp-Backup\\images\\staff';
+const BACKUP_STAFF_DOCS = path.join(app.getPath('documents'), 'SchoolApp-Backup', 'images', 'staff');
+[BACKUP_STAFF_D, BACKUP_STAFF_DOCS].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
+
+function deleteOldStaffImages(staffId){
+  if(!staffId) return;
+  const idStr = String(staffId);
+  const allFolders = [staffImagesDir, BACKUP_STAFF_D, BACKUP_STAFF_DOCS];
+  allFolders.forEach(folder => {
+    if(!fs.existsSync(folder)) return;
+    fs.readdirSync(folder).forEach(file => {
+      // matches staff_1.jpg, staff_1.png AND old format staff_XXX_123456 etc that starts with staff_{id}
+      // To avoid deleting staff_10 when id is 1, we check exact prefix with dot or underscore
+      if(file === `staff_${idStr}.jpg` || file === `staff_${idStr}.png` || file === `staff_${idStr}.jpeg` || file === `staff_${idStr}.webp` || file.startsWith(`staff_${idStr}.`) || file.startsWith(`staff_${idStr}_`)){
+        try{ fs.unlinkSync(path.join(folder, file)); }catch(e){}
+      }
+    });
+  });
+}
+
+function saveStaffImageFile(staffId, photoValue) {
+  if (!photoValue || !staffId) return '';
+  try {
+    // 1. Delete old image of this ID from all locations first
+    deleteOldStaffImages(staffId);
+
+    let fileName = '';
+    let buffer = null;
+    let srcPathForCopy = '';
+
+    // Absolute path from file picker
+    if (path.isAbsolute(photoValue) && fs.existsSync(photoValue)) {
+      let ext = (path.extname(photoValue) || '.jpg').toLowerCase();
+      if(ext === '.jpeg') ext = '.jpg';
+      fileName = `staff_${staffId}${ext}`;
+      srcPathForCopy = photoValue;
+    } 
+    // base64 from your staff.html preview
+    else if (photoValue.startsWith('data:image')) {
+      const m = photoValue.match(/data:image\/(\w+);base64,/);
+      let ext = m ? `.${m[1].toLowerCase()}` : '.jpg';
+      if(ext === '.jpeg') ext = '.jpg';
+      fileName = `staff_${staffId}${ext}`;
+      const base64 = photoValue.replace(/^data:image\/\w+;base64,/, "");
+      buffer = Buffer.from(base64, 'base64');
+    } else {
+      // already saved filename like staff_1.jpg - keep it
+      return path.basename(photoValue);
+    }
+
+    // 2. Save to main AppData
+    const destMain = path.join(staffImagesDir, fileName);
+    if(buffer) fs.writeFileSync(destMain, buffer);
+    else fs.copyFileSync(srcPathForCopy, destMain);
+
+    // 3. Backup instantly to D: and Documents (overwrite)
+    [BACKUP_STAFF_D, BACKUP_STAFF_DOCS].forEach(backupFolder => {
+      try {
+        if (!fs.existsSync(backupFolder)) fs.mkdirSync(backupFolder, { recursive: true });
+        const destBackup = path.join(backupFolder, fileName);
+        if(buffer) fs.writeFileSync(destBackup, buffer);
+        else fs.copyFileSync(srcPathForCopy, destBackup);
+      } catch(e){}
+    });
+
+    return fileName;
+  } catch(err){ console.error(err); return ''; }
 }
 
 // 3. PRIVILEGED PROTOCOLS
@@ -24,7 +98,7 @@ protocol.registerSchemesAsPrivileged([
 
 // 4. EXPIRY CONFIGURATION
 // Note: Months are 0-indexed in JS. 4 = May, 5 = June.
-const EXPIRY_DATE = new Date(2026, 9, 30); // May 31, 2026
+const EXPIRY_DATE = new Date(2027, 9, 3); // May 31, 2026
 
 // 5. DATABASE IMPORTS
 const { 
@@ -41,7 +115,7 @@ const {
 } = require('./database.js');
 
 let win;
-Menu.setApplicationMenu(null); 
+// Menu.setApplicationMenu(null); 
 
 function createWindow() {
     // --- OFFLINE PROTECTION & EXPIRY LOGIC (OPTION 2) ---
@@ -94,25 +168,38 @@ if (daysRemaining <= 0) {
     });
 }
 
-
     // Update the "Last Run" date to today
-    fs.writeFileSync(configPath, JSON.stringify({ lastRun: today.toISOString() }));
+fs.writeFileSync(configPath, JSON.stringify({ lastRun: today.toISOString() }));
 
-    // --- BROWSER WINDOW SETUP ---
+// RUN BACKUP EVERY TIME APP RUNS
+backupDatabaseDaily();
+backupImagesDaily();
+
+  // --- BROWSER WINDOW SETUP ---
 win = new BrowserWindow({
-        width: 800,
-        height: 400,
-        titleBarStyle: "default",
-        backgroundColor: "#fdf0d5",
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'), 
-            contextIsolation: true,
-            nodeIntegration: false,
-            sandbox: false
-        }
-    });
-    win.maximize(); 
+    width: 1280,
+    height: 800,
+    minWidth: 1024,
+    minHeight: 700,
+icon: path.join(__dirname, 'images', 'icons', 'logo.ico'),    titleBarStyle: "default",
+    backgroundColor: "#f8fafc",
+    show: false, // don't show until ready
+    autoHideMenuBar: true,
+    webPreferences: {
+        preload: path.join(__dirname, 'preload.js'), 
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: false
+    }
+});
 
+win.maximize();
+win.show(); // show after maximize
+
+win.once('ready-to-show', () => {
+    win.maximize();
+    win.show();
+});
    win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.includes('invoice') || url.includes('slc_template')) {
         return {
@@ -151,86 +238,94 @@ ipcMain.on('change-page', (event, pageUrl) => {
     }
 });
 
-
 //backup of db
 
 // backup of db
 function backupDatabaseDaily() {
   try {
-    // PRODUCTION FIX: Correctly maps to the isolated Electron system path
     const sourceDbPath = path.join(app.getPath('userData'), 'school.db');
-
     
-    // Define absolute destination path on D Drive
-        // const backupFolder = 'D:\\SchoolApp-Backup';
-        const backupFolder = path.join(app.getPath('documents'), 'SchoolApp-Backup');
+    // D DRIVE BACKUP - YOUR REQUIREMENT
+    const backupFolder = 'D:\\SchoolApp-Backup';
+    const backupFolderDocs = path.join(app.getPath('documents'), 'SchoolApp-Backup'); // keep docs as secondary
     
-    // Automatically create the backups folder if it does not exist
-    if (!fs.existsSync(backupFolder)) {
-      fs.mkdirSync(backupFolder, { recursive: true });
-      console.log("📁 Created Backup Folder: " + backupFolder);
-    }
+    [backupFolder, backupFolderDocs].forEach(folder => {
+      if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder, { recursive: true });
+        console.log("📁 Created Backup Folder: " + folder);
+      }
+    });
     
-    // Generate the current date filename format (e.g., backup-schoolDB-15-06-2026.db)
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     const backupFileName = `backup-schoolDB-${day}-${month}-${year}.db`;
-    const destinationDbPath = path.join(backupFolder, backupFileName);
     
-    // Run the backup only if a backup for today hasn't been created yet
-    if (!fs.existsSync(destinationDbPath)) {
-      if (fs.existsSync(sourceDbPath)) {
-        fs.copyFileSync(sourceDbPath, destinationDbPath);
-        console.log(`💾 Daily backup created successfully: ${backupFileName}`);
-      } else {
-        console.error("❌ Backup failed: Source database file not found at " + sourceDbPath);
-      }
-    } else {
-      console.log("ℹ️ Backup skipped: Today's backup already exists.");
+    // Save to D: Drive (MAIN)
+    const destD = path.join(backupFolder, backupFileName);
+    if (fs.existsSync(sourceDbPath)) {
+      fs.copyFileSync(sourceDbPath, destD);
+      console.log(`💾 D-Drive backup created: ${backupFileName}`);
     }
+
+    // Also save to Documents (backup of backup)
+    const destDocs = path.join(backupFolderDocs, backupFileName);
+    if (!fs.existsSync(destDocs) && fs.existsSync(sourceDbPath)) {
+      fs.copyFileSync(sourceDbPath, destDocs);
+    }
+
   } catch (error) {
-    console.error("❌ Crucial Backup Engine Error:", error);
+    console.error("❌ Backup Engine Error:", error);
   }
 }
-
 
 function backupImagesDaily() {
   try {
-    // Define the absolute destination path for images on D Drive
-    // const backupImagesFolder = 'D:\\SchoolApp-Backup\\images';
-    const backupImagesFolder = path.join(app.getPath('documents'), 'SchoolApp-Backup', 'images');
+    // D DRIVE - MAIN BACKUP LOCATION
+    const backupImagesFolder = 'D:\\SchoolApp-Backup\\images';
+    const backupStaffFolder = path.join(backupImagesFolder, 'staff');
     
-    // Automatically create the backups folder if it does not exist
-    if (!fs.existsSync(backupImagesFolder)) {
-      fs.mkdirSync(backupImagesFolder, { recursive: true });
-      console.log("📁 Created Image Backup Folder: " + backupImagesFolder);
-    }
+    // Secondary in Documents
+    const backupImagesDocs = path.join(app.getPath('documents'), 'SchoolApp-Backup', 'images');
+    const backupStaffDocs = path.join(backupImagesDocs, 'staff');
     
-    // PRODUCTION FIX: Scans your dynamic runtime image directory (imagesDir) instead of hardcoded paths
+    [backupImagesFolder, backupStaffFolder, backupImagesDocs, backupStaffDocs].forEach(folder => {
+      if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
+    });
+    
+    // 1. Backup Students (from imagesDir)
     if (fs.existsSync(imagesDir)) {
-      const files = fs.readdirSync(imagesDir);
-      files.forEach(file => {
-        const sourceFilePath = path.join(imagesDir, file);
-        const destFilePath = path.join(backupImagesFolder, file);
-        
-        // Only copy the image if it doesn't already exist in the backup folder
-        if (!fs.existsSync(destFilePath)) {
-          fs.copyFileSync(sourceFilePath, destFilePath);
-          console.log(`📸 Image backup created successfully: ${file}`);
+      fs.readdirSync(imagesDir).forEach(file => {
+        const src = path.join(imagesDir, file);
+        if (fs.lstatSync(src).isFile()) {
+          const destD = path.join(backupImagesFolder, file);
+          const destDocs = path.join(backupImagesDocs, file);
+          if (!fs.existsSync(destD)) {
+            fs.copyFileSync(src, destD);
+            console.log(`📸 D-Drive image backup: ${file}`);
+          }
+          if (!fs.existsSync(destDocs)) fs.copyFileSync(src, destDocs);
         }
       });
-    } else {
-      console.warn("⚠️ Image backup skipped: Source images directory not found at " + imagesDir);
+    }
+    
+    // 2. Backup Staff (from images/staff) - OVERWRITE to keep updated image
+    if (fs.existsSync(staffImagesDir)) {
+      fs.readdirSync(staffImagesDir).forEach(file => {
+        const src = path.join(staffImagesDir, file);
+        if (!fs.lstatSync(src).isFile()) return;
+        const destD = path.join(backupStaffFolder, file);
+        const destDocs = path.join(backupStaffDocs, file);
+        // overwrite so updated staff_1.jpg replaces old in backup
+        try{ fs.copyFileSync(src, destD); }catch(e){}
+        try{ fs.copyFileSync(src, destDocs); }catch(e){}
+      });
     }
   } catch (error) {
-    console.error("❌ Crucial Image Backup Engine Error:", error);
+    console.error("❌ Image Backup Error:", error);
   }
 }
-
-
-
 //backup ends
 //change password
 ipcMain.handle('change-password', async (event, currentP, newP) => {
@@ -239,6 +334,38 @@ ipcMain.handle('change-password', async (event, currentP, newP) => {
 
 // --- IPC HANDLERS ---
 // Centralized Application Metadata Configuration
+
+// ===== CENTRAL THEME CONFIG =====
+const appTheme = {
+//   studentCardHeaderBg: '#04A0E8', //<-- Eagl'es Nest
+  studentCardHeaderBg: '#054b6b', //<-- Eagl'es Nest
+  studentCardHeaderText: '#f9fbfd', 
+  studentCardSmallText: '#ffffff',
+//   studentCardFooterBg: '#04A0E8', //<-- Eagle's Nest
+  studentCardFooterBg: '#054b6b', //<-- Eagle's Nest
+
+//   staffCardHeaderBg: '#0A1931',       // <-- Eagles's Nest
+  
+  staffCardHeaderBg: '#f58012',       // <-- Kips's Nest
+  staffCardHeaderText: '#000000',     // <-- Staff institute name color
+  staffCardSmallText: '#ffffff',      // <-- Staff small text
+  staffCardFooterBg: '#02245a',
+  
+  sidebarBg: '#030303',
+  sidebarActive: '#f84040',
+  cardPrimary: '#f84040',
+  cardSecondary: '#ffffff',
+  cardFooterBg: '#02245a',
+  primary: '#4f46e5',
+  heading1: '#ffffff',
+  heading2: '#ffffff',
+  heading3: '#ffffff'
+};
+// Make it accessible to all HTMLs
+ipcMain.handle('get-theme', () => {
+  return appTheme;
+});
+
 ipcMain.handle('get-app-details', () => {
 //   return {
 //     instituteName: "Kauthar Ideal Public School (KIPS)",
@@ -246,7 +373,8 @@ ipcMain.handle('get-app-details', () => {
 //     email: "mahboobbalti110@gmail.com ",
 //     address: "Jigyot Road Old Bank Stop Alipur, Islamabad ",
 //     account: "Raast Account: 03368187772 || Essay pesa 0342-2384030",
-//     footerText: "EduPulse System Engine © 2026"
+//     footerText: "EduPulse System Engine © 2026",
+// theme: appTheme ,
 //   };
 
 //   return {
@@ -255,7 +383,8 @@ ipcMain.handle('get-app-details', () => {
 //     email: "imssohan1987@gmail.com ",
 //     address: "Sohan, Islamabad ",
 //     account: "HBL Account No: 17420009698101",
-//     footerText: "EduPulse System Engine © 2026"
+//     footerText: "EduPulse System Engine © 2026",
+// theme: appTheme 
 //   };
 
 // return {
@@ -264,21 +393,34 @@ ipcMain.handle('get-app-details', () => {
 //     email: "eaglesnestenss@gmail.com ",
 //     address: "Ghusia Muhallah Hamdani town Alipur Islamabad ",
 //     // account: "HBL Account No: 17420009698101",
-//     footerText: "EduPulse System Engine © 2026"
+//     footerText: "EduPulse System Engine © 2026",
+// theme: appTheme 
 //   };
-  return {
-    instituteName: "Techinfo",
-    contactNumber: "0311-5101738 ",
-    email: "techhinfolab360@gmail.com ",
-    address: "Islamabad ",
-    // account: "HBL Account No: 17420009698101",
-    footerText: "EduPulse System Engine © 2026"
-  };
+return {
+    instituteName: "Rahbar Public School",
+    contactNumber: "03151436832",
+    email: "asadaslam60@gmail.com",
+    address: "Pore Garhi, Habibullah ",
+    account: "Easypaisa No: 03424449242",
+    footerText: "EduPulse System Engine © 2026",
+    theme: appTheme     
+};
+//   return {
+//     instituteName: "Techinfo",
+//     contactNumber: "0311-5101738 ",
+//     email: "techhinfolab360@gmail.com ",
+//     address: "Islamabad ",
+//     // account: "HBL Account No: 17420009698101",
+//     footerText: "EduPulse System Engine © 2026",
+// theme: appTheme 
+//   };
 });
 
 ipcMain.handle('get-student-attendance-status', (e, { student_id, date }) => dbLogic.getStudentAttendanceStatus(student_id, date));
-ipcMain.handle('get-staff-attendance-status', (e, { staff_id, date }) => dbLogic.getStaffAttendanceStatus(staff_id, date));
-
+ipcMain.handle('get-staff-attendance-status', (e, { staff_id, date }) => {
+    const { getStaffAttendanceStatus } = require('./database.js');
+    return getStaffAttendanceStatus(staff_id, date);
+});
 // Licence status
 ipcMain.handle('get-license-status', () => {
     const today = new Date();
@@ -290,45 +432,169 @@ ipcMain.handle('get-license-status', () => {
     return `(Validity Period: ${months} Months, ${days} Days Remaining)`;
 });
 ipcMain.handle('get-image-url', (event, picturePath) => {
-    if (picturePath) {
-        const fullPath = path.join(imagesDir, picturePath);
-        // Check if file exists
-        if (fs.existsSync(fullPath)) {
-            return `file://${fullPath}`;
+    if (!picturePath) return null;
+    try {
+        const fileName = path.basename(picturePath);
+        // Check if it's staff image
+        let fullPath;
+        if (picturePath.includes('staff') || fs.existsSync(path.join(staffImagesDir, fileName))) {
+            fullPath = path.join(staffImagesDir, fileName);
         } else {
-            console.warn('Image file not found:', fullPath);
-            return null;
+            fullPath = path.join(imagesDir, picturePath);
         }
-    } else {
+        if (fs.existsSync(fullPath)) return `file://${fullPath.replace(/\\/g, '/')}`;
         return null;
-    }
+    } catch(e){ return null; }
+});
+ipcMain.handle('push-all-masters', async () => {
+  try{
+   await pushSubjectsOnline(db);
+await pushExamsOnline(db);
+await pushExamSettingsOnline(db);
+await pushExamStudentsOnline(db);
+await pushOfflineUsersToCloud(db);
+await pushStaffOnline(db);
+    console.log(`✅ Masters auto-pushed for ${SCHOOL_CODE}`);
+    return {success:true};
+  }catch(err){
+    console.log("Master push error", err.message);
+    return {success:false, error: err.message};
+  }
 });
 
 
-// Auth
+
+ipcMain.handle('push-cloud-marks', async (event, data) => {
+  try {
+    const exam_id = data?.exam_id;
+    const className = data?.className;
+    if(!exam_id || !className) return { success:false, error:"Select Exam and Class" };
+    console.log(`Push requested for exam ${exam_id} class ${className}`);
+    const { SCHOOL_CODE, pushSubjectsOnline, pushExamSettingsOnline, pushDynamicResultsOnline } = require('./supabase');
+    await pushSubjectsOnline(db);
+    await pushExamSettingsOnline(db);
+    const count = await pushDynamicResultsOnline(db, exam_id, className);
+    return { success: true, count, school: SCHOOL_CODE };
+  } catch (err) {
+    console.log("PUSH ERROR FULL:", err);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('pull-cloud-marks', async (event, data) => {
+  try {
+    const exam_id = data?.exam_id;
+    const className = data?.className;
+    const { pullTeacherMarksOnline } = require('./supabase');
+    const res = await pullTeacherMarksOnline(db, exam_id, className);
+    return res;
+  } catch (err) {
+    console.log("PULL ERROR:", err);
+    return { success:false, error: err.message };
+  }
+});
+
+// Alias for old button name (keep for compatibility)
+ipcMain.handle('push-cloud-result', async () => {
+  console.log(`⬆️ Manual PUSH results (alias) for ${SCHOOL_CODE}`);
+  return await pushDynamicResultsOnline(db);
+});
+
+
+
+// 4. LOGIN HANDLERS
 ipcMain.handle('login-attempt', async (event, credentials) => {
     try {
         const user = checkUser(credentials.username, credentials.password);
-        return user ? { success: true, user } : { success: false, message: "Invalid credentials" };
-    } catch (err) { return { success: false, message: "Database Error" }; }
+        if (!user) return { success: false, message: "Invalid credentials" };
+
+        // AUTO PUSH - ADDED STAFF
+        try{
+          console.log("🔄 Auto pushing masters + staff...");
+          await pushSubjectsOnline(db);
+          await pushExamsOnline(db);
+          await pushExamSettingsOnline(db);
+          await pushExamStudentsOnline(db);
+          await pushOfflineUsersToCloud(db);
+          await pushStaffOnline(db); // <-- NEW: Staff auto push
+          console.log(`✅ Masters + Staff auto-pushed for ${SCHOOL_CODE}`);
+        }catch(e){ console.log("Auto master push failed", e.message); }
+
+        return { success: true, user };
+    } catch (err) { 
+        console.error(err);
+        return { success: false, message: "Database Error" }; 
+    }
 });
 
-ipcMain.handle('add-user', async (event, userData) => {
-    try { addUser(userData); return { success: true }; } 
-    catch (err) { return { success: false, error: err.message }; }
+ipcMain.handle('login-user', async (event, username, password) => {
+    try {
+        const user = checkUser(username, password);
+        if (!user) return { success: false, message: "Invalid username or password" };
+        
+        // AUTO PUSH masters + staff on login - NO results auto-push
+        try{
+          await pushSubjectsOnline(db);
+          await pushExamsOnline(db);
+          await pushExamSettingsOnline(db);
+          await pushExamStudentsOnline(db);
+          await pushOfflineUsersToCloud(db);
+          await pushStaffOnline(db); // <-- NEW: Staff auto push
+        }catch(e){ console.log("Auto master push failed", e.message); }
+
+        return { success: true, user: user };
+    } catch (err) {
+        return { success: false, message: err.message };
+    }
 });
+// Example for student delete
+ipcMain.handle('deleteStudent', async (e, id) => {
+  db.prepare("DELETE FROM students WHERE id=?").run(id);
+  db.prepare("DELETE FROM student_subject_marks WHERE student_id=?").run(id);
+
+  // Immediately sync delete to online
+  if(isOnline()){
+    const { syncAllToCloud } = require('./supabase');
+    await syncAllToCloud(db); // this will delete online too
+  }
+  return {success:true};
+});
+ipcMain.handle('updateStudentMarks', async (e, student) => {
+  const now = new Date().toISOString();
+  // update each subject
+  for(const key of Object.keys(student)){
+    if(key.endsWith('_obt')){
+      const sub = key.replace('_obt','');
+      db.prepare(`UPDATE student_subject_marks
+        SET marks_obtained=?, updated_at=?
+        WHERE student_id=? AND subject_code=? AND exam_id=?`)
+       .run(student[key], now, student.student_id, sub, student.exam_id);
+    }
+  }
+  return {success:true};
+});
+// Same for deleteExam, deleteSubject, deleteClass etc
+
+
+ipcMain.handle('add-user', async (event, userData) => {
+    try { 
+      db.prepare(`INSERT INTO users (username, password, usertype, permissions, assigned_class) VALUES (?,?,?,?,?)`)
+        .run(userData.username, userData.password, userData.usertype, userData.permissions, userData.assigned_class || null);
+      return { success: true }; 
+    } catch (err) { return { success: false, error: err.message }; }
+});
+
 ipcMain.handle('update-user', async (event, userData) => {
   try {
     if (userData.password && userData.password.trim() !== "") {
-      db.prepare(`UPDATE users SET username = ?, password = ?, usertype = ?, permissions = ? WHERE id = ?`)
-        .run(userData.username, userData.password, userData.usertype, userData.permissions, userData.id);
+      db.prepare(`UPDATE users SET username = ?, password = ?, usertype = ?, permissions = ?, assigned_class = ? WHERE id = ?`)
+        .run(userData.username, userData.password, userData.usertype, userData.permissions, userData.assigned_class || null, userData.id);
     } else {
-      db.prepare(`UPDATE users SET username = ?, usertype = ?, permissions = ? WHERE id = ?`)
-        .run(userData.username, userData.usertype, userData.permissions, userData.id);
+      db.prepare(`UPDATE users SET username = ?, usertype = ?, permissions = ?, assigned_class = ? WHERE id = ?`)
+        .run(userData.username, userData.usertype, userData.permissions, userData.assigned_class || null, userData.id);
     }
     return { success: true };
   } catch (err) {
-    console.error("Database Update User Error:", err);
     return { success: false, error: err.message };
   }
 });
@@ -422,7 +688,7 @@ ipcMain.handle('get-image-folder', () => {
 
 
 // main.js - Update the add-student handler
-// main.js - Update the add-student handler
+
 ipcMain.handle('add-student', async (event, studentData) => {
     try {
         let fileNameForDB = ''; 
@@ -549,38 +815,7 @@ ipcMain.handle('bulk-update-fees', async (event, data) => {
 });
 
 
-// In Main.js - Replace the existing handler
-ipcMain.handle('update-single-fee-field', async (event, { id, field, value, remarks }) => {
- try {
-   // Expanded array to allow validation for your 4 new fee heads
-   const allowedFields = [
-     'adm_fee', 'tuition_fee', 'exam_fee', 'lab_fee', 'misc_fee',
-     'reg_fee', 'annual_fund', 'stationary_fund', 'bus_charges'
-   ];
-   
-   if (!allowedFields.includes(field)) throw new Error("Invalid field structure");
-   
-   let sql;
-   let params;
-   
-   // If updating misc_fee, update the remarks as well
-   if (field === 'misc_fee') {
-     sql = `UPDATE fee_tbl SET misc_fee = ?, misc_remarks = ? WHERE id = ?`;
-     params = [value, remarks, id];
-   } else {
-     // Safeguarded dynamic column update via validated whitelist insertion
-     sql = `UPDATE fee_tbl SET ${field} = ? WHERE id = ?`;
-     params = [value, id];
-   }
-   
-   const stmt = db.prepare(sql);
-   const info = stmt.run(...params);
-   return { success: info.changes > 0 };
- } catch (err) {
-   console.error("Database Single Field Error:", err);
-   return { success: false, error: err.message };
- }
-});
+
 
 ipcMain.handle('save-to-pdf', async (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -593,6 +828,40 @@ ipcMain.handle('save-to-pdf', async (event) => {
     return true;
 });
 
+ipcMain.handle('get-timetable', async (event, classId) => {
+    try {
+        const data = await dbLogic.getTimeTableByClass(classId);
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('save-timetable-slot', async (event, slotData) => {
+    try {
+        const result = await dbLogic.saveTimeTableSlot(slotData);
+        return result;
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+// Timetable Slot Deletion IPC Handler Channel Link
+ipcMain.handle('delete-timetable-slot', async (event, id) => {
+    try {
+        // Run standard SQL delete command against the database file instance
+        const result = db.prepare('DELETE FROM school_timetable WHERE id = ?').run(id);
+        
+        if (result.changes > 0) {
+            return { success: true };
+        } else {
+            return { success: false, error: "Slot not found or already deleted." };
+        }
+    } catch (dbError) {
+        console.error("SQL Database Deletion Error:", dbError);
+        return { success: false, error: dbError.message };
+    }
+});
 
 
 
@@ -742,26 +1011,51 @@ ipcMain.handle('get-dropdown-data', async () => {
 
 ipcMain.handle('update-set-marks', async (event, data) => {
     try {
-        if (!data) throw new Error("No data received from frontend");
-        const sql = `
-            UPDATE result 
-            SET urdu_setmarks = ?, eng_setmarks = ?, math_setmarks = ?, sst_setmarks = ?, 
-                islamiat_setmarks = ?, science_setmarks = ?, physics_setmarks = ?, chemistry_setmarks = ?, 
-                biology_setmarks = ?, computer_setmarks = ?, drawing_setmarks = ?, geography_setmarks = ?,
-                pak_studies_setmarks = ?, islamic_studies_setmarks = ?, tarjama_quran_setmarks = ?, gk_setmarks = ?,
-                functional_math_setmarks = ?, islamiat_compulsory_setmarks = ?, social_studies_setmarks = ?, home_economics_setmarks = ?,
-                civics_setmarks = ?, general_science_setmarks = ?, total_setmarks = ?
-            WHERE exam_id = ? AND class = ?
-        `;
-        const stmt = db.prepare(sql);
-        const info = stmt.run(
-            data.urdu, data.eng, data.math, data.sst, data.islamiat, data.science, 
-            data.physics, data.chemistry, data.biology, data.computer, data.drawing, data.geography,
-            data.pak_studies, data.islamic_studies, data.tarjama_quran, data.gk, data.functional_math,
-            data.islamiat_compulsory, data.social_studies, data.home_economics, data.civics, data.general_science,
-            data.total, data.exam_id, data.current_class
-        );
-        return { success: true, changes: info.changes };
+        const { exam_id, current_class, total } = data;
+
+        const tx = db.transaction(() => {
+            // 1. Save into exam_subject_settings
+            for (let key in data) {
+                if (['exam_id','current_class','total'].includes(key)) continue;
+                const marks = parseFloat(data[key]) || 0;
+                if (marks <= 0) {
+                    db.prepare(`DELETE FROM exam_subject_settings WHERE exam_id=? AND class=? AND subject_code=?`)
+                    .run(exam_id, current_class, key);
+                } else {
+                    db.prepare(`
+                        INSERT INTO exam_subject_settings (exam_id, class, subject_code, total_marks)
+                        VALUES (?,?,?,?)
+                        ON CONFLICT(exam_id, class, subject_code) DO UPDATE SET total_marks=excluded.total_marks
+                    `).run(exam_id, current_class, key, marks);
+                }
+            }
+
+            // 2. Update result total
+            db.prepare(`UPDATE result SET total_setmarks=? WHERE exam_id=? AND class=?`)
+            .run(total, exam_id, current_class);
+
+            // 3. Sync to student_subject_marks using CORRECT column names
+            const results = db.prepare(`SELECT result_id, student_id FROM result WHERE exam_id=? AND class=?`).all(exam_id, current_class);
+            for (let r of results) {
+                for (let key in data) {
+                    if (['exam_id','current_class','total'].includes(key)) continue;
+                    const marks = parseFloat(data[key]) || 0;
+                    if (marks > 0) {
+                        db.prepare(`
+                            INSERT INTO student_subject_marks (result_id, exam_id, student_id, class, subject_code, marks_set, marks_obtained)
+                            VALUES (?,?,?,?,?,?, 0)
+                            ON CONFLICT(result_id, subject_code) DO UPDATE SET
+                                marks_set=excluded.marks_set,
+                                exam_id=excluded.exam_id,
+                                student_id=excluded.student_id,
+                                class=excluded.class
+                        `).run(r.result_id, exam_id, r.student_id, current_class, key, marks);
+                    }
+                }
+            }
+        });
+        tx();
+        return { success: true, changes: 1 };
     } catch (err) {
         console.error("Update Error:", err);
         return { success: false, error: err.message };
@@ -772,140 +1066,237 @@ ipcMain.handle('update-set-marks', async (event, data) => {
 // Add these handlers in main.js
 // In main.js - Replace the existing get-all-student-progress handler
 // main.js
-ipcMain.handle('get-all-student-progress', async (event, filters = {}) => {
+ipcMain.handle('get-all-student-progress', async (event, { examId, className }) => {
     try {
-        const { examId, className } = filters;
+        const subjects = db.prepare(`SELECT subject_code, total_marks FROM exam_subject_settings WHERE exam_id=? AND class=? AND total_marks > 0`).all(examId, className);
         
-        // 1. Start with the base query (No WHERE clause yet)
-        let sql = `
-            SELECT r.*, s.student_name, s.father_name, s.picture_path, s.roll_no, s.registration_no 
-            FROM result r 
-            JOIN students s ON r.student_id = s.id
-        `;
-        
-        const params = [];
+        const rows = db.prepare(`
+            SELECT r.result_id, r.student_id, r.exam_id, r.class, r.total_setmarks, r.total_obt, r.percentage, r.grade, r.position, r.result_status, r.remarks,
+                   s.registration_no, s.student_name, s.roll_no, s.father_name, s.section, s.picture_path,
+                   e.exam_name
+            FROM result r
+            JOIN students s ON s.id = r.student_id
+            JOIN exams e ON e.exam_id = r.exam_id
+            WHERE r.exam_id=? AND r.class=? ORDER BY r.position ASC
+        `).all(examId, className);
 
-        // 2. Add filtering only if values are provided
-        if (examId && className) {
-            sql += ` WHERE r.exam_id = ? AND r.class = ?`;
-            params.push(examId, className);
-        }
-        
-        // 3. Add ordering
-        sql += ` ORDER BY r.total_obt DESC`;
-        
-        const stmt = db.prepare(sql);
-
-        // 4. Execute with parameters if they exist, otherwise fetch all
-        const results = params.length > 0 ? stmt.all(...params) : stmt.all();
-        
-        console.log(`Found ${results.length} records for Exam: ${examId}, Class: ${className}`);
-        return results;
-
+        const data = rows.map(row => {
+            const marks = db.prepare(`SELECT subject_code, marks_set, marks_obtained FROM student_subject_marks WHERE result_id=?`).all(row.result_id);
+            marks.forEach(m => {
+                row[`${m.subject_code}_setmarks`] = m.marks_set;
+                row[`${m.subject_code}_obt`] = m.marks_obtained;
+            });
+            subjects.forEach(sub => {
+                if (row[`${sub.subject_code}_setmarks`] === undefined) {
+                    row[`${sub.subject_code}_setmarks`] = sub.total_marks;
+                    row[`${sub.subject_code}_obt`] = 0;
+                }
+            });
+            return row;
+        });
+        return data;
     } catch (err) {
-        console.error("Database Error in Progress Reports:", err);
+        console.error(err);
         return [];
     }
 });
 
-
 ipcMain.handle('get-student-progress', async (event, studentId) => {
-    return db.prepare('SELECT r.*, s.student_name, s.father_name, s.picture_path, s.roll_no, s.registration_no FROM result r JOIN students s ON r.student_id = s.id WHERE r.student_id = ?').get(studentId);
+    try {
+        // Get latest result for this student
+        const row = db.prepare(`
+            SELECT r.result_id, r.student_id, r.exam_id, r.class, r.total_setmarks, r.total_obt, r.percentage, r.grade, r.position, r.result_status, r.remarks,
+                   s.registration_no, s.student_name, s.roll_no, s.father_name, s.section, s.picture_path,
+                   e.exam_name
+            FROM result r
+            JOIN students s ON s.id = r.student_id
+            JOIN exams e ON e.exam_id = r.exam_id
+            WHERE r.student_id=? ORDER BY r.result_id DESC LIMIT 1
+        `).get(studentId);
+
+        if (!row) return null;
+        
+        const subjects = db.prepare(`SELECT subject_code, total_marks FROM exam_subject_settings WHERE exam_id=? AND class=?`).all(row.exam_id, row.class);
+        const marks = db.prepare(`SELECT subject_code, marks_set, marks_obtained FROM student_subject_marks WHERE result_id=?`).all(row.result_id);
+        marks.forEach(m => {
+            row[`${m.subject_code}_setmarks`] = m.marks_set;
+            row[`${m.subject_code}_obt`] = m.marks_obtained;
+        });
+        subjects.forEach(sub => {
+            if (row[`${sub.subject_code}_setmarks`] === undefined) {
+                row[`${sub.subject_code}_setmarks`] = sub.total_marks;
+                row[`${sub.subject_code}_obt`] = 0;
+            }
+        });
+        return row;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 });
 
 ipcMain.handle('get-report-data', async (event, { examId, className }) => {
-  try {
-    const sql = `
-      SELECT r.*, s.* 
-      FROM result r
-      JOIN students s ON r.student_id = s.id
-      WHERE r.exam_id = ? AND r.class = ?
-      ORDER BY r.total_obt DESC
-    `;
-    const data = db.prepare(sql).all(examId, className);
-    return { success: true, data };
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+    try {
+        // 1. Get active subjects for this exam/class where total_marks > 0
+        const subjects = db.prepare(`SELECT subject_code, total_marks FROM exam_subject_settings WHERE exam_id=? AND class=? AND total_marks > 0`).all(examId, className);
+
+        // 2. Get students + result summary
+        const rows = db.prepare(`
+            SELECT r.result_id, r.student_id, r.class, r.total_setmarks, r.total_obt, r.percentage, r.grade, r.position, r.result_status,
+                   s.registration_no, s.student_name, s.whatsapp
+            FROM result r
+            JOIN students s ON s.id = r.student_id
+            WHERE r.exam_id=? AND r.class=? ORDER BY r.position ASC, s.student_name ASC
+        `).all(examId, className);
+
+        // 3. Attach subject marks to each student
+        const data = rows.map(row => {
+         // inside getReportData, change this line:
+const marks = db.prepare(`SELECT subject_code, marks_set, marks_obtained FROM student_subject_marks WHERE result_id=?`).all(row.result_id);
+const obj = {...row };
+marks.forEach(m => {
+    obj[`${m.subject_code}_setmarks`] = m.marks_set;
+    obj[`${m.subject_code}_obt`] = m.marks_obtained;
 });
+            // Fill subjects total from settings if not yet in student_subject_marks
+            subjects.forEach(sub => {
+                if (obj[`${sub.subject_code}_setmarks`] === undefined) {
+                    obj[`${sub.subject_code}_setmarks`] = sub.total_marks;
+                    obj[`${sub.subject_code}_obt`] = 0;
+                }
+            });
+            return obj;
+        });
+
+        return { success: true, data, subjects };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
 
 ipcMain.handle('recalculate-positions', async (event, { examId, className }) => {
     try {
-        const students = db.prepare(`
-            SELECT result_id FROM result 
-            WHERE exam_id = ? AND class = ? 
-            ORDER BY total_obt DESC, percentage DESC
-        `).all(examId, className);
-        const updateStmt = db.prepare('UPDATE result SET position = ? WHERE result_id = ?');
-        const transaction = db.transaction((list) => {
-            list.forEach((s, index) => {
-                updateStmt.run(index + 1, s.result_id);
+        const rows = db.prepare(`SELECT result_id FROM result WHERE exam_id=? AND class=? ORDER BY total_obt DESC`).all(examId, className);
+        const tx = db.transaction(() => {
+            rows.forEach((r, i) => {
+                db.prepare(`UPDATE result SET position=? WHERE result_id=?`).run(i+1, r.result_id);
             });
         });
-        transaction(students);
+        tx();
         return { success: true };
-    } catch (err) {
-        console.error("Position Error:", err);
-        return { success: false, error: err.message };
-    }
-});
-
-ipcMain.handle('update-student-marks', async (event, s) => {
-    try {
-        const totalObt = (
-            Number(s.urdu_obt || 0) + Number(s.eng_obt || 0) + Number(s.math_obt || 0) + Number(s.sst_obt || 0) + 
-            Number(s.islamiat_obt || 0) + Number(s.science_obt || 0) + Number(s.physics_obt || 0) + Number(s.chemistry_obt || 0) + 
-            Number(s.biology_obt || 0) + Number(s.computer_obt || 0) + Number(s.drawing_obt || 0) + Number(s.geography_obt || 0) +
-            Number(s.pak_studies_obt || 0) + Number(s.islamic_studies_obt || 0) + Number(s.tarjama_quran_obt || 0) + Number(s.gk_obt || 0) +
-            Number(s.functional_math_obt || 0) + Number(s.islamiat_compulsory_obt || 0) + Number(s.social_studies_obt || 0) + Number(s.home_economics_obt || 0) +
-            Number(s.civics_obt || 0) + Number(s.general_science_obt || 0)
-        );
-        
-        const percentage = (totalObt / Number(s.total_setmarks)) * 100;
-        let grade = 'F';
-        if (percentage >= 90) grade = 'A+';
-        else if (percentage >= 80) grade = 'A';
-        else if (percentage >= 70) grade = 'B+';
-        else if (percentage >= 60) grade = 'B';
-        else if (percentage >= 50) grade = 'C';
-        else if (percentage >= 40) grade = 'D';
-        const status = percentage >= 40 ? 'Pass' : 'Fail';
-
-        const sql = `
-            UPDATE result SET 
-                urdu_obt=?, eng_obt=?, math_obt=?, sst_obt=?, islamiat_obt=?, science_obt=?, 
-                physics_obt=?, chemistry_obt=?, biology_obt=?, computer_obt=?, drawing_obt=?, geography_obt=?, 
-                pak_studies_obt=?, islamic_studies_obt=?, tarjama_quran_obt=?, gk_obt=?, functional_math_obt=?,
-                islamiat_compulsory_obt=?, social_studies_obt=?, home_economics_obt=?, civics_obt=?, general_science_obt=?,
-                total_obt=?, percentage=?, grade=?, result_status=?
-            WHERE result_id = ?
-        `;
-        db.prepare(sql).run(
-            s.urdu_obt, s.eng_obt, s.math_obt, s.sst_obt, s.islamiat_obt, s.science_obt,
-            s.physics_obt, s.chemistry_obt, s.biology_obt, s.computer_obt, s.drawing_obt, s.geography_obt,
-            s.pak_studies_obt, s.islamic_studies_obt, s.tarjama_quran_obt, s.gk_obt, s.functional_math_obt,
-            s.islamiat_compulsory_obt, s.social_studies_obt, s.home_economics_obt, s.civics_obt, s.general_science_obt,
-            totalObt, percentage, grade, status, s.result_id
-        );
-        return { success: true };
-    } catch (err) {
-        return { success: false, error: err.message };
-    }
+    } catch (e) { return { success: false, error: e.message }; }
 });
 
 
 // Staff & Salary Management
+// --- STAFF HANDLERS (same pattern as students) ---
+const { pathToFileURL } = require('url');
+
 ipcMain.handle('get-staff', async () => {
-    return dbLogic.getStaff();
+  try {
+    const list = dbLogic.getStaff(); // this logs SELECT * inside getStaff() - remove console.log from there
+
+    return list.map(s => {
+      let display = null;
+
+      if (s.photo) {
+        // if already base64
+        if (s.photo.startsWith('data:')) {
+          display = s.photo;
+        } else {
+          try {
+            const abs = path.join(staffImagesDir, path.basename(s.photo));
+            if (fs.existsSync(abs)) {
+              // Convert to base64 - 100% offline, no file://, no SSL error
+              const ext = path.extname(abs).toLowerCase();
+              const mime = ext === '.png' ? 'image/png' : 'image/jpeg';
+              const data = fs.readFileSync(abs).toString('base64');
+              display = `data:${mime};base64,${data}`;
+            }
+          } catch (e) {
+            console.error("Photo read error:", e.message);
+          }
+        }
+      }
+
+      // If still null, use LOCAL placeholder, NOT internet URL
+      if (!display) {
+        display = null; // let frontend show ../../images/default-avatar.png
+      }
+
+      return { ...s, photoDisplay: display };
+    });
+
+  } catch (err) {
+    console.error("get-staff error:", err);
+    return [];
+  }
 });
+
+// Inside your main.js / database.js IPC registration block
 ipcMain.handle('add-staff', async (event, data) => {
-    return dbLogic.insertStaff(data);
+  try {
+    // 1. Get the next available ID from the table to name the image file properly
+    const row = db.prepare("SELECT MAX(id) AS maxId FROM staff_tbl").get();
+    const nextId = (row.maxId || 0) + 1;
+
+    // 2. Process and copy the image FIRST using the predicted ID
+    let finalPhotoName = null;
+    if (data.photo) {
+      // Calls your existing image saving function cleanly
+      finalPhotoName = saveStaffImageFile(nextId, data.photo); 
+    }
+
+    // 3. Run a SINGLE query to insert EVERYTHING at once
+    const sql = `
+      INSERT INTO staff_tbl 
+      (name, cnic, contact, designation, doj, salary, allowance, status, documents_held, photo) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    const stmt = db.prepare(sql);
+    const result = stmt.run(
+      data.name,
+      data.cnic,
+      data.contact,
+      data.designation,
+      data.doj,
+      data.salary,
+      data.allowance,
+      data.status,
+      data.documents_held,
+      finalPhotoName // Inserts the photo filename directly!
+    );
+
+    return { success: true, id: result.lastInsertRowid };
+  } catch (error) {
+    console.error("Database Insert Error:", error);
+    throw error;
+  }
 });
+
+
 ipcMain.handle('update-staff', async (event, id, data) => {
-    return dbLogic.updateStaff(id, data);
+  // If new photo provided (base64 or absolute path)
+  if (data.photo && (data.photo.startsWith('data:image') || path.isAbsolute(data.photo))) {
+    // This deletes old staff_{id}.* from AppData + D:\ + Documents
+    const fileName = saveStaffImageFile(id, data.photo);
+    data.photo = fileName;
+  } else if (data.photo) {
+    // already filename like staff_1.jpg
+    data.photo = path.basename(data.photo);
+  }
+  // if no photo field, keep old photo
+  return dbLogic.updateStaff(id, data);
 });
+
 ipcMain.handle('delete-staff', async (event, id) => {
-    return dbLogic.deleteStaff(id);
+  try {
+    // Deletes staff_1.jpg from all 3 places
+    deleteOldStaffImages(id);
+  } catch (e) {}
+  return dbLogic.deleteStaff(id);
 });
 ipcMain.handle('initiate-salary', async (event, month, year) => {
     return dbLogic.initiateSalary(month, year);
@@ -1066,23 +1457,48 @@ ipcMain.handle('get-expense-filters', async () => {
 });
 
 // Update your get-expenses handler to use 'exp_month'
+// --- GET EXPENSES - also return ROWID as id ---
 ipcMain.handle('get-expenses', async (event, filters) => {
     try {
-        let query = "SELECT * FROM exp_tbl WHERE 1=1";
+        let query = "SELECT ROWID as id, * FROM exp_tbl WHERE 1=1";
         const params = [];
 
         if (filters.month) {
-            query += " AND exp_month = ?"; // Changed from exp_mon
+            query += " AND exp_month =?";
             params.push(filters.month);
         }
         if (filters.year) {
-            query += " AND exp_year = ?";
+            query += " AND exp_year =?";
             params.push(filters.year);
         }
+        query += " ORDER BY ROWID DESC";
         return db.prepare(query).all(...params);
     } catch (err) {
         console.error(err);
         return [];
+    }
+});
+
+ipcMain.handle('delete-expense', async (event, id) => {
+    try {
+        console.log("Deleting ROWID:", id);
+        const info = db.prepare("DELETE FROM exp_tbl WHERE ROWID =?").run(Number(id));
+        return { success: info.changes > 0 };
+    } catch (err) {
+        console.error("Delete error:", err.message);
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('update-expense', async (event, data) => {
+    try {
+        console.log("Updating ROWID:", data);
+        const info = db.prepare("UPDATE exp_tbl SET expence =?, exp_amount =? WHERE ROWID =?")
+                      .run(data.expense, data.amount, Number(data.id));
+        return { success: info.changes > 0 };
+    } catch (err) {
+        console.error("Update error:", err.message);
+        return { success: false, error: err.message };
     }
 });
 //datesheet
@@ -1786,26 +2202,68 @@ ipcMain.handle('getAllSubjectMarksBulk', (e, ids) => dbLogic.getAllSubjectMarksB
 
 
 // 2. Add a new subject
+// 2. Add a new subject - FIXED: normalize code
 ipcMain.handle('add-new-subject', async (event, data) => {
     try {
         const { code, name } = data;
+        const cleanCode = String(code).toLowerCase().trim();
         const stmt = db.prepare("INSERT INTO academy_subjects (subject_code, subject_display_name) VALUES (?, ?)");
-        const info = stmt.run(code.toLowerCase().trim(), name.trim());
+        const info = stmt.run(cleanCode, name.trim());
         return { success: true, id: info.lastInsertRowid };
     } catch (err) {
         return { success: false, error: err.message };
     }
 });
 
-// 3. Delete a subject
+// 3. Delete a subject - FIXED: CASCADE DELETE (THIS IS YOUR MAIN BUG)
 ipcMain.handle('delete-subject', async (event, id) => {
     try {
-        db.prepare("DELETE FROM academy_subjects WHERE id = ?").run(id);
+        // Get code first before delete
+        const row = db.prepare("SELECT subject_code FROM academy_subjects WHERE id = ?").get(id);
+        if(!row) return { success: false, error: "Not found" };
+        const cleanCode = String(row.subject_code).toLowerCase().trim();
+
+        // Transaction: delete from all 3 tables
+        const trx = db.transaction(()=>{
+            db.prepare("DELETE FROM academy_subjects WHERE id = ?").run(id);
+            db.prepare("DELETE FROM exam_subject_settings WHERE LOWER(TRIM(subject_code)) = ?").run(cleanCode);
+            db.prepare("DELETE FROM student_subject_marks WHERE LOWER(TRIM(subject_code)) = ?").run(cleanCode);
+        });
+        trx();
+
+        console.log(`🗑️ Deleted subject ${cleanCode} from academy + settings + marks`);
         return { success: true };
     } catch (err) {
         return { success: false, error: err.message };
     }
 });
+ipcMain.handle('updateIndividualFullFees', (e, data) => {
+    try{
+        db.prepare(`
+            UPDATE fee_tbl SET
+                monthly_fee =?,
+                adm_fee =?,
+                exam_fee =?,
+                lab_fee =?,
+                reg_fee =?,
+                annual_fund =?,
+                stationary_fund =?,
+                bus_charges =?,
+                misc_fee =?,
+                misc_remarks =?
+            WHERE id =?
+        `).run(
+            data.monthly_fee, data.adm_fee, data.exam_fee, data.lab_fee,
+            data.reg_fee, data.annual_fund, data.stationary_fund,
+            data.bus_charges, data.misc_fee, data.misc_remarks,
+            data.id
+        );
+        return { success: true };
+    }catch(err){
+        return { success: false, error: err.message };
+    }
+});
+
 
 
 

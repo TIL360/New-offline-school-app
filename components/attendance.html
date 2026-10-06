@@ -331,6 +331,7 @@
 
 <script>
     let currentTab = 'student';
+    let scannerLock = false; // prevents focus fight
 
     function showPopup(regNo, name, date, type) {
         const old = document.getElementById('temp-success-msg');
@@ -338,149 +339,181 @@
         const div = document.createElement('div');
         div.id = 'temp-success-msg';
         div.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999;';
-        let icon = type === 'already' ? '⚠️' : '✅';
-        let title = type === 'already' ? 'Already Marked!' : 'Attendance Marked!';
-        let color = type === 'already' ? '#f39c12' : '#2ec4b6';
-        let statusText = type === 'already' ? 'Already Present Today' : 'Present';
+        let icon = type === 'already'? '⚠️' : (type === 'error'? '❌' : '✅');
+        let title = type === 'already'? 'Already Marked!' : (type === 'error'? 'Not Found!' : 'Attendance Marked!');
+        let color = type === 'already'? '#f39c12' : (type === 'error'? '#e74c3c' : '#2ec4b6');
+        let statusText = type === 'already'? 'Already Present Today' : (type === 'error'? 'Not Found' : 'Present');
         div.innerHTML = `<div style="background:white;padding:35px 40px;border-radius:16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.3);min-width:380px;"><div style="font-size:50px;">${icon}</div><div style="font-size:20px;font-weight:700;color:#003049;margin:10px 0 5px;">${title}</div><div style="font-size:14px;color:#555;line-height:1.6;">Attendance of <b style="color:#003049;">Rg No ${regNo}</b>, <b style="color:#003049;">${name}</b> is <b style="color:${color};">${statusText}</b></div><div style="margin-top:12px;font-size:12px;background:#f4f6f9;padding:6px 12px;border-radius:20px;display:inline-block;color:#6c757d;">📅 ${date}</div></div>`;
-        div.onclick = () => div.remove();
+        div.onclick = () => { div.remove(); focusScannerInput(); };
         document.body.appendChild(div);
-        setTimeout(() => { if(div) div.remove(); }, 2000);
+        setTimeout(() => { if(div && div.parentNode) div.remove(); focusScannerInput(); }, 2000);
     }
 
-    function focusScanner(event) {
+    function focusScannerInput() {
+        if(scannerLock) return;
         const scanner = document.getElementById('card-scanner');
-        if (!scanner) return;
-        if (event && event.target) {
-            const tag = event.target.tagName.toLowerCase();
-            if (['select', 'option', 'input', 'button', 'a'].includes(tag)) return;
-        }
+        if (!scanner || document.activeElement === scanner) return;
+        // Don't steal focus if user is typing in other inputs
+        const activeTag = document.activeElement? document.activeElement.tagName.toLowerCase() : '';
+        if (['input', 'select', 'textarea'].includes(activeTag) && document.activeElement.id!== 'card-scanner') return;
+
         scanner.focus();
+        // For barcode scanners that need selection
+        // scanner.select();
     }
 
-window.addEventListener('DOMContentLoaded', async () => {
-    const today = new Date();
-    document.getElementById('attendance-date').value = today.toISOString().split('T')[0];
-    try {
-        const classes = await window.api.getClasses();
-        const dropdown = document.getElementById('class-dropdown');
-        if (classes && dropdown) {
-            classes.forEach(cls => {
-                const opt = document.createElement('option');
-                opt.value = cls.class_name; opt.textContent = cls.class_name;
-                dropdown.appendChild(opt);
-            });
-        }
-    } catch (err) { console.error(err); }
+    window.addEventListener('DOMContentLoaded', async () => {
+        const today = new Date();
+        const dateEl = document.getElementById('attendance-date');
+        if(dateEl) dateEl.value = today.toISOString().split('T')[0];
 
-    const scannerInput = document.getElementById('card-scanner');
-    if (scannerInput) {
-    scannerInput.addEventListener('keydown', async function(e) {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    let val = this.value.trim().toUpperCase();
-    if (!val) return;
-    const date = document.getElementById('attendance-date').value;
-    this.value = '';
-
-    // AUTO DETECT
-    let isStaff = val.startsWith('EMP-');
-    
-    try {
-        if (isStaff) {
-            let staffId = parseInt(val.replace('EMP-',''));
-            let status = await window.api.getStaffAttendanceStatus({ staff_id: staffId, date });
-            if (status === 'Present') {
-                showPopup(val, `Staff ${staffId}`, date, 'already');
-            } else {
-                await window.api.saveStaffAttendance({ records: [{ staff_id: staffId, status: 'Present' }], date });
-                showPopup(val, `Staff ${staffId}`, date, 'success');
-            }
-        } else {
-            // Student
-            const student = await window.api.getStudentByRegNo(val);
-            if(!student) return alert('Student not found');
-            let sId = student.student_id;
-            let status = await window.api.getStudentAttendanceStatus({ student_id: sId, date });
-            if (status === 'Present') {
-                showPopup(student.registration_no, student.student_name, date, 'already');
-            } else {
-                await window.api.saveStudentAttendance({ records: [{ student_id: sId, status: 'Present' }], date });
-                showPopup(student.registration_no, student.student_name, date, 'success');
-            }
-        }
-    } catch(err){ console.error(err); }
-});
-    }
-    focusScanner();
-    document.addEventListener('click', (e) => focusScanner(e));
-});
-
-function switchTab(tabName) {
-    currentTab = tabName;
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    if (event && event.target) event.target.classList.add('active');
-    const classContainer = document.getElementById('class-select-container');
-    if (classContainer) classContainer.style.display = tabName === 'staff' ? 'none' : 'block';
-    document.getElementById('table-body').innerHTML = `<tr><td colspan="4" style="text-align:center;padding:30px;">Please select class...</td></tr>`;
-    document.getElementById('save-btn').style.display = 'none';
-    setTimeout(focusScanner, 50);
-}
-
-async function loadAttendanceList() {
-    const date = document.getElementById('attendance-date').value;
-    const headersTr = document.getElementById('table-headers');
-    const bodyTbody = document.getElementById('table-body');
-    if (!date) { alert("Please pick a date first."); return; }
-    bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;">Syncing rows...</td></tr>`;
-    if (currentTab === 'student') {
-        const className = document.getElementById('class-dropdown').value;
-        if (!className) return;
-        headersTr.innerHTML = `<th>Reg No</th><th>Roll No</th><th>Student Name</th><th>Status</th>`;
         try {
-            const response = await window.api.getStudentAttendance({ className, date });
-            const students = response.records || [];
-            bodyTbody.innerHTML = '';
-            students.forEach(s => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${s.registration_no}</td><td>${s.roll_no}</td><td><b>${s.student_name}</b></td><td><div class="status-options" data-id="${s.student_id}"><label><input type="radio" name="status-${s.student_id}" value="Present" ${s.status === 'Present' ? 'checked' : ''}> Present</label><label><input type="radio" name="status-${s.student_id}" value="Absent" ${s.status === 'Absent' ? 'checked' : ''}> Absent</label><label><input type="radio" name="status-${s.student_id}" value="Leave" ${s.status === 'Leave' ? 'checked' : ''}> Leave</label></div></td>`;
-                bodyTbody.appendChild(tr);
-            });
-            document.getElementById('save-btn').style.display = 'inline-block';
+            const classes = await window.api.getClasses();
+            const dropdown = document.getElementById('class-dropdown');
+            if (classes && dropdown) {
+                dropdown.innerHTML = '<option value="">-- Choose Class --</option>';
+                classes.forEach(cls => {
+                    const opt = document.createElement('option');
+                    opt.value = cls.class_name; opt.textContent = cls.class_name;
+                    dropdown.appendChild(opt);
+                });
+            }
         } catch (err) { console.error(err); }
-    } else {
-        headersTr.innerHTML = `<th>ID</th><th>Designation</th><th>Name</th><th>Status</th>`;
-        try {
-            const response = await window.api.getStaffAttendance({ date });
-            const staffList = response.records || [];
-            bodyTbody.innerHTML = '';
-            staffList.forEach(st => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>EMP-${st.staff_id}</td><td><i>${st.designation}</i></td><td><b>${st.name}</b></td><td><div class="status-options" data-id="${st.staff_id}"><label><input type="radio" name="status-${st.staff_id}" value="Present" ${st.status === 'Present' ? 'checked' : ''}> Present</label><label><input type="radio" name="status-${st.staff_id}" value="Absent" ${st.status === 'Absent' ? 'checked' : ''}> Absent</label><label><input type="radio" name="status-${st.staff_id}" value="Leave" ${st.status === 'Leave' ? 'checked' : ''}> Leave</label></div></td>`;
-                bodyTbody.appendChild(tr);
-            });
-            document.getElementById('save-btn').style.display = 'inline-block';
-        } catch (err) { console.error(err); }
-    }
-}
 
-async function saveAttendanceRecords() {
-    const date = document.getElementById('attendance-date').value;
-    const records =[];
-    document.querySelectorAll('.status-options').forEach(container => {
-        const idKey = container.getAttribute('data-id');
-        const checkedRadio = container.querySelector(`input[name="status-${idKey}"]:checked`);
-        if (checkedRadio) {
-            if (currentTab === 'student') records.push({ student_id: parseInt(idKey), status: checkedRadio.value });
-            else records.push({ staff_id: parseInt(idKey), status: checkedRadio.value });
+        const scannerInput = document.getElementById('card-scanner');
+        if (scannerInput) {
+            // FIXED SCANNER HANDLER - NO ALERT
+            scannerInput.addEventListener('keydown', async function(e) {
+                if (e.key!== 'Enter') return;
+                e.preventDefault();
+                let val = this.value.trim().toUpperCase();
+                if (!val) return;
+                const date = document.getElementById('attendance-date').value;
+                this.value = '';
+
+                scannerLock = true; // prevent refocus during async
+                let isStaff = val.startsWith('EMP-');
+
+                try {
+                    if (isStaff) {
+                        let staffId = parseInt(val.replace('EMP-',''));
+                        if(isNaN(staffId)) throw new Error('Invalid Staff ID');
+                        let status = await window.api.getStaffAttendanceStatus({ staff_id: staffId, date });
+                        if (status === 'Present') {
+                            showPopup(val, `Staff ${staffId}`, date, 'already');
+                        } else {
+                            await window.api.saveStaffAttendance({ records: [{ staff_id: staffId, status: 'Present' }], date });
+                            showPopup(val, `Staff ${staffId}`, date, 'success');
+                        }
+                    } else {
+                        const student = await window.api.getStudentByRegNo(val);
+                        if(!student) {
+                            showPopup(val, 'Unknown Student', date, 'error');
+                            return;
+                        }
+                        let sId = student.student_id;
+                        let status = await window.api.getStudentAttendanceStatus({ student_id: sId, date });
+                        if (status === 'Present') {
+                            showPopup(student.registration_no, student.student_name, date, 'already');
+                        } else {
+                            await window.api.saveStudentAttendance({ records: [{ student_id: sId, status: 'Present' }], date });
+                            showPopup(student.registration_no, student.student_name, date, 'success');
+                        }
+                    }
+                } catch(err){
+                    console.error(err);
+                    showPopup(val, err.message, date, 'error');
+                } finally {
+                    scannerLock = false;
+                    setTimeout(focusScannerInput, 100);
+                }
+            });
+
+            // Auto-refocus only when scanner loses focus and user is not typing elsewhere
+            scannerInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    const active = document.activeElement;
+                    if(!active || active === document.body) focusScannerInput();
+                }, 500);
+            });
         }
+
+        // FIXED: Focus only on window focus, NOT on every click
+        window.addEventListener('focus', () => setTimeout(focusScannerInput, 100));
+
+        // Initial focus with delay - solves Alt+Tab issue
+        setTimeout(focusScannerInput, 300);
     });
-    if (records.length === 0) { alert("Please mark at least one!"); return; }
-    try {
-        let res = currentTab === 'student' ? await window.api.saveStudentAttendance({ records, date }) : await window.api.saveStaffAttendance({ records, date });
-        if (res && res.success) { alert(`Success! Saved for ${date}.`); loadAttendanceList(); }
-    } catch (e) { console.error(e); }
-}
+
+    function switchTab(tabName) {
+        currentTab = tabName;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        // fix event target
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(b => { if(b.textContent.toLowerCase().includes(tabName)) b.classList.add('active'); });
+
+        const classContainer = document.getElementById('class-select-container');
+        if (classContainer) classContainer.style.display = tabName === 'staff'? 'none' : 'block';
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="4" style="text-align:center;padding:30px;">Please select class...</td></tr>`;
+        document.getElementById('save-btn').style.display = 'none';
+        setTimeout(focusScannerInput, 100);
+    }
+
+    async function loadAttendanceList() {
+        const date = document.getElementById('attendance-date').value;
+        const headersTr = document.getElementById('table-headers');
+        const bodyTbody = document.getElementById('table-body');
+        if (!date) { showPopup('', 'Please pick a date first', date, 'error'); return; }
+        bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;">Syncing rows...</td></tr>`;
+        if (currentTab === 'student') {
+            const className = document.getElementById('class-dropdown').value;
+            if (!className) { bodyTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Please choose class</td></tr>`; return; }
+            headersTr.innerHTML = `<th>Reg No</th><th>Roll No</th><th>Student Name</th><th>Status</th>`;
+            try {
+                const response = await window.api.getStudentAttendance({ className, date });
+                const students = response.records || [];
+                bodyTbody.innerHTML = '';
+                students.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${s.registration_no}</td><td>${s.roll_no}</td><td><b>${s.student_name}</b></td><td><div class="status-options" data-id="${s.student_id}"><label><input type="radio" name="status-${s.student_id}" value="Present" ${s.status === 'Present'? 'checked' : ''}> Present</label><label><input type="radio" name="status-${s.student_id}" value="Absent" ${s.status === 'Absent'? 'checked' : ''}> Absent</label><label><input type="radio" name="status-${s.student_id}" value="Leave" ${s.status === 'Leave'? 'checked' : ''}> Leave</label></div></td>`;
+                    bodyTbody.appendChild(tr);
+                });
+                document.getElementById('save-btn').style.display = 'inline-block';
+            } catch (err) { console.error(err); }
+        } else {
+            headersTr.innerHTML = `<th>ID</th><th>Designation</th><th>Name</th><th>Status</th>`;
+            try {
+                const response = await window.api.getStaffAttendance({ date });
+                const staffList = response.records || [];
+                bodyTbody.innerHTML = '';
+                staffList.forEach(st => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>EMP-${st.staff_id}</td><td><i>${st.designation}</i></td><td><b>${st.name}</b></td><td><div class="status-options" data-id="${st.staff_id}"><label><input type="radio" name="status-${st.staff_id}" value="Present" ${st.status === 'Present'? 'checked' : ''}> Present</label><label><input type="radio" name="status-${st.staff_id}" value="Absent" ${st.status === 'Absent'? 'checked' : ''}> Absent</label><label><input type="radio" name="status-${st.staff_id}" value="Leave" ${st.status === 'Leave'? 'checked' : ''}> Leave</label></div></td>`;
+                    bodyTbody.appendChild(tr);
+                });
+                document.getElementById('save-btn').style.display = 'inline-block';
+            } catch (err) { console.error(err); }
+        }
+        setTimeout(focusScannerInput, 200);
+    }
+
+    async function saveAttendanceRecords() {
+        const date = document.getElementById('attendance-date').value;
+        const records =[];
+        document.querySelectorAll('.status-options').forEach(container => {
+            const idKey = container.getAttribute('data-id');
+            const checkedRadio = container.querySelector(`input[name="status-${idKey}"]:checked`);
+            if (checkedRadio) {
+                if (currentTab === 'student') records.push({ student_id: parseInt(idKey), status: checkedRadio.value });
+                else records.push({ staff_id: parseInt(idKey), status: checkedRadio.value });
+            }
+        });
+        if (records.length === 0) { showPopup('', 'Please mark at least one', new Date().toISOString().split('T')[0], 'error'); return; }
+        try {
+            let res = currentTab === 'student'? await window.api.saveStudentAttendance({ records, date }) : await window.api.saveStaffAttendance({ records, date });
+            if (res && res.success) { showPopup('All', `${records.length} Records`, date, 'success'); loadAttendanceList(); }
+        } catch (e) { console.error(e); }
+    }
 </script>
 </body>
 </html>

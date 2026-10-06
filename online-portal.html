@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Portal - TECHINFO_2026</title>
+<style>*{box-sizing:border-box;font-family:Segoe UI,sans-serif}body{margin:0;background:#f0f4f8;padding:10px}
+.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 15px rgba(0,0,0,.05);max-width:900px;margin:20px auto}
+select,input{width:100%;padding:11px;border:1.5px solid #cbd5e1;border-radius:8px;margin-top:4px;font-size:14px}
+button{width:100%;padding:12px;background:#ea580c;color:#fff;border:none;border-radius:8px;font-weight:bold;margin-top:12px;cursor:pointer}
+table{width:100%;border-collapse:collapse;margin-top:12px}th{background:#102a43;color:#fff;padding:8px;font-size:11px;text-align:left}td{padding:8px;border-bottom:1px solid #eee;font-size:13px}
+.off{background:#f1f5f9;padding:4px 8px;border-radius:4px;font-weight:bold;text-align:center;display:inline-block;min-width:55px}.on{width:70px;padding:6px;border:1.5px solid #ea580c;border-radius:4px;text-align:center;font-weight:bold}
+.badge{background:#102a43;color:#fff;padding:2px 8px;border-radius:12px;font-size:11px}.hidden{display:none}</style></head>
+<body>
+<div id="loginPage" class="card" style="max-width:380px;"><h2 style="text-align:center;color:#102a43;">TEACHER LOGIN</h2><p style="text-align:center;font-size:12px;color:#666;">TECHINFO_2026</p>
+<input id="username" placeholder="Username - Case Sensitive e.g. Faisal" autocomplete="username"><input id="password" type="password" placeholder="Password" autocomplete="current-password"><button id="btnLogin">LOGIN</button><p id="loginMsg" style="color:red;text-align:center;font-size:12px"></p>
+</div>
+<div id="mainPage" class="card hidden"><div style="display:flex;justify-content:space-between;font-size:13px"><span>Welcome <b id="userName"></b> <span id="userClass" class="badge"></span></span><a href="#" onclick="logout()" style="color:red;font-weight:bold;text-decoration:none">Logout</a></div>
+<label>Select Exam</label><select id="examSelect"></select><label>Select Class</label><select id="classSelect"></select><label>Select Subject</label><select id="subjectSelect"></select>
+<button id="btnLoad">📥 Load Students</button><div id="studentsArea"></div></div>
+<script>
+const SCHOOL_CODE='TECHINFO_2026';
+const SUPABASE_URL='https://vxdqfngvmrrupfooywwk.supabase.co';
+const SUPABASE_KEY='sb_publishable_dvggOmxQl7wmhpIrkzbrLw_9Zp-Dm57';
+const HEADERS={"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json","Prefer":"return=minimal"};
+let currentUser=null,currentMarks=[];
+const subjectsMap={"eng":"English","maths":"Mathematics","math":"Mathematics","urdu":"Urdu","isl":"Islamiat","islamiat":"Islamiat","phy":"Physics","chem":"Chemistry","bio":"Biology","cs":"Computer","comp":"Computer","pst":"Pak Studies","pak_studies":"Pak Studies","science":"Science"};
+async function sbGet(path){try{const r=await fetch(SUPABASE_URL+"/rest/v1/"+path,{headers:HEADERS});if(!r.ok){return [];}return await r.json();}catch(e){return [];}}
+async function sbPatch(path,body){try{const r=await fetch(SUPABASE_URL+"/rest/v1/"+path,{method:"PATCH",headers:HEADERS,body:JSON.stringify(body)});return r.ok;}catch(e){return false;}}
+// --- CASE SENSITIVE LOGIN ---
+document.getElementById('btnLogin').onclick=async()=>{
+  const rawU=document.getElementById('username').value.trim();
+  const rawP=document.getElementById('password').value.trim();
+  if(!rawU||!rawP){document.getElementById('loginMsg').innerText="Enter username & password";return;}
+  document.getElementById('loginMsg').innerText="Checking...";
+  const data=await sbGet(`users?school_code=eq.${SCHOOL_CODE}&username=eq.${encodeURIComponent(rawU)}&password=eq.${encodeURIComponent(rawP)}&select=*`);
+  if(!data.length){document.getElementById('loginMsg').innerText=`Login failed: '${rawU}' is CASE SENSITIVE. Use exact case.`;return;}
+  currentUser=data[0]; sessionStorage.setItem('teacher',JSON.stringify(currentUser)); showMain();
+};
+function showMain(){if(!currentUser){try{currentUser=JSON.parse(sessionStorage.getItem('teacher')||'null')}catch(e){}}if(!currentUser)return;document.getElementById('loginPage').classList.add('hidden');document.getElementById('mainPage').classList.remove('hidden');document.getElementById('userName').innerText=currentUser.username;document.getElementById('userClass').innerText=currentUser.assigned_class||currentUser.usertype||'All';loadExams();}
+function logout(){sessionStorage.clear();location.reload();}
+if(sessionStorage.getItem('teacher')){currentUser=JSON.parse(sessionStorage.getItem('teacher'));showMain();}
+async function loadExams(){const sel=document.getElementById('examSelect');sel.innerHTML='<option>Loading...</option>';let data=await sbGet(`exams?school_code=eq.${SCHOOL_CODE}&select=*&order=exam_id.desc`);sel.innerHTML='<option value="">-- Select Exam --</option>';data.forEach(e=>{sel.innerHTML+=`<option value="${e.exam_id||e.id}">${e.exam_name}</option>`;});sel.onchange=loadClasses;}
+async function loadClasses(){const exam_id=document.getElementById('examSelect').value;if(!exam_id)return;let data=await sbGet(`exam_subject_settings?school_code=eq.${SCHOOL_CODE}&exam_id=eq.${exam_id}&select=class`);let classes=[...new Set(data.map(d=>d.class).filter(Boolean))];const isAdmin=String(currentUser.usertype||'').toLowerCase()==='admin';const assigned=String(currentUser.assigned_class||'').trim();if(!isAdmin&&assigned){const filtered=classes.filter(c=>String(c).trim()===assigned);if(filtered.length>0)classes=filtered;}const sel=document.getElementById('classSelect');sel.innerHTML='<option value="">-- Select Class --</option>';classes.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);sel.onchange=loadSubjects;}
+async function loadSubjects(){const exam_id=document.getElementById('examSelect').value;const cls=document.getElementById('classSelect').value;if(!exam_id||!cls)return;let data=await sbGet(`exam_subject_settings?school_code=eq.${SCHOOL_CODE}&exam_id=eq.${exam_id}&class=eq.${cls}&select=subject_code,total_marks`);const sel=document.getElementById('subjectSelect');sel.innerHTML='<option value="">-- Select Subject --</option>';data.forEach(s=>{const full=subjectsMap[s.subject_code.toLowerCase()]||s.subject_code.toUpperCase();sel.innerHTML+=`<option value="${s.subject_code}">${full} (${s.total_marks})</option>`;});}
+document.getElementById('btnLoad').onclick=async()=>{
+  const exam_id=document.getElementById('examSelect').value;const cls=document.getElementById('classSelect').value;const subj=document.getElementById('subjectSelect').value;
+  if(!exam_id||!cls||!subj)return alert("Select all");
+  document.getElementById('btnLoad').innerText="Loading...";
+  const data=await sbGet(`student_subject_marks?school_code=eq.${SCHOOL_CODE}&exam_id=eq.${exam_id}&class=eq.${cls}&subject_code=eq.${subj}&order=student_id&select=*`);
+  const ids=[...new Set(data.map(d=>d.student_id))];let students=[];if(ids.length){students=await sbGet(`students?school_code=eq.${SCHOOL_CODE}&id=in.(${ids.join(',')})&select=id,registration_no,student_name`);}
+  const map={};students.forEach(s=>map[s.id]=s);currentMarks=data;
+  let html=`<p style="font-size:12px">Total ${data.length} | Offline vs Teacher Marks</p><table><thead><tr><th>Reg No</th><th>Student</th><th>Offline</th><th>Teacher Online Marks</th></tr></thead><tbody>`;
+  data.forEach((row,idx)=>{
+    const st=map[row.student_id]||{registration_no:row.student_id,student_name:'Student '+row.student_id};
+    const offline=row.marks_obtained;
+    const onlineVal=row.marks_obtained_online!=null?row.marks_obtained_online:row.marks_obtained;
+    html+=`<tr><td>${st.registration_no}</td><td><b>${st.student_name}</b></td><td><span class="off">${row.marks_set}/${offline}</span></td><td><input class="on" id="m_${idx}" type="number" value="${onlineVal}" oninput="currentMarks[${idx}].marks_obtained_online=this.value"></td></tr>`;
+  });
+  html+=`</tbody></table><button onclick="saveAll()" style="background:#27ae60">💾 Save Teacher Marks - ${data.length} students</button><p id="saveMsg" style="text-align:center;font-size:12px"></p>`;
+  document.getElementById('studentsArea').innerHTML=html;document.getElementById('btnLoad').innerText="📥 Load Students";
+};
+async function saveAll(){
+  if(!currentMarks.length)return alert("Nothing");
+  document.getElementById('saveMsg').innerText="Saving to marks_obtained_online...";
+  let c=0;for(let row of currentMarks){const ok=await sbPatch(`student_subject_marks?school_code=eq.${SCHOOL_CODE}&result_id=eq.${row.result_id}&subject_code=eq.${row.subject_code}`,{marks_obtained_online:Number(row.marks_obtained_online)});if(ok)c++;}
+  document.getElementById('saveMsg').innerText=`✅ ${c}/${currentMarks.length} teacher marks saved! Now PULL in desktop`;
+}
+</script></body></html>
